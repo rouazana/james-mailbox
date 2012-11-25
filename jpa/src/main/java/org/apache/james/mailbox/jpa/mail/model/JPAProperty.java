@@ -26,27 +26,32 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.james.mailbox.store.mail.model.Property;
+import org.apache.openjpa.persistence.jdbc.Index;
 
-@Entity(name="Property")
-@Table(name="JAMES_MAIL_PROPERTY")
+@Entity(name = "Property")
+@Table(name = "JAMES_MAIL_PROPERTY")
 public class JPAProperty implements Property {
 
     /** The system unique key */
     @Id
     @GeneratedValue
     @Column(name = "PROPERTY_ID", nullable = true)
+    // TODO The columnNames are not interpreted, see OPENJPA-223 to fix
+    // MAILBOX-186
+    @Index(name = "INDEX_PROPERTY_MSG_ID", columnNames = { "MAILBOX_ID", "MAIL_UID" })
     private long id;
-    
+
     /** Order within the list of properties */
     @Basic(optional = false)
     @Column(name = "PROPERTY_LINE_NUMBER", nullable = false)
+    @Index(name = "INDEX_PROPERTY_LINE_NUMBER")
     private int line;
-    
+
     /** Local part of the name of this property */
     @Basic(optional = false)
     @Column(name = "PROPERTY_LOCAL_NAME", nullable = false, length = 500)
     private String localName;
-    
+
     /** Namespace part of the name of this property */
     @Basic(optional = false)
     @Column(name = "PROPERTY_NAME_SPACE", nullable = false, length = 500)
@@ -56,18 +61,23 @@ public class JPAProperty implements Property {
     @Basic(optional = false)
     @Column(name = "PROPERTY_VALUE", nullable = false, length = 1024)
     private String value;
-    
+
     /**
      * @deprecated enhancement only
      */
-    @Deprecated 
-    public JPAProperty() {}
-    
+    @Deprecated
+    public JPAProperty() {
+    }
+
     /**
      * Constructs a property.
-     * @param localName not null
-     * @param namespace not null
-     * @param value not null
+     * 
+     * @param localName
+     *            not null
+     * @param namespace
+     *            not null
+     * @param value
+     *            not null
      */
     public JPAProperty(String namespace, String localName, String value, int order) {
         super();
@@ -79,7 +89,9 @@ public class JPAProperty implements Property {
 
     /**
      * Constructs a property cloned from the given.
-     * @param property not null
+     * 
+     * @param property
+     *            not null
      */
     public JPAProperty(Property property, int order) {
         this(property.getNamespace(), property.getLocalName(), property.getValue(), order);
@@ -93,9 +105,10 @@ public class JPAProperty implements Property {
     public JPAProperty(JPAProperty property) {
         this(property.getNamespace(), property.getLocalName(), property.getValue(), property.getOrder());
     }
-    
+
     /**
      * Gets the order of this property.
+     * 
      * @return order of this property
      */
     public int getOrder() {
@@ -104,22 +117,25 @@ public class JPAProperty implements Property {
 
     /**
      * Gets the local part of the name of the property.
+     * 
      * @return not null
      */
     public String getLocalName() {
         return localName;
     }
-    
+
     /**
      * Gets the namespace for the name.
+     * 
      * @return not null
      */
     public String getNamespace() {
         return namespace;
     }
-    
+
     /**
      * Gets the value for this property.
+     * 
      * @return not null
      */
     public String getValue() {
@@ -149,21 +165,16 @@ public class JPAProperty implements Property {
     }
 
     /**
-     * Constructs a <code>String</code> with all attributes
-     * in name = value format.
-     *
-     * @return a <code>String</code> representation 
-     * of this object.
+     * Constructs a <code>String</code> with all attributes in name = value
+     * format.
+     * 
+     * @return a <code>String</code> representation of this object.
      */
     public String toString() {
-        final String result = "JPAProperty ( "
-            + "id = " + this.id + " "
-            + "localName = " + this.localName + " "
-            + "namespace = " + this.namespace + " "
-            + "value = " + this.value 
-            + " )";
-    
+        final String result = "JPAProperty ( " + "id = " + this.id + " " + "localName = " + this.localName + " "
+                + "namespace = " + this.namespace + " " + "value = " + this.value + " )";
+
         return result;
     }
-    
+
 }
