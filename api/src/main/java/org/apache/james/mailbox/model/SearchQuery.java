@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-
 package org.apache.james.mailbox.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.mail.Flags.Flag;
-
 
 /**
  * <p>
@@ -42,120 +41,108 @@ import javax.mail.Flags.Flag;
  * provided for criteria.
  * </p>
  */
-public class SearchQuery {
+public class SearchQuery implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     /**
      * The Resolution which should get used for {@link Date} searches
-     * 
-     *
      */
     public static enum DateResolution {
-        Second,
-        Minute,
-        Hour,
-        Day,
-        Month,
-        Year
-        
-        
+        Second, Minute, Hour, Day, Month, Year
     }
-    
+
     public static enum AddressType {
-        From,
-        To,
-        Cc,
-        Bcc
+        From, To, Cc, Bcc
     }
-    
+
     /**
-     * Allow to sort a {@link SearchQuery} response in different ways. 
-     * 
-     *
+     * Allow to sort a {@link SearchQuery} response in different ways.
      */
-    public static final class Sort {
-        
+    public static final class Sort implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         /**
          * Specify on what to sort
-         *
          */
         public static enum SortClause {
-            
+
             /**
              * Internal date and time of the message (internaldate)
              */
             Arrival,
-            
+
             /**
-             * addr-mailbox of the first "cc" address. 
+             * addr-mailbox of the first "cc" address.
              * 
              * This MUST BE converted to uppercase before doing the sort
              */
             MailboxCc,
-            
+
             /**
              * addr-mailbox of the first "from" address.
              * 
              * This MUST BE converted to uppercase before doing the sort
              */
             MailboxFrom,
-            
+
             /**
              * addr-mailbox of the first "To" address
              * 
              * This MUST BE converted to uppercase before doing the sort
              */
             MailboxTo,
-            
+
             /**
              * Base subject text.
              * 
              * This MUST BE converted to uppercase before doing the sort
              */
             BaseSubject,
-            
+
             /**
              * Size of the message in octets.
              */
             Size,
-            
+
             /**
              * <p>
-             *  As used in this document, the term "sent date" refers to the date and
-             *  time from the Date: header, adjusted by time zone to normalize to
-             *  UTC.  For example, "31 Dec 2000 16:01:33 -0800" is equivalent to the
-             *  UTC date and time of "1 Jan 2001 00:01:33 +0000".
-             *  If the time zone is invalid, the date and time SHOULD be treated as
-             *  UTC.  If the time is also invalid, the time SHOULD be treated as
-             *  00:00:00.  If there is no valid date or time, the date and time
-             *  SHOULD be treated as 00:00:00 on the earliest possible date.
-             *  
-             *  If the sent date cannot be determined (a Date: header is missing or
-             *  cannot be parsed), the INTERNALDATE for that message is used as the
-             *  sent date.
-             *  </p>
+             * As used in this document, the term "sent date" refers to the date
+             * and time from the Date: header, adjusted by time zone to
+             * normalize to UTC. For example, "31 Dec 2000 16:01:33 -0800" is
+             * equivalent to the UTC date and time of
+             * "1 Jan 2001 00:01:33 +0000". If the time zone is invalid, the
+             * date and time SHOULD be treated as UTC. If the time is also
+             * invalid, the time SHOULD be treated as 00:00:00. If there is no
+             * valid date or time, the date and time SHOULD be treated as
+             * 00:00:00 on the earliest possible date.
+             * 
+             * If the sent date cannot be determined (a Date: header is missing
+             * or cannot be parsed), the INTERNALDATE for that message is used
+             * as the sent date.
+             * </p>
              */
             SentDate,
-            
+
             /**
              * addr-name of the first "From" address
              * 
              * This MUST BE converted to uppercase before doing the sort
              */
             DisplayFrom,
-            
+
             /**
              * addr-name of the first "To" address
              * 
              * This MUST BE converted to uppercase before doing the sort
              */
             DisplayTo,
-            
+
             /**
              * Uid of the message. This is the DEFAULT if no other is specified
              */
             Uid
         }
-        
+
         private final boolean reverse;
         private final SortClause sortClause;
 
@@ -163,7 +150,7 @@ public class SearchQuery {
             this.reverse = reverse;
             this.sortClause = sortClause;
         }
-        
+
         /**
          * Create a new {@link Sort} which is NOT {@link #reverse}
          * 
@@ -172,7 +159,7 @@ public class SearchQuery {
         public Sort(SortClause sortClause) {
             this(sortClause, false);
         }
-        
+
         /**
          * Return true if the sort should be in reverse order
          * 
@@ -181,9 +168,9 @@ public class SearchQuery {
         public boolean isReverse() {
             return reverse;
         }
-        
+
         /**
-         * Return the {@link SortClause} 
+         * Return the {@link SortClause}
          * 
          * @return clause
          */
@@ -232,8 +219,8 @@ public class SearchQuery {
      * Creates a filter for message mod-sequence less than the given value
      * 
      * @param value
-     *            messages with mod-sequence less than this value will be selected by
-     *            the returned criterion
+     *            messages with mod-sequence less than this value will be
+     *            selected by the returned criterion
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion modSeqLessThan(long value) {
@@ -244,8 +231,8 @@ public class SearchQuery {
      * Creates a filter for message mod-sequence greater than the given value
      * 
      * @param value
-     *            messages with mod-sequence greater than this value will be selected by
-     *            the returned criterion
+     *            messages with mod-sequence greater than this value will be
+     *            selected by the returned criterion
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion modSeqGreaterThan(long value) {
@@ -256,14 +243,14 @@ public class SearchQuery {
      * Creates a filter for message mod-sequence equal to the given value
      * 
      * @param value
-     *            messages with mod-sequence equal to this value will be selected by the
-     *            returned criterion
+     *            messages with mod-sequence equal to this value will be
+     *            selected by the returned criterion
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion modSeqEquals(long value) {
         return new ModSeqCriterion(new NumericOperator(value, NumericComparator.EQUALS));
     }
-    
+
     /**
      * Creates a filter matching messages with internal date after the given
      * date.
@@ -271,8 +258,10 @@ public class SearchQuery {
      * @param date
      *            given date
      * @param res
-     *            the date resolution, either {@link DateResolution#Year}, {@link DateResolution#Month}, {@link DateResolution#Day},
-     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or {@link DateResolution#Second}
+     *            the date resolution, either {@link DateResolution#Year},
+     *            {@link DateResolution#Month}, {@link DateResolution#Day},
+     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or
+     *            {@link DateResolution#Second}
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion internalDateAfter(Date date, DateResolution res) {
@@ -285,8 +274,10 @@ public class SearchQuery {
      * @param date
      *            given date
      * @param res
-     *            the date resolution, either {@link DateResolution#Year}, {@link DateResolution#Month}, {@link DateResolution#Day},
-     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or {@link DateResolution#Second}
+     *            the date resolution, either {@link DateResolution#Year},
+     *            {@link DateResolution#Month}, {@link DateResolution#Day},
+     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or
+     *            {@link DateResolution#Second}
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion internalDateOn(Date date, DateResolution res) {
@@ -300,8 +291,10 @@ public class SearchQuery {
      * @param date
      *            given date
      * @param res
-     *            the date resolution, either {@link DateResolution#Year}, {@link DateResolution#Month}, {@link DateResolution#Day},
-     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or {@link DateResolution#Second}
+     *            the date resolution, either {@link DateResolution#Year},
+     *            {@link DateResolution#Month}, {@link DateResolution#Day},
+     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or
+     *            {@link DateResolution#Second}
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion internalDateBefore(Date date, DateResolution res) {
@@ -318,8 +311,10 @@ public class SearchQuery {
      * @param date
      *            given date
      * @param res
-     *            the date resolution, either {@link DateResolution#Year}, {@link DateResolution#Month}, {@link DateResolution#Day},
-     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or {@link DateResolution#Second}
+     *            the date resolution, either {@link DateResolution#Year},
+     *            {@link DateResolution#Month}, {@link DateResolution#Day},
+     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or
+     *            {@link DateResolution#Second}
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion headerDateAfter(String headerName, Date date, DateResolution res) {
@@ -336,8 +331,10 @@ public class SearchQuery {
      * @param date
      *            given date
      * @param res
-     *            the date resolution, either {@link DateResolution#Year}, {@link DateResolution#Month}, {@link DateResolution#Day},
-     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or {@link DateResolution#Second}
+     *            the date resolution, either {@link DateResolution#Year},
+     *            {@link DateResolution#Month}, {@link DateResolution#Day},
+     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or
+     *            {@link DateResolution#Second}
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion headerDateOn(String headerName, Date date, DateResolution res) {
@@ -354,8 +351,10 @@ public class SearchQuery {
      * @param date
      *            given date
      * @param res
-     *            the date resolution, either {@link DateResolution#Year}, {@link DateResolution#Month}, {@link DateResolution#Day},
-     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or {@link DateResolution#Second}
+     *            the date resolution, either {@link DateResolution#Year},
+     *            {@link DateResolution#Month}, {@link DateResolution#Day},
+     *            {@link DateResolution#Hour}, {@link DateResolution#Minute} or
+     *            {@link DateResolution#Second}
      * @return <code>Criterion</code>, not null
      */
     public static final Criterion headerDateBefore(String headerName, Date date, DateResolution res) {
@@ -363,24 +362,25 @@ public class SearchQuery {
     }
 
     /**
-     * Creates a filter matching messages whose Address header contains the given address. 
-     * The address header of the message MUST get canonicalized before try to match it.
+     * Creates a filter matching messages whose Address header contains the
+     * given address. The address header of the message MUST get canonicalized
+     * before try to match it.
      * 
      * @param type
      * @param address
      * @return <code>Criterion</code>
      */
-    public static final Criterion address(AddressType type, String address) {       
+    public static final Criterion address(AddressType type, String address) {
         return new HeaderCriterion(type.name(), new AddressOperator(address));
     }
 
-    
     /**
      * Creates a filter matching messages whose header value contains the given
      * value.
      * 
-     * All to-compared Strings MUST BE converted to uppercase before doing so (this also include the search value)
-     *
+     * All to-compared Strings MUST BE converted to uppercase before doing so
+     * (this also include the search value)
+     * 
      * @param headerName
      *            name of the header whose value will be compared, not null
      * @param value
@@ -399,7 +399,8 @@ public class SearchQuery {
     /**
      * Creates a filter matching messages with a header matching the given name.
      * 
-     * All to-compared Strings MUST BE converted to uppercase before doing so (this also include the search value)
+     * All to-compared Strings MUST BE converted to uppercase before doing so
+     * (this also include the search value)
      * 
      * @param headerName
      *            name of the header whose value will be compared, not null
@@ -414,7 +415,8 @@ public class SearchQuery {
      * within the body or in the headers. Implementations may choose to ignore
      * mime parts which cannot be decoded to text.
      * 
-     * All to-compared Strings MUST BE converted to uppercase before doing so (this also include the search value)
+     * All to-compared Strings MUST BE converted to uppercase before doing so
+     * (this also include the search value)
      * 
      * @param value
      *            search value
@@ -429,7 +431,8 @@ public class SearchQuery {
      * the body. Implementations may choose to ignore mime parts which cannot be
      * decoded to text.
      * 
-     * All to-compared Strings MUST BE converted to uppercase before doing so (this also include the search value)
+     * All to-compared Strings MUST BE converted to uppercase before doing so
+     * (this also include the search value)
      * 
      * @param value
      *            search value
@@ -607,8 +610,8 @@ public class SearchQuery {
 
     private final List<Criterion> criterias = new ArrayList<Criterion>();
 
-    private  List<Sort> sorts = new ArrayList<SearchQuery.Sort>(Arrays.asList(new Sort(Sort.SortClause.Uid, false)));
-    
+    private List<Sort> sorts = new ArrayList<SearchQuery.Sort>(Arrays.asList(new Sort(Sort.SortClause.Uid, false)));
+
     public void andCriteria(Criterion crit) {
         criterias.add(crit);
     }
@@ -616,29 +619,31 @@ public class SearchQuery {
     public List<Criterion> getCriterias() {
         return criterias;
     }
-    
+
     /**
      * Set the {@link Sort}'s to use
      * 
      * @param sorts
      */
     public void setSorts(List<Sort> sorts) {
-        if (sorts == null || sorts.isEmpty()) throw new IllegalArgumentException("There must be at least one Sort");
+        if (sorts == null || sorts.isEmpty())
+            throw new IllegalArgumentException("There must be at least one Sort");
         this.sorts = sorts;
     }
 
     /**
-     * Return the {@link Sort}'s which should get used for sorting the result. They get "executed" in a chain, if the first does not
-     * give an result the second will get executed etc.
+     * Return the {@link Sort}'s which should get used for sorting the result.
+     * They get "executed" in a chain, if the first does not give an result the
+     * second will get executed etc.
      * 
-     * If not set via {@link #setSorts(List)} it will sort via {@link Sort.SortClause#Uid}
+     * If not set via {@link #setSorts(List)} it will sort via
+     * {@link Sort.SortClause#Uid}
      * 
      * @return sorts
      */
     public List<Sort> getSorts() {
         return sorts;
     }
-    
 
     /**
      * Gets the UIDS of messages which are recent for this client session. The
@@ -702,7 +707,9 @@ public class SearchQuery {
      * boundaries. May be a single value. {@link Long#MAX_VALUE} represents
      * unlimited in either direction.
      */
-    public static final class NumericRange {
+    public static final class NumericRange implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private final long lowValue;
 
         private final long highValue;
@@ -787,7 +794,9 @@ public class SearchQuery {
     /**
      * Marker superclass for criteria.
      */
-    public static abstract class Criterion {
+    public static abstract class Criterion implements Serializable {
+        private static final long serialVersionUID = 1L;
+
     }
 
     public enum Conjunction {
@@ -799,6 +808,8 @@ public class SearchQuery {
      * indicates how the conjoined criteria should be related.
      */
     public static final class ConjunctionCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final Conjunction type;
 
         private final List<Criterion> criteria;
@@ -871,7 +882,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("ConjunctionCriterion ( ").append("criteria = ").append(this.criteria).append(TAB).append("type = ").append(this.type).append(TAB).append(" )");
+            retValue.append("ConjunctionCriterion ( ").append("criteria = ").append(this.criteria).append(TAB)
+                    .append("type = ").append(this.type).append(TAB).append(" )");
 
             return retValue.toString();
         }
@@ -882,6 +894,8 @@ public class SearchQuery {
      * Any message.
      */
     public static final class AllCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private static final AllCriterion ALL = new AllCriterion();
 
         private static Criterion all() {
@@ -921,6 +935,7 @@ public class SearchQuery {
      * Message text.
      */
     public static final class TextCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
 
         private final Scope type;
 
@@ -994,7 +1009,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("TextCriterion ( ").append("operator = ").append(this.operator).append(TAB).append("type = ").append(this.type).append(TAB).append(" )");
+            retValue.append("TextCriterion ( ").append("operator = ").append(this.operator).append(TAB)
+                    .append("type = ").append(this.type).append(TAB).append(" )");
 
             return retValue.toString();
         }
@@ -1004,6 +1020,8 @@ public class SearchQuery {
      * Header value content search.
      */
     public static final class HeaderCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final HeaderOperator operator;
 
         private final String headerName;
@@ -1080,7 +1098,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("HeaderCriterion ( ").append("headerName = ").append(this.headerName).append(TAB).append("operator = ").append(this.operator).append(TAB).append(" )");
+            retValue.append("HeaderCriterion ( ").append("headerName = ").append(this.headerName).append(TAB)
+                    .append("operator = ").append(this.operator).append(TAB).append(" )");
 
             return retValue.toString();
         }
@@ -1091,6 +1110,8 @@ public class SearchQuery {
      * Filters on the internal date.
      */
     public static final class InternalDateCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final DateOperator operator;
 
         public InternalDateCriterion(final DateOperator operator) {
@@ -1149,7 +1170,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("InternalDateCriterion ( ").append("operator = ").append(this.operator).append(TAB).append(" )");
+            retValue.append("InternalDateCriterion ( ").append("operator = ").append(this.operator).append(TAB)
+                    .append(" )");
 
             return retValue.toString();
         }
@@ -1159,6 +1181,8 @@ public class SearchQuery {
      * Filters on the mod-sequence of the messages.
      */
     public static final class ModSeqCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final NumericOperator operator;
 
         private ModSeqCriterion(final NumericOperator operator) {
@@ -1224,6 +1248,8 @@ public class SearchQuery {
     }
 
     public static final class SizeCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final NumericOperator operator;
 
         private SizeCriterion(final NumericOperator operator) {
@@ -1288,11 +1314,12 @@ public class SearchQuery {
         }
     }
 
-    
     /**
      * Filters on a custom flag valuation.
      */
     public static final class CustomFlagCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final String flag;
 
         private final BooleanOperator operator;
@@ -1369,7 +1396,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("CustomFlagCriterion ( ").append("flag = ").append(this.flag).append(TAB).append("operator = ").append(this.operator).append(TAB).append(" )");
+            retValue.append("CustomFlagCriterion ( ").append("flag = ").append(this.flag).append(TAB)
+                    .append("operator = ").append(this.operator).append(TAB).append(" )");
 
             return retValue.toString();
         }
@@ -1379,8 +1407,9 @@ public class SearchQuery {
      * Filters on a standard flag.
      */
     public static final class FlagCriterion extends Criterion {
-        private final Flag flag;
+        private static final long serialVersionUID = 1L;
 
+        private final Flag flag;
         private final BooleanOperator operator;
 
         private FlagCriterion(final Flag flag, final BooleanOperator operator) {
@@ -1455,7 +1484,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("FlagCriterion ( ").append("flag = ").append(this.flag).append(TAB).append("operator = ").append(this.operator).append(TAB).append(" )");
+            retValue.append("FlagCriterion ( ").append("flag = ").append(this.flag).append(TAB).append("operator = ")
+                    .append(this.operator).append(TAB).append(" )");
 
             return retValue.toString();
         }
@@ -1466,6 +1496,8 @@ public class SearchQuery {
      * Filters on message identity.
      */
     public static final class UidCriterion extends Criterion {
+        private static final long serialVersionUID = 1L;
+
         private final InOperator operator;
 
         public UidCriterion(final NumericRange[] ranges) {
@@ -1534,7 +1566,7 @@ public class SearchQuery {
     /**
      * Search operator.
      */
-    public interface Operator {
+    public interface Operator extends Serializable {
     }
 
     /**
@@ -1544,6 +1576,8 @@ public class SearchQuery {
     }
 
     public static final class AddressOperator implements HeaderOperator {
+        private static final long serialVersionUID = 1L;
+
         private final String address;
 
         public AddressOperator(final String address) {
@@ -1607,10 +1641,13 @@ public class SearchQuery {
             return retValue.toString();
         }
     }
+
     /**
      * Contained value search.
      */
     public static final class ContainsOperator implements HeaderOperator {
+        private static final long serialVersionUID = 1L;
+
         private final String value;
 
         public ContainsOperator(final String value) {
@@ -1679,6 +1716,8 @@ public class SearchQuery {
      * Existance search.
      */
     public static final class ExistsOperator implements HeaderOperator {
+        private static final long serialVersionUID = 1L;
+
         private static final ExistsOperator EXISTS = new ExistsOperator();
 
         public static ExistsOperator exists() {
@@ -1715,6 +1754,7 @@ public class SearchQuery {
      * Boolean value search.
      */
     public static final class BooleanOperator implements Operator {
+        private static final long serialVersionUID = 1L;
 
         private static final BooleanOperator SET = new BooleanOperator(true);
 
@@ -1799,6 +1839,8 @@ public class SearchQuery {
      * Searches numeric values.
      */
     public static final class NumericOperator implements Operator {
+        private static final long serialVersionUID = 1L;
+
         public static final int EQUALS = 1;
 
         public static final int LESS_THAN = 2;
@@ -1874,7 +1916,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("NumericOperator ( ").append("type = ").append(this.type).append(TAB).append("value = ").append(this.value).append(TAB).append(" )");
+            retValue.append("NumericOperator ( ").append("type = ").append(this.type).append(TAB).append("value = ")
+                    .append(this.value).append(TAB).append(" )");
 
             return retValue.toString();
         }
@@ -1888,6 +1931,8 @@ public class SearchQuery {
      * Operates on a date.
      */
     public static final class DateOperator implements HeaderOperator {
+        private static final long serialVersionUID = 1L;
+
         public static final int BEFORE = 1;
 
         public static final int AFTER = 2;
@@ -1910,15 +1955,16 @@ public class SearchQuery {
         public Date getDate() {
             return date;
         }
-        
+
         public DateResolution getDateResultion() {
             return res;
         }
+
         /**
          * Gets the operator type.
          * 
-         * @return the type, either {@link DateComparator#BEFORE}, {@link DateComparator#AFTER} or
-         *         {@link DateComparator#ON}
+         * @return the type, either {@link DateComparator#BEFORE},
+         *         {@link DateComparator#AFTER} or {@link DateComparator#ON}
          */
         public DateComparator getType() {
             return type;
@@ -1931,7 +1977,7 @@ public class SearchQuery {
         public int hashCode() {
             final int PRIME = 31;
             int result = 1;
-            //result = PRIME * result + (int)date.getTime();
+            // result = PRIME * result + (int)date.getTime();
             result = PRIME * result + type.hashCode();
             return result;
         }
@@ -1948,8 +1994,8 @@ public class SearchQuery {
             if (getClass() != obj.getClass())
                 return false;
             final DateOperator other = (DateOperator) obj;
-            //if (date != other.date)
-            //    return false;
+            // if (date != other.date)
+            // return false;
             if (res != other.res)
                 return false;
             if (type != other.type)
@@ -1968,7 +2014,9 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("DateOperator ( ").append("date = ").append(date.toString()).append(TAB).append("res = ").append(this.res.name()).append(TAB).append("type = ").append(this.type).append(TAB).append(TAB).append(" )");
+            retValue.append("DateOperator ( ").append("date = ").append(date.toString()).append(TAB).append("res = ")
+                    .append(this.res.name()).append(TAB).append("type = ").append(this.type).append(TAB).append(TAB)
+                    .append(" )");
 
             return retValue.toString();
         }
@@ -1979,6 +2027,8 @@ public class SearchQuery {
      * Search for numbers within set of ranges.
      */
     public static final class InOperator implements Operator {
+        private static final long serialVersionUID = 1L;
+
         private final NumericRange[] range;
 
         public InOperator(final NumericRange[] range) {
@@ -2032,7 +2082,8 @@ public class SearchQuery {
 
             StringBuffer retValue = new StringBuffer();
 
-            retValue.append("InOperator ( ").append("range = ").append(Arrays.toString(this.range)).append(TAB).append(" )");
+            retValue.append("InOperator ( ").append("range = ").append(Arrays.toString(this.range)).append(TAB)
+                    .append(" )");
 
             return retValue.toString();
         }
