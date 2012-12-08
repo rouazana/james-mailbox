@@ -85,6 +85,8 @@ public class StoreMailboxManager<Id> implements MailboxManager {
     
     private int copyBatchSize = 0;
 
+	private int moveBatchSize = 0;
+
     private MailboxPathLocker locker;
 
     private MessageSearchIndex<Id> index;
@@ -114,6 +116,10 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         this.copyBatchSize = copyBatchSize;
     }
     
+    public void setMoveBatchSize(int moveBatchSize) {
+		this.moveBatchSize = moveBatchSize;
+	}
+
     public void setFetchBatchSize(int fetchBatchSize) {
         this.fetchBatchSize = fetchBatchSize;
     }
@@ -482,6 +488,26 @@ public class StoreMailboxManager<Id> implements MailboxManager {
             return copiedRanges;
         } else {
             return fromMailbox.copyTo(set, toMailbox, session);
+        }
+    }
+
+    /**
+     * @see org.apache.james.mailbox.MailboxManager#moveMessages(MessageRange, MailboxPath, MailboxPath, MailboxSession)
+     */
+    @SuppressWarnings("unchecked")
+	public List<MessageRange> moveMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException {
+        StoreMessageManager<Id> toMailbox = (StoreMessageManager<Id>) getMailbox(to, session);
+        StoreMessageManager<Id> fromMailbox = (StoreMessageManager<Id>) getMailbox(from, session);
+        
+        if (moveBatchSize > 0) {
+            List<MessageRange> movedRanges = new ArrayList<MessageRange>();
+            Iterator<MessageRange> ranges = set.split(moveBatchSize).iterator();
+            while(ranges.hasNext()) {
+                movedRanges.addAll(fromMailbox.copyTo(ranges.next(), toMailbox, session));
+            }
+            return movedRanges;
+        } else {
+            return fromMailbox.moveTo(set, toMailbox, session);
         }
     }
 

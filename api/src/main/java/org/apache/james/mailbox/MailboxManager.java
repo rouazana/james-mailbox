@@ -145,6 +145,23 @@ public interface MailboxManager extends RequestAware, MailboxListenerSupport {
     List<MessageRange> copyMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException;
 
     /**
+     * Move the given {@link MessageRange} from one Mailbox to the other. 
+     * 
+     * Be aware that the moved Messages MUST get the \RECENT flag set!
+     * 
+     * @param set
+     *            messages to move
+     * @param from
+     *            name of the source mailbox
+     * @param to
+     *            name of the destination mailbox
+     * @param session
+     *            <code>MailboxSession</code>, not null
+     * @return a list of MessageRange - uids assigned to moved messages
+     */
+    List<MessageRange> moveMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException;
+
+    /**
      * Searches for mailboxes matching the given query.
      * 
      * @param expression

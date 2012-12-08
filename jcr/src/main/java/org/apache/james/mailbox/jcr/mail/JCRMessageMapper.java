@@ -55,12 +55,12 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
 /**
- * JCR implementation of a {@link MessageMapper}. The implementation store each message as 
- * a seperate child node under the mailbox
- *
+ * JCR implementation of a {@link MessageMapper}. The implementation store each
+ * message as a seperate child node under the mailbox
+ * 
  */
 public class JCRMessageMapper extends AbstractMessageMapper<String> implements JCRImapConstants {
-    
+
     /**
      * Store the messages directly in the mailbox: .../mailbox/
      */
@@ -97,52 +97,65 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
     public final static int MESSAGE_SCALE_MINUTE = 5;
 
     private final int scaleType;
-    
+
     private final MailboxSessionJCRRepository repository;
 
-    
     /**
      * Construct a new {@link JCRMessageMapper} instance
      * 
-     * @param repository {@link MailboxSessionJCRRepository} to use
-     * @param mSession {@link MailboxSession} to which the mapper is bound
-     * @param uidProvider {@link UidProvider} to use
-     * @param modSeqProvider {@link ModSeqProvider} to use
-     * @param scaleType message scale type either {@link #MESSAGE_SCALE_DAY}, {@link #MESSAGE_SCALE_HOUR}, {@link #MESSAGE_SCALE_MINUTE},
-     *          {@link #MESSAGE_SCALE_MONTH}, {@link #MESSAGE_SCALE_NONE} or {@link #MESSAGE_SCALE_YEAR}
+     * @param repository
+     *            {@link MailboxSessionJCRRepository} to use
+     * @param mSession
+     *            {@link MailboxSession} to which the mapper is bound
+     * @param uidProvider
+     *            {@link UidProvider} to use
+     * @param modSeqProvider
+     *            {@link ModSeqProvider} to use
+     * @param scaleType
+     *            message scale type either {@link #MESSAGE_SCALE_DAY},
+     *            {@link #MESSAGE_SCALE_HOUR}, {@link #MESSAGE_SCALE_MINUTE},
+     *            {@link #MESSAGE_SCALE_MONTH}, {@link #MESSAGE_SCALE_NONE} or
+     *            {@link #MESSAGE_SCALE_YEAR}
      */
-    public JCRMessageMapper(final MailboxSessionJCRRepository repository, MailboxSession mSession, UidProvider<String> uidProvider, ModSeqProvider<String> modSeqProvider, int scaleType) {
+    public JCRMessageMapper(final MailboxSessionJCRRepository repository, MailboxSession mSession,
+            UidProvider<String> uidProvider, ModSeqProvider<String> modSeqProvider, int scaleType) {
         super(mSession, uidProvider, modSeqProvider);
-        this.repository = repository;        
+        this.repository = repository;
         this.scaleType = scaleType;
     }
-    
+
     /**
-     * Construct a new {@link JCRMessageMapper} instance using {@link #MESSAGE_SCALE_DAY} as default
+     * Construct a new {@link JCRMessageMapper} instance using
+     * {@link #MESSAGE_SCALE_DAY} as default
      * 
-     * @param repos {@link MailboxSessionJCRRepository} to use
-     * @param session {@link MailboxSession} to which the mapper is bound
-     * @param uidProvider {@link UidProvider} to use
-     * @param modSeqProvider {@link ModSeqProvider} to use
+     * @param repos
+     *            {@link MailboxSessionJCRRepository} to use
+     * @param session
+     *            {@link MailboxSession} to which the mapper is bound
+     * @param uidProvider
+     *            {@link UidProvider} to use
+     * @param modSeqProvider
+     *            {@link ModSeqProvider} to use
      */
-    public JCRMessageMapper(final MailboxSessionJCRRepository repos, MailboxSession session, UidProvider<String> uidProvider, ModSeqProvider<String> modSeqProvider) {
+    public JCRMessageMapper(final MailboxSessionJCRRepository repos, MailboxSession session,
+            UidProvider<String> uidProvider, ModSeqProvider<String> modSeqProvider) {
         this(repos, session, uidProvider, modSeqProvider, MESSAGE_SCALE_DAY);
     }
 
-    
     /**
      * Return the JCR Session
      * 
      * @return session
      */
-    protected Session getSession() throws RepositoryException{
+    protected Session getSession() throws RepositoryException {
         return repository.login(mailboxSession);
     }
 
     /**
-     * Begin is not supported by level 1 JCR implementations, however we refresh the session
+     * Begin is not supported by level 1 JCR implementations, however we refresh
+     * the session
      */
-    protected void begin() throws MailboxException {  
+    protected void begin() throws MailboxException {
         try {
             getSession().refresh(true);
         } catch (RepositoryException e) {
@@ -152,7 +165,8 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
     }
 
     /**
-     * Just call save on the underlying JCR Session, because level 1 JCR implementation does not offer Transactions
+     * Just call save on the underlying JCR Session, because level 1 JCR
+     * implementation does not offer Transactions
      */
     protected void commit() throws MailboxException {
         try {
@@ -165,7 +179,8 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
     }
 
     /**
-     * Rollback is not supported by level 1 JCR implementations, so just do nothing
+     * Rollback is not supported by level 1 JCR implementations, so just do
+     * nothing
      */
     protected void rollback() throws MailboxException {
         try {
@@ -177,81 +192,82 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
     }
 
     /**
-     * Return the path to the mailbox. This path is escaped to be able to use it in xpath queries
-     * 
-     * See http://wiki.apache.org/jackrabbit/EncodingAndEscaping
-     * 
-     * @param mailbox
-     * @return
-     * @throws ItemNotFoundException
-     * @throws RepositoryException
+     * Logout from open JCR Session
      */
-    private String getMailboxPath(Mailbox<String> mailbox) throws ItemNotFoundException, RepositoryException {
-        return ISO9075.encodePath(getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath());
-    }
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox()
-     */
-    public long countMessagesInMailbox(Mailbox<String> mailbox) throws MailboxException {
-        try {
-            // we use order by because without it count will always be 0 in jackrabbit
-            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message) order by @" + JCRMessage.UID_PROPERTY;
-            QueryManager manager = getSession().getWorkspace().getQueryManager();
-            QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
-            NodeIterator nodes = result.getNodes();
-            long count = nodes.getSize();
-            if (count == -1) {
-                count = 0;
-                while(nodes.hasNext()) {
-                    nodes.nextNode();
-                    count++;
-                }
-            } 
-            return count;
-        } catch (RepositoryException e) {
-            throw new MailboxException("Unable to count messages in mailbox " + mailbox, e);
-        }
-       
+    public void endRequest() {
+        repository.logout(mailboxSession);
     }
 
     /*
      * (non-Javadoc)
      * 
      * @see
-     * org.apache.james.mailbox.store.mail.MessageMapper#countUnseenMessagesInMailbox
+     * org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox
      * ()
      */
-    public long countUnseenMessagesInMailbox(Mailbox<String> mailbox) throws MailboxException {
-        
+    public long countMessagesInMailbox(Mailbox<String> mailbox) throws MailboxException {
         try {
-            // we use order by because without it count will always be 0 in jackrabbit
-            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.SEEN_PROPERTY +"='false'] order by @" + JCRMessage.UID_PROPERTY;
+            // we use order by because without it count will always be 0 in
+            // jackrabbit
+            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message) order by @"
+                    + JCRMessage.UID_PROPERTY;
             QueryManager manager = getSession().getWorkspace().getQueryManager();
             QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
             NodeIterator nodes = result.getNodes();
             long count = nodes.getSize();
-            
             if (count == -1) {
                 count = 0;
-                while(nodes.hasNext()) {
+                while (nodes.hasNext()) {
                     nodes.nextNode();
-                    
                     count++;
                 }
-            } 
+            }
+            return count;
+        } catch (RepositoryException e) {
+            throw new MailboxException("Unable to count messages in mailbox " + mailbox, e);
+        }
+
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.apache.james.mailbox.store.mail.MessageMapper#
+     * countUnseenMessagesInMailbox ()
+     */
+    public long countUnseenMessagesInMailbox(Mailbox<String> mailbox) throws MailboxException {
+
+        try {
+            // we use order by because without it count will always be 0 in
+            // jackrabbit
+            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                    + JCRMessage.SEEN_PROPERTY + "='false'] order by @" + JCRMessage.UID_PROPERTY;
+            QueryManager manager = getSession().getWorkspace().getQueryManager();
+            QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
+            NodeIterator nodes = result.getNodes();
+            long count = nodes.getSize();
+
+            if (count == -1) {
+                count = 0;
+                while (nodes.hasNext()) {
+                    nodes.nextNode();
+
+                    count++;
+                }
+            }
             return count;
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to count unseen messages in mailbox " + mailbox, e);
         }
     }
 
-
     /*
      * (non-Javadoc)
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#delete(org.apache.james.mailbox.store.mail.model.Mailbox, org.apache.james.mailbox.store.mail.model.Message)
+     * 
+     * @see
+     * org.apache.james.mailbox.store.mail.MessageMapper#delete(org.apache.james
+     * .mailbox.store.mail.model.Mailbox,
+     * org.apache.james.mailbox.store.mail.model.Message)
      */
     public void delete(Mailbox<String> mailbox, Message<String> message) throws MailboxException {
         JCRMessage membership = (JCRMessage) message;
@@ -265,13 +281,17 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         }
     }
 
-
-
     /*
      * (non-Javadoc)
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#findInMailbox(org.apache.james.mailbox.store.mail.model.Mailbox, org.apache.james.mailbox.MessageRange, org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
+     * 
+     * @see
+     * org.apache.james.mailbox.store.mail.MessageMapper#findInMailbox(org.apache
+     * .james.mailbox.store.mail.model.Mailbox,
+     * org.apache.james.mailbox.MessageRange,
+     * org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
      */
-    public Iterator<Message<String>> findInMailbox(Mailbox<String> mailbox, MessageRange set, FetchType fType, int max) throws MailboxException {
+    public Iterator<Message<String>> findInMailbox(Mailbox<String> mailbox, MessageRange set, FetchType fType, int max)
+            throws MailboxException {
         try {
             List<Message<String>> results;
             long from = set.getUidFrom();
@@ -292,165 +312,37 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
             case RANGE:
                 results = findMessagesInMailboxBetweenUIDs(mailbox, from, to, max);
                 break;
-                }
+            }
             return results.iterator();
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to search MessageRange " + set + " in mailbox " + mailbox, e);
         }
     }
-   
-    private List<Message<String>> findMessagesInMailboxAfterUID(Mailbox<String> mailbox, long uid, int batchSize) throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.UID_PROPERTY + ">=" + uid + "] order by @" + JCRMessage.UID_PROPERTY;
-
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        Query query = manager.createQuery(queryString, Query.XPATH);
-        if(batchSize > 0)
-        	query.setLimit(batchSize);
-        QueryResult result = query.execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
-        }
-        return list;
-    }
-
-    private List<Message<String>> findMessageInMailboxWithUID(Mailbox<String> mailbox, long uid) throws RepositoryException  {
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.UID_PROPERTY + "=" + uid + "]";
-
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        Query query = manager.createQuery(queryString, Query.XPATH);
-        query.setLimit(1);
-        QueryResult result = query.execute();
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
-        }
-        return list;
-    }
-
-    private List<Message<String>> findMessagesInMailboxBetweenUIDs(Mailbox<String> mailbox, long from, long to, int batchSize) throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.UID_PROPERTY + ">=" + from + " and @" + JCRMessage.UID_PROPERTY + "<=" + to + "] order by @" + JCRMessage.UID_PROPERTY;
-        
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        Query query = manager.createQuery(queryString, Query.XPATH);
-        if(batchSize > 0)
-        	query.setLimit(batchSize);
-        QueryResult result = query.execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
-        }
-        return list;
-    }
-    
-    private List<Message<String>> findMessagesInMailbox(Mailbox<String> mailbox, int batchSize) throws RepositoryException {        
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message) order by @" + JCRMessage.UID_PROPERTY;
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        Query query = manager.createQuery(queryString, Query.XPATH);
-        if(batchSize > 0)
-        	query.setLimit(batchSize);
-        QueryResult result = query.execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
-        }
-        return list;
-    }
-
-    
-    
-    private List<Message<String>> findDeletedMessagesInMailboxAfterUID(Mailbox<String> mailbox, long uid) throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.UID_PROPERTY + ">=" + uid + " and @" + JCRMessage.DELETED_PROPERTY+ "='true'] order by @" + JCRMessage.UID_PROPERTY;
- 
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
-        }
-        return list;
-    }
-
-    private List<Message<String>> findDeletedMessageInMailboxWithUID(Mailbox<String> mailbox, long uid) throws RepositoryException  {
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.UID_PROPERTY + "=" + uid + " and @" + JCRMessage.DELETED_PROPERTY+ "='true']";
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        Query query = manager.createQuery(queryString, Query.XPATH);
-        query.setLimit(1);
-        QueryResult result = query.execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            JCRMessage member = new JCRMessage(iterator.nextNode(), mailboxSession.getLog());
-            list.add(member);
-        }
-        return list;
-    }
-
-    private List<Message<String>> findDeletedMessagesInMailboxBetweenUIDs(Mailbox<String> mailbox, long from, long to) throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.UID_PROPERTY + ">=" + from + " and @" + JCRMessage.UID_PROPERTY + "<=" + to + " and @" + JCRMessage.DELETED_PROPERTY+ "='true'] order by @" + JCRMessage.UID_PROPERTY;
-       
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
-        }
-        return list;
-    }
-    
-    private List<Message<String>> findDeletedMessagesInMailbox(Mailbox<String> mailbox) throws RepositoryException {
-        
-        List<Message<String>> list = new ArrayList<Message<String>>();
-        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.DELETED_PROPERTY+ "='true'] order by @" + JCRMessage.UID_PROPERTY;
-        
-        QueryManager manager = getSession().getWorkspace().getQueryManager();
-        QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
-
-        NodeIterator iterator = result.getNodes();
-        while (iterator.hasNext()) {
-            JCRMessage member = new JCRMessage(iterator.nextNode(), mailboxSession.getLog());
-            list.add(member);
-        }
-        return list;
-    }
-
 
     /*
      * 
-     * TODO: Maybe we should better use an ItemVisitor and just traverse through the child nodes. This could be a way faster
+     * TODO: Maybe we should better use an ItemVisitor and just traverse through
+     * the child nodes. This could be a way faster
      * 
      * (non-Javadoc)
      * 
-     * @see
-     * org.apache.james.mailbox.store.mail.MessageMapper#findRecentMessageUidsInMailbox
-     * ()
+     * @see org.apache.james.mailbox.store.mail.MessageMapper#
+     * findRecentMessageUidsInMailbox ()
      */
     public List<Long> findRecentMessageUidsInMailbox(Mailbox<String> mailbox) throws MailboxException {
-        
+
         try {
- 
+
             List<Long> list = new ArrayList<Long>();
-            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.RECENT_PROPERTY +"='true'] order by @" + JCRMessage.UID_PROPERTY;
-            
+            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                    + JCRMessage.RECENT_PROPERTY + "='true'] order by @" + JCRMessage.UID_PROPERTY;
+
             QueryManager manager = getSession().getWorkspace().getQueryManager();
             Query query = manager.createQuery(queryString, Query.XPATH);
             QueryResult result = query.execute();
-            
+
             NodeIterator iterator = result.getNodes();
-            while(iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()).getUid());
             }
             return list;
@@ -460,23 +352,26 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         }
     }
 
-
     /*
      * (non-Javadoc)
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#findFirstUnseenMessageUid(org.apache.james.mailbox.store.mail.model.Mailbox)
+     * 
+     * @see
+     * org.apache.james.mailbox.store.mail.MessageMapper#findFirstUnseenMessageUid
+     * (org.apache.james.mailbox.store.mail.model.Mailbox)
      */
     public Long findFirstUnseenMessageUid(Mailbox<String> mailbox) throws MailboxException {
         try {
-            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@" + JCRMessage.SEEN_PROPERTY +"='false'] order by @" + JCRMessage.UID_PROPERTY;
+            String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                    + JCRMessage.SEEN_PROPERTY + "='false'] order by @" + JCRMessage.UID_PROPERTY;
 
             QueryManager manager = getSession().getWorkspace().getQueryManager();
-            
+
             Query query = manager.createQuery(queryString, Query.XPATH);
             query.setLimit(1);
             QueryResult result = query.execute();
 
             NodeIterator iterator = result.getNodes();
-            if(iterator.hasNext()) {
+            if (iterator.hasNext()) {
                 return new JCRMessage(iterator.nextNode(), mailboxSession.getLog()).getUid();
             } else {
                 return null;
@@ -484,6 +379,312 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to find first unseen message in mailbox " + mailbox, e);
         }
+    }
+
+    @Override
+    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(Mailbox<String> mailbox, MessageRange set)
+            throws MailboxException {
+        try {
+            final List<Message<String>> results;
+            final long from = set.getUidFrom();
+            final long to = set.getUidTo();
+            final Type type = set.getType();
+            switch (type) {
+            default:
+            case ALL:
+                results = findDeletedMessagesInMailbox(mailbox);
+                break;
+            case FROM:
+                results = findDeletedMessagesInMailboxAfterUID(mailbox, from);
+                break;
+            case ONE:
+                results = findDeletedMessageInMailboxWithUID(mailbox, from);
+                break;
+            case RANGE:
+                results = findDeletedMessagesInMailboxBetweenUIDs(mailbox, from, to);
+                break;
+            }
+            Map<Long, MessageMetaData> uids = new HashMap<Long, MessageMetaData>();
+            for (int i = 0; i < results.size(); i++) {
+                Message<String> m = results.get(i);
+                long uid = m.getUid();
+                uids.put(uid, new SimpleMessageMetaData(m));
+                delete(mailbox, m);
+            }
+            return uids;
+        } catch (RepositoryException e) {
+            throw new MailboxException("Unable to search MessageRange " + set + " in mailbox " + mailbox, e);
+        }
+    }
+
+    /**
+     * (non-Javadoc)
+     * 
+     * @see org.apache.james.mailbox.store.mail.MessageMapper#move(org.apache.james.mailbox.store.mail.model.Mailbox,
+     *      org.apache.james.mailbox.store.mail.model.Message)
+     */
+    @Override
+    public MessageMetaData move(Mailbox<String> mailbox, Message<String> original) throws MailboxException {
+        throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
+    }
+
+    @Override
+    protected MessageMetaData copy(Mailbox<String> mailbox, long uid, long modSeq, Message<String> original)
+            throws MailboxException {
+        try {
+            String newMessagePath = getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath() + NODE_DELIMITER
+                    + String.valueOf(uid);
+            getSession().getWorkspace().copy(
+                    ((JCRMessage) original).getNode().getPath(),
+                    getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath() + NODE_DELIMITER
+                            + String.valueOf(uid));
+            Node node = getSession().getNode(newMessagePath);
+            node.setProperty(JCRMessage.MAILBOX_UUID_PROPERTY, mailbox.getMailboxId());
+            node.setProperty(JCRMessage.UID_PROPERTY, uid);
+            node.setProperty(JCRMessage.MODSEQ_PROPERTY, modSeq);
+            // A copy of a message is recent
+            // See MAILBOX-85
+            node.setProperty(JCRMessage.RECENT_PROPERTY, true);
+            return new SimpleMessageMetaData(new JCRMessage(node, mailboxSession.getLog()));
+        } catch (RepositoryException e) {
+            throw new MailboxException("Unable to copy message " + original + " in mailbox " + mailbox, e);
+        }
+    }
+
+    @Override
+    protected MessageMetaData save(Mailbox<String> mailbox, Message<String> message) throws MailboxException {
+        final JCRMessage membership = (JCRMessage) message;
+        try {
+    
+            Node messageNode = null;
+    
+            if (membership.isPersistent()) {
+                messageNode = getSession().getNodeByIdentifier(membership.getId());
+            }
+    
+            if (messageNode == null) {
+    
+                Date date = message.getInternalDate();
+                if (date == null) {
+                    date = new Date();
+                }
+    
+                // extracte the date from the message to create node structure
+                // later
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(date);
+                final String year = convertIntToString(cal.get(Calendar.YEAR));
+                final String month = convertIntToString(cal.get(Calendar.MONTH) + 1);
+                final String day = convertIntToString(cal.get(Calendar.DAY_OF_MONTH));
+                final String hour = convertIntToString(cal.get(Calendar.HOUR_OF_DAY));
+                final String min = convertIntToString(cal.get(Calendar.MINUTE));
+    
+                Node mailboxNode = getSession().getNodeByIdentifier(mailbox.getMailboxId());
+                Node node = mailboxNode;
+    
+                if (scaleType > MESSAGE_SCALE_NONE) {
+                    // we lock the whole mailbox with all its childs while
+                    // adding the folder structure for the date
+    
+                    if (scaleType >= MESSAGE_SCALE_YEAR) {
+                        node = JcrUtils.getOrAddFolder(node, year);
+    
+                        if (scaleType >= MESSAGE_SCALE_MONTH) {
+                            node = JcrUtils.getOrAddFolder(node, month);
+    
+                            if (scaleType >= MESSAGE_SCALE_DAY) {
+                                node = JcrUtils.getOrAddFolder(node, day);
+    
+                                if (scaleType >= MESSAGE_SCALE_HOUR) {
+                                    node = JcrUtils.getOrAddFolder(node, hour);
+    
+                                    if (scaleType >= MESSAGE_SCALE_MINUTE) {
+                                        node = JcrUtils.getOrAddFolder(node, min);
+                                    }
+                                }
+                            }
+                        }
+                    }
+    
+                }
+    
+                long uid = membership.getUid();
+                messageNode = mailboxNode.addNode(String.valueOf(uid), "nt:file");
+                messageNode.addMixin("jamesMailbox:message");
+                try {
+                    membership.merge(messageNode);
+    
+                } catch (IOException e) {
+                    throw new RepositoryException("Unable to merge message in to tree", e);
+                }
+            } else {
+                membership.merge(messageNode);
+            }
+            return new SimpleMessageMetaData(membership);
+        } catch (RepositoryException e) {
+            throw new MailboxException("Unable to save message " + message + " in mailbox " + mailbox, e);
+        } catch (IOException e) {
+            throw new MailboxException("Unable to save message " + message + " in mailbox " + mailbox, e);
+        }
+    }
+
+    /**
+     * Return the path to the mailbox. This path is escaped to be able to use it
+     * in xpath queries
+     * 
+     * See http://wiki.apache.org/jackrabbit/EncodingAndEscaping
+     * 
+     * @param mailbox
+     * @return
+     * @throws ItemNotFoundException
+     * @throws RepositoryException
+     */
+    private String getMailboxPath(Mailbox<String> mailbox) throws ItemNotFoundException, RepositoryException {
+        return ISO9075.encodePath(getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath());
+    }
+
+    private List<Message<String>> findMessagesInMailboxAfterUID(Mailbox<String> mailbox, long uid, int batchSize)
+            throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.UID_PROPERTY + ">=" + uid + "] order by @" + JCRMessage.UID_PROPERTY;
+
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        Query query = manager.createQuery(queryString, Query.XPATH);
+        if (batchSize > 0)
+            query.setLimit(batchSize);
+        QueryResult result = query.execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
+        }
+        return list;
+    }
+
+    private List<Message<String>> findMessageInMailboxWithUID(Mailbox<String> mailbox, long uid)
+            throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.UID_PROPERTY + "=" + uid + "]";
+
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        Query query = manager.createQuery(queryString, Query.XPATH);
+        query.setLimit(1);
+        QueryResult result = query.execute();
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
+        }
+        return list;
+    }
+
+    private List<Message<String>> findMessagesInMailboxBetweenUIDs(Mailbox<String> mailbox, long from, long to,
+            int batchSize) throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.UID_PROPERTY + ">=" + from + " and @" + JCRMessage.UID_PROPERTY + "<=" + to
+                + "] order by @" + JCRMessage.UID_PROPERTY;
+
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        Query query = manager.createQuery(queryString, Query.XPATH);
+        if (batchSize > 0)
+            query.setLimit(batchSize);
+        QueryResult result = query.execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
+        }
+        return list;
+    }
+
+    private List<Message<String>> findMessagesInMailbox(Mailbox<String> mailbox, int batchSize)
+            throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message) order by @"
+                + JCRMessage.UID_PROPERTY;
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        Query query = manager.createQuery(queryString, Query.XPATH);
+        if (batchSize > 0)
+            query.setLimit(batchSize);
+        QueryResult result = query.execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
+        }
+        return list;
+    }
+
+    private List<Message<String>> findDeletedMessagesInMailboxAfterUID(Mailbox<String> mailbox, long uid)
+            throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.UID_PROPERTY + ">=" + uid + " and @" + JCRMessage.DELETED_PROPERTY + "='true'] order by @"
+                + JCRMessage.UID_PROPERTY;
+
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
+        }
+        return list;
+    }
+
+    private List<Message<String>> findDeletedMessageInMailboxWithUID(Mailbox<String> mailbox, long uid)
+            throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.UID_PROPERTY + "=" + uid + " and @" + JCRMessage.DELETED_PROPERTY + "='true']";
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        Query query = manager.createQuery(queryString, Query.XPATH);
+        query.setLimit(1);
+        QueryResult result = query.execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            JCRMessage member = new JCRMessage(iterator.nextNode(), mailboxSession.getLog());
+            list.add(member);
+        }
+        return list;
+    }
+
+    private List<Message<String>> findDeletedMessagesInMailboxBetweenUIDs(Mailbox<String> mailbox, long from, long to)
+            throws RepositoryException {
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.UID_PROPERTY + ">=" + from + " and @" + JCRMessage.UID_PROPERTY + "<=" + to + " and @"
+                + JCRMessage.DELETED_PROPERTY + "='true'] order by @" + JCRMessage.UID_PROPERTY;
+
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            list.add(new JCRMessage(iterator.nextNode(), mailboxSession.getLog()));
+        }
+        return list;
+    }
+
+    private List<Message<String>> findDeletedMessagesInMailbox(Mailbox<String> mailbox) throws RepositoryException {
+
+        List<Message<String>> list = new ArrayList<Message<String>>();
+        String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
+                + JCRMessage.DELETED_PROPERTY + "='true'] order by @" + JCRMessage.UID_PROPERTY;
+
+        QueryManager manager = getSession().getWorkspace().getQueryManager();
+        QueryResult result = manager.createQuery(queryString, Query.XPATH).execute();
+
+        NodeIterator iterator = result.getNodes();
+        while (iterator.hasNext()) {
+            JCRMessage member = new JCRMessage(iterator.nextNode(), mailboxSession.getLog());
+            list.add(member);
+        }
+        return list;
     }
 
     /**
@@ -498,150 +699,6 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
             return "0" + String.valueOf(value);
         } else {
             return String.valueOf(value);
-        }
-    }
-
-
-
-   
-
-
-
-    /**
-     * Logout from open JCR Session
-     */
-    public void endRequest() {
-       repository.logout(mailboxSession);
-    }
-    
-    
-    @Override
-    protected MessageMetaData copy(Mailbox<String> mailbox, long uid, long modSeq, Message<String> original) throws MailboxException {
-        try {
-            String newMessagePath = getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath() + NODE_DELIMITER + String.valueOf(uid);
-            getSession().getWorkspace().copy(((JCRMessage)original).getNode().getPath(), getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath() + NODE_DELIMITER + String.valueOf(uid));
-            Node node = getSession().getNode(newMessagePath);
-            node.setProperty(JCRMessage.MAILBOX_UUID_PROPERTY, mailbox.getMailboxId());
-            node.setProperty(JCRMessage.UID_PROPERTY, uid);
-            node.setProperty(JCRMessage.MODSEQ_PROPERTY, modSeq);
-            // A copy of a message is recent 
-            // See MAILBOX-85
-            node.setProperty(JCRMessage.RECENT_PROPERTY, true);
-            return new SimpleMessageMetaData(new JCRMessage(node, mailboxSession.getLog()));
-        } catch (RepositoryException e) {
-            throw new MailboxException("Unable to copy message " +original + " in mailbox " + mailbox, e);
-        }        
-    }
-
-    @Override
-    protected MessageMetaData save(Mailbox<String> mailbox, Message<String> message) throws MailboxException {
-        final JCRMessage membership = (JCRMessage) message;
-        try {
-
-            Node messageNode = null;
-
-            if (membership.isPersistent()) {
-                messageNode = getSession().getNodeByIdentifier(membership.getId());
-            }
-
-            if (messageNode == null) {
-               
-                Date date = message.getInternalDate();
-                if (date == null) {
-                    date = new Date();
-                }
-
-                // extracte the date from the message to create node structure
-                // later
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(date);
-                final String year = convertIntToString(cal.get(Calendar.YEAR));
-                final String month = convertIntToString(cal.get(Calendar.MONTH) + 1);
-                final String day = convertIntToString(cal.get(Calendar.DAY_OF_MONTH));
-                final String hour = convertIntToString(cal.get(Calendar.HOUR_OF_DAY));
-                final String min = convertIntToString(cal.get(Calendar.MINUTE));
-
-                Node mailboxNode = getSession().getNodeByIdentifier(mailbox.getMailboxId());
-                Node node = mailboxNode;
-
-                if (scaleType > MESSAGE_SCALE_NONE) {
-                    // we lock the whole mailbox with all its childs while
-                    // adding the folder structure for the date
-
-                    if (scaleType >= MESSAGE_SCALE_YEAR) {
-                        node = JcrUtils.getOrAddFolder(node, year);
-
-                        if (scaleType >= MESSAGE_SCALE_MONTH) {
-                            node = JcrUtils.getOrAddFolder(node, month);
-
-                            if (scaleType >= MESSAGE_SCALE_DAY) {
-                                node = JcrUtils.getOrAddFolder(node, day);
-
-                                if (scaleType >= MESSAGE_SCALE_HOUR) {
-                                    node = JcrUtils.getOrAddFolder(node, hour);
-
-                                    if (scaleType >= MESSAGE_SCALE_MINUTE) {
-                                        node = JcrUtils.getOrAddFolder(node, min);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-                long uid = membership.getUid();
-                messageNode = mailboxNode.addNode(String.valueOf(uid), "nt:file");
-                messageNode.addMixin("jamesMailbox:message");
-                try {
-                    membership.merge(messageNode);
-
-                } catch (IOException e) {
-                    throw new RepositoryException("Unable to merge message in to tree", e);
-                }                
-            } else {
-                membership.merge(messageNode);
-            }
-            return new SimpleMessageMetaData(membership);
-        } catch (RepositoryException e) {
-            throw new MailboxException("Unable to save message " + message + " in mailbox " + mailbox, e);
-        } catch (IOException e) {
-            throw new MailboxException("Unable to save message " + message + " in mailbox " + mailbox, e);
-        }        
-    }
-    
-    @Override
-    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(Mailbox<String> mailbox, MessageRange set) throws MailboxException {
-        try {
-            final List<Message<String>> results;
-            final long from = set.getUidFrom();
-            final long to = set.getUidTo();
-            final Type type = set.getType();
-            switch (type) {
-                default:
-                case ALL:
-                    results = findDeletedMessagesInMailbox(mailbox);
-                    break;
-                case FROM:
-                    results = findDeletedMessagesInMailboxAfterUID(mailbox, from);
-                    break;
-                case ONE:
-                    results = findDeletedMessageInMailboxWithUID(mailbox, from);
-                    break;
-                case RANGE:
-                    results = findDeletedMessagesInMailboxBetweenUIDs(mailbox, from, to);
-                    break;       
-            }
-            Map<Long, MessageMetaData> uids = new HashMap<Long, MessageMetaData>();
-            for (int i = 0; i < results.size(); i++) {
-                Message<String> m = results.get(i);
-                long uid = m.getUid();
-                uids.put(uid, new SimpleMessageMetaData(m));
-                delete(mailbox, m);
-            }
-            return uids;
-        } catch (RepositoryException e) {
-            throw new MailboxException("Unable to search MessageRange " + set + " in mailbox " + mailbox, e);
         }
     }
 

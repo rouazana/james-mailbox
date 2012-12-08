@@ -555,6 +555,16 @@ public class HBaseMessageMapper extends NonTransactionalMapper implements Messag
 
     /*
      * (non-Javadoc)
+     * @see org.apache.james.mailbox.store.mail.MessageMapper#copy(org.apache.james.mailbox.store.mail.model.Mailbox, org.apache.james.mailbox.store.mail.model.Message)
+     */
+    @Override
+    public MessageMetaData move(Mailbox<UUID> mailbox, Message<UUID> original) throws MailboxException {
+    	//TODO implement if possible
+    	throw new UnsupportedOperationException();
+    }
+
+    /*
+     * (non-Javadoc)
      * @see org.apache.james.mailbox.store.mail.MessageMapper#getLastUid(org.apache.james.mailbox.store.mail.model.Mailbox)
      */
     @Override

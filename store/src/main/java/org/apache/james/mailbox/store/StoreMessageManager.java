@@ -574,6 +574,34 @@ public class StoreMessageManager<Id> implements org.apache.james.mailbox.Message
         }, true);
     }
 
+    /**
+     * Move the {@link MessageRange} to the {@link StoreMessageManager}
+     * 
+     * @param set
+     * @param toMailbox
+     * @param session
+     * @throws MailboxException
+     */
+    public List<MessageRange> moveTo(final MessageRange set, final StoreMessageManager<Id> toMailbox, final MailboxSession session) throws MailboxException {
+        if (!isWriteable(session)) {
+            throw new ReadOnlyException(new StoreMailboxPath<Id>(getMailboxEntity()), session.getPathDelimiter());
+        }
+        if (!toMailbox.isWriteable(session)) {
+            throw new ReadOnlyException(new StoreMailboxPath<Id>(toMailbox.getMailboxEntity()), session.getPathDelimiter());
+        }
+
+        //TODO lock the from mailbox too, in a non-deadlocking manner - how?
+        return locker.executeWithLock(session, new StoreMailboxPath<Id>(toMailbox.getMailboxEntity()), new MailboxPathLocker.LockAwareExecution<List<MessageRange>>() {
+
+            @Override
+            public List<MessageRange> execute() throws MailboxException {
+                SortedMap<Long, MessageMetaData> movedUids = move(set, toMailbox, session);
+                dispatcher.added(session, movedUids, toMailbox.getMailboxEntity());
+                return MessageRange.toRanges(new ArrayList<Long>(movedUids.keySet()));
+            }
+        }, true);
+    }
+
     protected MessageMetaData appendMessageToStore(final Message<Id> message, MailboxSession session) throws MailboxException {
         final MessageMapper<Id> mapper = mapperFactory.getMessageMapper(session);
         return mapperFactory.getMessageMapper(session).execute(new Mapper.Transaction<MessageMetaData>() {
@@ -679,6 +707,26 @@ public class StoreMessageManager<Id> implements org.apache.james.mailbox.Message
         return copiedRows.iterator();
     }
 
+    private Iterator<MessageMetaData> move(Iterator<Message<Id>> originalRows,
+			MailboxSession session) throws MailboxException {
+        final List<MessageMetaData> movedRows = new ArrayList<MessageMetaData>();
+        final MessageMapper<Id> messageMapper = mapperFactory.getMessageMapper(session);
+
+        while (originalRows.hasNext()) {
+            final Message<Id> originalMessage = originalRows.next();
+            MessageMetaData data = messageMapper.execute(new Mapper.Transaction<MessageMetaData>() {
+                public MessageMetaData run() throws MailboxException {
+                    return messageMapper.move(getMailboxEntity(), originalMessage);
+
+                }
+
+            });
+            movedRows.add(data);
+        }
+        return movedRows.iterator();
+	}
+
+
     /**
      * @see org.apache.james.mailbox.store.AbstractStoreMessageManager#copy(org.apache.james.mailbox.model.MessageRange,
      *      org.apache.james.mailbox.store.AbstractStoreMessageManager,
@@ -697,6 +745,22 @@ public class StoreMessageManager<Id> implements org.apache.james.mailbox.Message
 
         return copiedMessages;
     }
+
+    private SortedMap<Long, MessageMetaData> move(MessageRange set,
+			final StoreMessageManager<Id> to, final MailboxSession session) throws MailboxException {
+        MessageMapper<Id> messageMapper = mapperFactory.getMessageMapper(session);
+
+        final SortedMap<Long, MessageMetaData> movedMessages = new TreeMap<Long, MessageMetaData>();
+        Iterator<Message<Id>> originalRows = messageMapper.findInMailbox(mailbox, set, FetchType.Full, -1);
+        Iterator<MessageMetaData> ids = to.move(originalRows, session);
+        while (ids.hasNext()) {
+            MessageMetaData data = ids.next();
+            movedMessages.put(data.getUid(), data);
+        }
+
+        return movedMessages;
+	}
+
 
     /**
      * Return the count of unseen messages

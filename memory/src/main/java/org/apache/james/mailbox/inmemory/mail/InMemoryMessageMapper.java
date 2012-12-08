@@ -46,12 +46,13 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
 
     private Map<Long, Map<Long, Message<Long>>> mailboxByUid;
     private static final int INITIAL_SIZE = 256;
-    
-    public InMemoryMessageMapper(MailboxSession session, UidProvider<Long> uidProvider, ModSeqProvider<Long> modSeqProvider) {
+
+    public InMemoryMessageMapper(MailboxSession session, UidProvider<Long> uidProvider,
+            ModSeqProvider<Long> modSeqProvider) {
         super(session, uidProvider, modSeqProvider);
         this.mailboxByUid = new ConcurrentHashMap<Long, Map<Long, Message<Long>>>(INITIAL_SIZE);
     }
-    
+
     private Map<Long, Message<Long>> getMembershipByUidForMailbox(Mailbox<Long> mailbox) {
         Map<Long, Message<Long>> membershipByUid = mailboxByUid.get(mailbox.getMailboxId());
         if (membershipByUid == null) {
@@ -60,7 +61,7 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
         }
         return membershipByUid;
     }
-    
+
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox(org.apache.james.mailbox.store.mail.model.Mailbox)
      */
@@ -73,7 +74,7 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
      */
     public long countUnseenMessagesInMailbox(Mailbox<Long> mailbox) throws MailboxException {
         long count = 0;
-        for(Message<Long> member:getMembershipByUidForMailbox(mailbox).values()) {
+        for (Message<Long> member : getMembershipByUidForMailbox(mailbox).values()) {
             if (!member.isSeen()) {
                 count++;
             }
@@ -83,72 +84,73 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
 
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#delete(org.apache.james.mailbox.store.mail.model.Mailbox,
-     * org.apache.james.mailbox.store.mail.model.Message)
+     *      org.apache.james.mailbox.store.mail.model.Message)
      */
     public void delete(Mailbox<Long> mailbox, Message<Long> message) throws MailboxException {
         getMembershipByUidForMailbox(mailbox).remove(message.getUid());
     }
 
-
     /**
-     * @see org.apache.james.mailbox.store.mail.MessageMapper#findInMailbox(org.apache.james.mailbox.store.mail.model.Mailbox, org.apache.james.mailbox.model.MessageRange, org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
+     * @see org.apache.james.mailbox.store.mail.MessageMapper#findInMailbox(org.apache.james.mailbox.store.mail.model.Mailbox,
+     *      org.apache.james.mailbox.model.MessageRange,
+     *      org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
      */
-    public Iterator<Message<Long>> findInMailbox(Mailbox<Long> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
+    public Iterator<Message<Long>> findInMailbox(Mailbox<Long> mailbox, MessageRange set, FetchType ftype, int max)
+            throws MailboxException {
         List<Message<Long>> results;
         final MessageRange.Type type = set.getType();
         switch (type) {
-            case ALL:
-                results = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
-                break;
-            case FROM:
-                results = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
-                for (final Iterator<Message<Long>> it=results.iterator();it.hasNext();) {
-                   if (it.next().getUid()< set.getUidFrom()) {
-                       it.remove(); 
-                   }
+        case ALL:
+            results = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
+            break;
+        case FROM:
+            results = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
+            for (final Iterator<Message<Long>> it = results.iterator(); it.hasNext();) {
+                if (it.next().getUid() < set.getUidFrom()) {
+                    it.remove();
                 }
-                break;
-            case RANGE:
-                results = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
-                for (final Iterator<Message<Long>> it=results.iterator();it.hasNext();) {
-                   final long uid = it.next().getUid();
-                if (uid<set.getUidFrom() || uid>set.getUidTo()) {
-                       it.remove(); 
-                   }
+            }
+            break;
+        case RANGE:
+            results = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
+            for (final Iterator<Message<Long>> it = results.iterator(); it.hasNext();) {
+                final long uid = it.next().getUid();
+                if (uid < set.getUidFrom() || uid > set.getUidTo()) {
+                    it.remove();
                 }
-                break;
-            case ONE:
-                results  = new ArrayList<Message<Long>>(1);
-                final Message<Long> member = getMembershipByUidForMailbox(mailbox).get(set.getUidFrom());
-                if (member != null) {
-                    results.add(member);
-                }
-                break;
-            default:
-                results = new ArrayList<Message<Long>>();
-                break;
+            }
+            break;
+        case ONE:
+            results = new ArrayList<Message<Long>>(1);
+            final Message<Long> member = getMembershipByUidForMailbox(mailbox).get(set.getUidFrom());
+            if (member != null) {
+                results.add(member);
+            }
+            break;
+        default:
+            results = new ArrayList<Message<Long>>();
+            break;
         }
         Collections.sort(results);
-        
+
         if (max > 0 && results.size() > max) {
-            results = results.subList(0, max -1);
+            results = results.subList(0, max - 1);
         }
         return results.iterator();
     }
-    
 
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#findRecentMessageUidsInMailbox(org.apache.james.mailbox.store.mail.model.Mailbox)
      */
     public List<Long> findRecentMessageUidsInMailbox(Mailbox<Long> mailbox) throws MailboxException {
         final List<Long> results = new ArrayList<Long>();
-        for(Message<Long> member:getMembershipByUidForMailbox(mailbox).values()) {
+        for (Message<Long> member : getMembershipByUidForMailbox(mailbox).values()) {
             if (member.isRecent()) {
                 results.add(member.getUid());
             }
         }
         Collections.sort(results);
-        
+
         return results;
     }
 
@@ -158,7 +160,7 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
     public Long findFirstUnseenMessageUid(Mailbox<Long> mailbox) throws MailboxException {
         List<Message<Long>> memberships = new ArrayList<Message<Long>>(getMembershipByUidForMailbox(mailbox).values());
         Collections.sort(memberships);
-        for (int i = 0;  i < memberships.size(); i++) {
+        for (int i = 0; i < memberships.size(); i++) {
             Message<Long> m = memberships.get(i);
             if (m.isSeen() == false) {
                 return m.getUid();
@@ -167,8 +169,36 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
         return null;
     }
 
+    @Override
+    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<Long> mailbox, MessageRange set)
+            throws MailboxException {
+        final Map<Long, MessageMetaData> filteredResult = new HashMap<Long, MessageMetaData>();
+
+        Iterator<Message<Long>> it = findInMailbox(mailbox, set, FetchType.Metadata, -1);
+        while (it.hasNext()) {
+            Message<Long> member = it.next();
+            if (member.isDeleted()) {
+                filteredResult.put(member.getUid(), new SimpleMessageMetaData(member));
+
+                delete(mailbox, member);
+            }
+        }
+        return filteredResult;
+    }
+
     public void deleteAll() {
         mailboxByUid.clear();
+    }
+
+    /**
+     * (non-Javadoc)
+     * 
+     * @see org.apache.james.mailbox.store.mail.MessageMapper#move(org.apache.james.mailbox.store.mail.model.Mailbox,
+     *      org.apache.james.mailbox.store.mail.model.Message)
+     */
+    @Override
+    public MessageMetaData move(Mailbox<Long> mailbox, Message<Long> original) throws MailboxException {
+        throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
     }
 
     /**
@@ -179,14 +209,16 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
     }
 
     /**
-     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#copy(org.apache.james.mailbox.store.mail.model.Mailbox, long, long, org.apache.james.mailbox.store.mail.model.Message)
+     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#copy(org.apache.james.mailbox.store.mail.model.Mailbox,
+     *      long, long, org.apache.james.mailbox.store.mail.model.Message)
      */
-    protected MessageMetaData copy(Mailbox<Long> mailbox, long uid, long modSeq, Message<Long> original) throws MailboxException {
+    protected MessageMetaData copy(Mailbox<Long> mailbox, long uid, long modSeq, Message<Long> original)
+            throws MailboxException {
         SimpleMessage<Long> message = new SimpleMessage<Long>(mailbox, original);
         message.setUid(uid);
         message.setModSeq(modSeq);
         Flags flags = original.createFlags();
-        
+
         // Mark message as recent as it is a copy
         flags.add(Flag.RECENT);
         message.setFlags(flags);
@@ -194,14 +226,15 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
     }
 
     /**
-     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#save(org.apache.james.mailbox.store.mail.model.Mailbox, org.apache.james.mailbox.store.mail.model.Message)
+     * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#save(org.apache.james.mailbox.store.mail.model.Mailbox,
+     *      org.apache.james.mailbox.store.mail.model.Message)
      */
     protected MessageMetaData save(Mailbox<Long> mailbox, Message<Long> message) throws MailboxException {
         SimpleMessage<Long> copy = new SimpleMessage<Long>(mailbox, message);
         copy.setUid(message.getUid());
         copy.setModSeq(message.getModSeq());
         getMembershipByUidForMailbox(mailbox).put(message.getUid(), copy);
-        
+
         return new SimpleMessageMetaData(message);
     }
 
@@ -209,36 +242,19 @@ public class InMemoryMessageMapper extends AbstractMessageMapper<Long> {
      * Do nothing
      */
     protected void begin() throws MailboxException {
-        
+
     }
 
     /**
      * Do nothing
      */
     protected void commit() throws MailboxException {
-        
-    }
 
+    }
 
     /**
      * Do nothing
      */
-    protected void rollback() throws MailboxException {        
-    }
-
-    @Override
-    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<Long> mailbox, MessageRange set) throws MailboxException {
-        final Map<Long, MessageMetaData> filteredResult = new HashMap<Long, MessageMetaData>();
-
-        Iterator<Message<Long>> it = findInMailbox(mailbox, set, FetchType.Metadata, -1);
-        while(it.hasNext()) {
-            Message<Long> member = it.next();
-            if (member.isDeleted()) {
-                filteredResult.put(member.getUid(), new SimpleMessageMetaData(member));
-
-                delete(mailbox, member);
-            }
-        }
-        return filteredResult;
+    protected void rollback() throws MailboxException {
     }
 }

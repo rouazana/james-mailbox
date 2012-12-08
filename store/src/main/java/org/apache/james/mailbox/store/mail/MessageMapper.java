@@ -152,6 +152,16 @@ public interface MessageMapper<Id> extends Mapper {
      */
     MessageMetaData copy(Mailbox<Id> mailbox,Message<Id> original) throws MailboxException;
     
+    /**
+     * Move the given {@link Message} to a new mailbox and return the uid of the moved. Be aware that the given uid is just a suggestion for the uid of the moved
+     * message. Implementation may choose to use a different one, so only depend on the returned uid!
+     * 
+     * @param mailbox the Mailbox to move to
+     * @param original the original to move
+     * @throws StorageException
+     */
+    MessageMetaData move(Mailbox<Id> mailbox,Message<Id> original) throws MailboxException;
+    
     
     /**
      * Return the last uid which were used for storing a Message in the {@link Mailbox}
