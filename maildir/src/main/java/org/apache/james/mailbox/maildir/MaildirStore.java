@@ -33,7 +33,6 @@ import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
 import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 
 public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Integer>{
 
@@ -48,7 +47,9 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
     
     private File maildirRootFile;
     private final MailboxPathLocker locker;
-    
+
+    private boolean messageNameStrictParse = false;
+
     /**
      * Construct a MaildirStore with a location. The location String
      * currently may contain the
@@ -78,7 +79,9 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @return The MaildirFolder
      */
     public MaildirFolder createMaildirFolder(Mailbox<Integer> mailbox) {
-        return new MaildirFolder(getFolderName(mailbox), new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), mailbox.getName()), locker);
+        MaildirFolder mf = new MaildirFolder(getFolderName(mailbox), new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), mailbox.getName()), locker);
+        mf.setMessageNameStrictParse(isMessageNameStrictParse());
+        return mf;
     }
 
     /**
@@ -105,7 +108,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
     public Mailbox<Integer> loadMailbox(MailboxSession session, MailboxPath mailboxPath)
     throws MailboxNotFoundException, MailboxException {
         MaildirFolder folder = new MaildirFolder(getFolderName(mailboxPath), mailboxPath, locker);
-
+        folder.setMessageNameStrictParse(isMessageNameStrictParse());
         if (!folder.exists())
             throw new MailboxNotFoundException(mailboxPath);
         return loadMailbox(session, folder.getRootFile(), mailboxPath);
@@ -120,6 +123,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      */
     private Mailbox<Integer> loadMailbox(MailboxSession session, File mailboxFile, MailboxPath mailboxPath) throws MailboxException {
         MaildirFolder folder = new MaildirFolder(mailboxFile.getAbsolutePath(), mailboxPath, locker);
+        folder.setMessageNameStrictParse(isMessageNameStrictParse());
         try {
             return new MaildirMailbox<Integer>(session, mailboxPath, folder);
         } catch (IOException e) {
@@ -260,5 +264,28 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
     @Override
     public long lastUid(MailboxSession session, Mailbox<Integer> mailbox) throws MailboxException {
        return createMaildirFolder(mailbox).getLastUid(session);
+    }
+
+    /**
+     * Returns whether the names of message files in this store are parsed in
+     * a strict manner ({@code true}), which means a size field and flags are
+     * expected.
+     * @return
+     */
+    public boolean isMessageNameStrictParse() {
+        return messageNameStrictParse;
+    }
+
+    /**
+     * Specifies whether the names of message files in this store are parsed in
+     * a strict manner ({@code true}), which means a size field and flags are
+     * expected.
+     *
+     * Default is {@code false}.
+     *
+     * @param messageNameStrictParse
+     */
+    public void setMessageNameStrictParse(boolean messageNameStrictParse) {
+        this.messageNameStrictParse = messageNameStrictParse;
     }
 }

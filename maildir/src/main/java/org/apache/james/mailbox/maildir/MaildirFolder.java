@@ -72,6 +72,7 @@ public class MaildirFolder {
     private int messageCount = 0;
     private long uidValidity = -1;
     private MailboxACL acl;
+    private boolean messageNameStrictParse = false;
 
     private final MailboxPathLocker locker;
 
@@ -92,8 +93,36 @@ public class MaildirFolder {
         this.locker = locker;
         this.path = path;
     }
-    
+
+    private MaildirMessageName newMaildirMessageName(MaildirFolder folder, String fullName) {
+        MaildirMessageName mdn = new MaildirMessageName(folder, fullName);
+        mdn.setMessageNameStrictParse(isMessageNameStrictParse());
+        return mdn;
+    }
+
     /**
+     * Returns whether the names of message files in this folder are parsed in
+     * a strict manner ({@code true}), which means a size field and flags are
+     * expected.
+     *
+     * @return
+     */
+    public boolean isMessageNameStrictParse() {
+        return messageNameStrictParse;
+    }
+
+    /**
+     * Specifies whether the names of message files in this folder are parsed in
+     * a strict manner ({@code true}), which means a size field and flags are
+     * expected.
+     *
+     * @param messageNameStrictParse
+     */
+    public void setMessageNameStrictParse(boolean messageNameStrictParse) {
+        this.messageNameStrictParse = messageNameStrictParse;
+    }
+
+  /**
      * Returns the {@link File} of this Maildir folder.
      * @return the root folder
      */
@@ -323,7 +352,7 @@ public class MaildirFolder {
                             }
                             
                             if (line.substring(0, gap).equals(uidString)) {
-                                return new MaildirMessageName(MaildirFolder.this, line.substring(gap + 1));
+                                return newMaildirMessageName(MaildirFolder.this, line.substring(gap + 1));
                             }
                         }
                     }
@@ -499,7 +528,7 @@ public class MaildirFolder {
                             String name = line.substring(gap + 1, line.length());
                             for (String recentFile : recentFiles) {
                                 if (recentFile.equals(name)) {
-                                    recentMessages.put(uid, new MaildirMessageName(MaildirFolder.this, recentFile));
+                                    recentMessages.put(uid, newMaildirMessageName(MaildirFolder.this, recentFile));
                                     counter++;
                                     break;
                                 }
@@ -533,7 +562,7 @@ public class MaildirFolder {
             messageCount = curFiles.length + newFiles.length;
             String[] allFiles = (String[]) ArrayUtils.addAll(curFiles, newFiles);
             for (String file : allFiles)
-                uidMap.put(getNextUid(), new MaildirMessageName(MaildirFolder.this, file));
+                uidMap.put(getNextUid(), newMaildirMessageName(MaildirFolder.this, file));
             //uidMap = new TreeMap<Long, MaildirMessageName>(uidMap);
             pw = new PrintWriter(uidList);
             pw.println(createUidListHeader());
@@ -580,7 +609,7 @@ public class MaildirFolder {
             }
             String[] allFiles = (String[]) ArrayUtils.addAll(curFiles, newFiles);
             for (String file : allFiles) {
-                MaildirMessageName messageName = new MaildirMessageName(MaildirFolder.this, file);
+                MaildirMessageName messageName = newMaildirMessageName(MaildirFolder.this, file);
                 Long uid = reverseUidMap.get(messageName.getBaseName());
                 if (uid == null)
                     uid = getNextUid();
@@ -630,7 +659,7 @@ public class MaildirFolder {
                         if (to != -1 && uid > to)
                             break;
                         String name = line.substring(gap + 1, line.length());
-                        uidMap.put(uid, new MaildirMessageName(MaildirFolder.this, name));
+                        uidMap.put(uid, newMaildirMessageName(MaildirFolder.this, name));
                     }
                 }
             }
@@ -859,7 +888,7 @@ public class MaildirFolder {
                         }
                         
                         if (uid == Long.valueOf(line.substring(0, line.indexOf(" ")))) {
-                            deletedMessage = new MaildirMessageName(MaildirFolder.this, line.substring(gap + 1, line.length()));
+                            deletedMessage = newMaildirMessageName(MaildirFolder.this, line.substring(gap + 1, line.length()));
                             messageCount--;
                         }
                         else {

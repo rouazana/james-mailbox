@@ -103,10 +103,19 @@ public class MaildirMessageName {
     private Date internalDate;
     private Long size;
     private Flags flags;
+    private boolean messageNameStrictParse = false;
     
     public MaildirMessageName(MaildirFolder parentFolder, String fullName) {
         this.parentFolder = parentFolder;
         setFullName(fullName);
+    }
+
+    public boolean isMessageNameStrictParse() {
+        return messageNameStrictParse;
+    }
+
+    public void setMessageNameStrictParse(boolean messageNameStrictParse) {
+        this.messageNameStrictParse = messageNameStrictParse;
     }
 
     /**
@@ -241,16 +250,37 @@ public class MaildirMessageName {
      * into its components hostname, size and flags and fills the respective variables.
      */
     private void splitHostNameAndMeta() {
-        int firstEnd = hostnameAndMeta.indexOf(',');
-        int secondEnd = hostnameAndMeta.indexOf(':', firstEnd + 1);
-        hostname = hostnameAndMeta.substring(0, firstEnd);
-        // there are flags
-        if (secondEnd != -1) {
-            sizeString = hostnameAndMeta.substring(firstEnd, secondEnd);
-            flagsString = hostnameAndMeta.substring(secondEnd, hostnameAndMeta.length());
+        String[] hostnamemetaFlags = hostnameAndMeta.split(":", 2);
+        if (hostnamemetaFlags.length >= 1) {
+          this.hostnameAndMeta = hostnamemetaFlags[0];
+          int firstEnd = hostnameAndMeta.indexOf(',');
+
+          // read size field if existent
+          if (firstEnd > 0) {
+            hostname = hostnameAndMeta.substring(0, firstEnd);
+            String attrStr = hostnameAndMeta.substring(firstEnd);
+            String[] fields = attrStr.split(",");
+            for (String field : fields) {
+              if (field.startsWith("S=")) {
+                  sizeString = "," + field;
+              }
+            }
+          } else {
+            sizeString = null;
+            hostname = this.hostnameAndMeta;
+          }
         }
-        else {
-            sizeString = hostnameAndMeta.substring(firstEnd, hostnameAndMeta.length());
+
+        if (hostnamemetaFlags.length >= 2) {
+            this.flagsString = ":" + hostnamemetaFlags[1];
+        }
+        if (isMessageNameStrictParse()) {
+            if (sizeString == null) {
+                throw new IllegalArgumentException("No message size found in message name: "+ fullName);
+            }
+            if (flagsString == null) {
+                throw new IllegalArgumentException("No flags found in message name: "+ fullName);
+            }
         }
     }
     
@@ -276,7 +306,8 @@ public class MaildirMessageName {
             split();
             if (flagsString == null)
                 return null;
-            flags = decodeFlags(flagsString.substring(3)); // skip the ":2," part
+            if (flagsString.length() >= 3)
+                flags = decodeFlags(flagsString.substring(3)); // skip the ":2," part
         }
         return flags;
     }
@@ -289,6 +320,8 @@ public class MaildirMessageName {
         if (size == null) {
             split();
             if (sizeString == null)
+                return null;
+            if (!sizeString.startsWith(",S="))
                 return null;
             size = Long.valueOf(sizeString.substring(3)); // skip the ",S=" part
         }

@@ -18,18 +18,6 @@
  ****************************************************************/
 package org.apache.james.mailbox.maildir.mail.model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
-import java.util.Date;
-import java.util.List;
-
-import javax.mail.Flags;
-import javax.mail.util.SharedFileInputStream;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.maildir.MaildirFolder;
 import org.apache.james.mailbox.maildir.MaildirMessageName;
@@ -46,6 +34,12 @@ import org.apache.james.mime4j.stream.EntityState;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.james.mime4j.stream.MimeTokenStream;
 import org.apache.james.mime4j.stream.RecursionMode;
+
+import javax.mail.Flags;
+import javax.mail.util.SharedFileInputStream;
+import java.io.*;
+import java.util.Date;
+import java.util.List;
 
 public class MaildirMessage extends AbstractMessage<Integer> {
 
@@ -78,6 +72,8 @@ public class MaildirMessage extends AbstractMessage<Integer> {
         } else {
             // if the message resist in the new folder its RECENT
             if (file.getParentFile().getName().equals(MaildirFolder.NEW)) {
+                if (flags == null)
+                    flags = new Flags();
                 flags.add(Flags.Flag.RECENT);
             }
         }
@@ -378,7 +374,16 @@ public class MaildirMessage extends AbstractMessage<Integer> {
      */
     @Override
     public long getFullContentOctets() {
-        return messageName.getSize();
+        Long size = messageName.getSize();
+        if (size != null) {
+            return size;
+        } else {
+            try {
+                return messageName.getFile().length();
+            } catch (FileNotFoundException e) {
+                return -1;
+            }
+        }
     }
 
     /**

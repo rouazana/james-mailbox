@@ -49,6 +49,7 @@
     </bean>
     <bean id="maildirStore" class="org.apache.james.mailbox.maildir.MaildirStore">
         <constructor-arg index="0" value="${maildir.folder}"/>
+        <property name="messageNameStrictParse" value="${maildir.messageNameParser.strictMode}"/>
     </bean>
     <alias name="jvm-locker" alias="maildir-locker"/>
 
