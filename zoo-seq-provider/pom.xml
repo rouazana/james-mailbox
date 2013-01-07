@@ -17,7 +17,8 @@
     specific language governing permissions and limitations
     under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -28,9 +29,9 @@
     </parent>
 
     <artifactId>zookeeper-sequence-provider</artifactId>
-
-    <name>Apache James Zookeeper Sequence Provider</name>
-    <description>High performance distribuited sequence provider based on ZooKeepr </description>
+    <name>Apache James :: Mailbox :: Zookeeper Sequence Provider</name>
+    <packaging>bundle</packaging>
+    <description>High performance distribuited sequence provider based on ZooKeepr</description>
 
     <properties>
         <curator.version>1.1.2</curator.version>
@@ -39,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
-            <artifactId>junit-dep</artifactId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -48,8 +49,7 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <version>1.6.4</version>
+            <artifactId>slf4j-simple</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>

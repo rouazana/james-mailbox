@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-15"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements. See the NOTICE file
@@ -28,8 +28,8 @@
     </parent>
 
     <artifactId>apache-james-mailbox-api</artifactId>
-
-    <name>Apache James Mailbox API</name>
+    <packaging>bundle</packaging>
+    <name>Apache James :: Mailbox :: API</name>
 
     <dependencies>
         <dependency>
@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>junit</groupId>
-            <artifactId>junit-dep</artifactId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

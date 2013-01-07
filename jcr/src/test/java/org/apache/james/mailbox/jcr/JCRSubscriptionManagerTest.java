@@ -18,10 +18,6 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
-import java.io.File;
-
-import javax.jcr.RepositoryException;
-
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.james.mailbox.AbstractSubscriptionManagerTest;
@@ -30,26 +26,28 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.xml.sax.InputSource;
 
-public class JCRSubscriptionManagerTest extends AbstractSubscriptionManagerTest{
+import javax.jcr.RepositoryException;
+import java.io.File;
+
+public class JCRSubscriptionManagerTest extends AbstractSubscriptionManagerTest {
     private static final String JACKRABBIT_HOME = "target/jackrabbit";
-    
+
     public static final String META_DATA_DIRECTORY = "target/user-meta-data";
 
     private static RepositoryImpl repository;
     private static String user = "user";
     private static String pass = "pass";
     private static String workspace = null;
+
     @BeforeClass
     public static void before() throws RepositoryException {
-       
-        RepositoryConfig  config = RepositoryConfig.create(new InputSource(JCRMailboxManagerTest.class.getClassLoader().getResourceAsStream("test-repository.xml")), JACKRABBIT_HOME);
+        RepositoryConfig config = RepositoryConfig.create(new InputSource(JCRMailboxManagerTest.class.getClassLoader().getResourceAsStream("test-repository.xml")), JACKRABBIT_HOME);
         repository = RepositoryImpl.create(config);
-       
 
         // Register imap cnd file
         JCRUtils.registerCnd(repository, workspace, user, pass);
     }
-    
+
     @AfterClass
     public static void after() {
         if (repository != null) {
@@ -57,7 +55,7 @@ public class JCRSubscriptionManagerTest extends AbstractSubscriptionManagerTest{
         }
         new File(JACKRABBIT_HOME).delete();
     }
-    
+
     @Override
     public SubscriptionManager createSubscriptionManager() {
 

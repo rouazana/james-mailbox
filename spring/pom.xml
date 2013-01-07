@@ -17,7 +17,8 @@
     specific language governing permissions and limitations
     under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -28,8 +29,8 @@
     </parent>
 
     <artifactId>apache-james-mailbox-spring</artifactId>
-
-    <name>Apache James Mailbox Spring</name>
+    <name>Apache James :: Mailbox :: Spring</name>
+    <packaging>bundle</packaging>
 
     <dependencies>
         <dependency>
@@ -56,17 +57,15 @@
             <groupId>org.apache.james</groupId>
             <artifactId>apache-james-mailbox-maildir</artifactId>
         </dependency>
+        <!-- TODO: enable after fix maibox-hbase -->
+        <!--<dependency>-->
+        <!--<groupId>org.apache.james</groupId>-->
+        <!--<artifactId>apache-james-mailbox-hbase</artifactId>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.apache.james</groupId>
-            <artifactId>apache-james-mailbox-hbase</artifactId>
-        </dependency>
-        <!--
-            JCR temporary desactivated because jackrabbit still uses lucene 2
-            <dependency>
-            <groupId>org.apache.james</groupId>
             <artifactId>apache-james-mailbox-jcr</artifactId>
-            </dependency>
-        -->
+        </dependency>
         <dependency>
             <groupId>org.apache.james</groupId>
             <artifactId>apache-james-mailbox-tool</artifactId>
@@ -105,23 +104,23 @@
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
         </dependency>
-        <!--
-            JCR temporary desactivated because jackrabbit still uses lucene 2
-            <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>2.4.1</version>
-            <scope>test</scope>
-            </dependency>
-            <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-core</artifactId>
-            </dependency>
-            <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-jcr-commons</artifactId>
-            </dependency>
-        -->
+            <!--
+                JCR temporary desactivated because jackrabbit still uses lucene 2
+                <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>2.4.1</version>
+                <scope>test</scope>
+                </dependency>
+                <dependency>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>jackrabbit-core</artifactId>
+                </dependency>
+                <dependency>
+                <groupId>org.apache.jackrabbit</groupId>
+                <artifactId>jackrabbit-jcr-commons</artifactId>
+                </dependency>
+            -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>

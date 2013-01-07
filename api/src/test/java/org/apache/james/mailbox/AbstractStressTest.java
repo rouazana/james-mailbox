@@ -18,6 +18,15 @@
  ****************************************************************/
 package org.apache.james.mailbox;
 
+import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.MailboxConstants;
+import org.apache.james.mailbox.model.MailboxPath;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+import org.junit.Test;
+import org.slf4j.LoggerFactory;
+
+import javax.mail.Flags;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,103 +37,88 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.mail.Flags;
-
-import junit.framework.Assert;
-
-import org.apache.james.mailbox.MailboxManager;
-import org.apache.james.mailbox.MailboxSession;
-import org.apache.james.mailbox.MessageManager;
-import org.apache.james.mailbox.exception.MailboxException;
-import org.apache.james.mailbox.model.MailboxConstants;
-import org.apache.james.mailbox.model.MailboxPath;
-import org.junit.Test;
-import org.slf4j.LoggerFactory;
-
 public abstract class AbstractStressTest {
 
     private final static int APPEND_OPERATIONS = 200;
-    
-    
+
+
     protected abstract MailboxManager getMailboxManager();
-    
+
     @Test
     public void testStessTest() throws InterruptedException, MailboxException {
-       
+
         final CountDownLatch latch = new CountDownLatch(APPEND_OPERATIONS);
-        final ExecutorService pool = Executors.newFixedThreadPool(APPEND_OPERATIONS/2);
+        final ExecutorService pool = Executors.newFixedThreadPool(APPEND_OPERATIONS / 2);
         final List<Long> uList = new ArrayList<Long>();
         MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
         getMailboxManager().startProcessingRequest(session);
         final MailboxPath path = new MailboxPath(MailboxConstants.USER_NAMESPACE, "username", "INBOX");
         getMailboxManager().createMailbox(path, session);
         getMailboxManager().addListener(path, new MailboxListener() {
-			
-			
-			@Override
-			public void event(Event event) {
-				long u = ((Added) event).getUids().get(0);
-				uList.add(u);
-			}
-		}, session);
+
+
+            @Override
+            public void event(Event event) {
+                long u = ((Added) event).getUids().get(0);
+                uList.add(u);
+            }
+        }, session);
         getMailboxManager().endProcessingRequest(session);
         getMailboxManager().logout(session, false);
-        
+
         final AtomicBoolean fail = new AtomicBoolean(false);
         final ConcurrentHashMap<Long, Object> uids = new ConcurrentHashMap<Long, Object>();
-        
+
         // fire of 1000 append operations
-        for (int i = 0 ; i < APPEND_OPERATIONS; i++) {
+        for (int i = 0; i < APPEND_OPERATIONS; i++) {
             pool.execute(new Runnable() {
-                
+
                 public void run() {
-                    if (fail.get()){
+                    if (fail.get()) {
                         latch.countDown();
                         return;
                     }
-                    
+
 
                     try {
                         MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
 
                         getMailboxManager().startProcessingRequest(session);
                         MessageManager m = getMailboxManager().getMailbox(path, session);
-                        Long uid =  m.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), new Date(), session, false, new Flags());
-                        
+                        Long uid = m.appendMessage(new ByteArrayInputStream("Subject: test\r\n\r\ntestmail".getBytes()), new Date(), session, false, new Flags());
+
                         System.out.println("Append message with uid=" + uid);
                         if (uids.put(uid, new Object()) != null) {
                             fail.set(true);
                         }
                         getMailboxManager().endProcessingRequest(session);
-                        getMailboxManager().logout(session,false);
+                        getMailboxManager().logout(session, false);
                     } catch (MailboxException e) {
                         e.printStackTrace();
                         fail.set(true);
                     } finally {
                         latch.countDown();
                     }
-                    
-                    
+
+
                 }
             });
         }
-        
+
         latch.await();
-        
+
         // check if the uids were higher on each append. See MAILBOX-131
         long last = 0;
         for (int i = 0; i < uList.size(); i++) {
             long l = uList.get(i);
             if (l <= last) {
-                Assert.fail(l + "->" + last);
+                fail(l + "->" + last);
             } else {
                 last = l;
             }
 
         }
-        org.junit.Assert.assertFalse("Unable to append all messages",fail.get());
+        assertFalse("Unable to append all messages", fail.get());
         pool.shutdown();
-
-        
     }
 }

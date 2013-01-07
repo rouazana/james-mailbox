@@ -18,12 +18,6 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
-import java.io.File;
-
-import javax.jcr.RepositoryException;
-
-import junit.framework.Assert;
-
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.ConfigurationException;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
@@ -33,52 +27,43 @@ import org.apache.james.mailbox.acl.GroupMembershipResolver;
 import org.apache.james.mailbox.acl.MailboxACLResolver;
 import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
-import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.jcr.mail.JCRModSeqProvider;
 import org.apache.james.mailbox.jcr.mail.JCRUidProvider;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.junit.After;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
+
+import javax.jcr.RepositoryException;
+import java.io.File;
 
 /**
  * JCRMailboxManagerTest that extends the StoreMailboxManagerTest.
  */
 public class JCRMailboxManagerTest extends AbstractMailboxManagerTest {
-    
+
     private static final String JACKRABBIT_HOME = "target/jackrabbit";
-    
+
     public static final String META_DATA_DIRECTORY = "target/user-meta-data";
 
     private static RepositoryImpl repository;
-   
-    /**
-     * Setup the mailboxManager.
-     * 
-     * @throws Exception
-     */
+
     @Before
     public void setup() throws Exception {
         createMailboxManager();
     }
 
-    
-    /**
-     * Close system session and shutdown system repository.
-     */
     @After
-    public void tearDown() throws BadCredentialsException, MailboxException {
+    public void tearDown() throws MailboxException {
         MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
         session.close();
         repository.shutdown();
         new File(JACKRABBIT_HOME).delete();
     }
-    
-    /* (non-Javadoc)
-     * @see org.apache.james.mailbox.MailboxManagerTest#createMailboxManager()
-     */
+
     protected void createMailboxManager() throws MailboxException {
 
         new File(JACKRABBIT_HOME).delete();
@@ -92,10 +77,10 @@ public class JCRMailboxManagerTest extends AbstractMailboxManagerTest {
             repository = RepositoryImpl.create(config);
         } catch (ConfigurationException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         } catch (RepositoryException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
 
         // Register imap cnd file
@@ -103,9 +88,9 @@ public class JCRMailboxManagerTest extends AbstractMailboxManagerTest {
         MailboxSessionJCRRepository sessionRepos = new GlobalMailboxSessionJCRRepository(repository, workspace, user, pass);
         JVMMailboxPathLocker locker = new JVMMailboxPathLocker();
         JCRUidProvider uidProvider = new JCRUidProvider(locker, sessionRepos);
-        JCRModSeqProvider modSeqProvider= new JCRModSeqProvider(locker, sessionRepos);
+        JCRModSeqProvider modSeqProvider = new JCRModSeqProvider(locker, sessionRepos);
         JCRMailboxSessionMapperFactory mf = new JCRMailboxSessionMapperFactory(sessionRepos, uidProvider, modSeqProvider);
-        
+
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 

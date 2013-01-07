@@ -18,10 +18,6 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
-import java.io.File;
-
-import javax.jcr.RepositoryException;
-
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.james.mailbox.AbstractStressTest;
@@ -40,12 +36,15 @@ import org.junit.Before;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
+import javax.jcr.RepositoryException;
+import java.io.File;
+
 public class JCRStressTest extends AbstractStressTest {
-    
+
     private JCRMailboxManager mailboxManager;
     private RepositoryImpl repository;
     private static final String JACKRABBIT_HOME = "target/jackrabbit";
-   
+
     @Before
     public void setUp() throws RepositoryException, MailboxException {
 
@@ -62,19 +61,18 @@ public class JCRStressTest extends AbstractStressTest {
         MailboxSessionJCRRepository sessionRepos = new GlobalMailboxSessionJCRRepository(repository, workspace, user, pass);
         JVMMailboxPathLocker locker = new JVMMailboxPathLocker();
         JCRUidProvider uidProvider = new JCRUidProvider(locker, sessionRepos);
-        JCRModSeqProvider modSeqProvider= new JCRModSeqProvider(locker, sessionRepos);
+        JCRModSeqProvider modSeqProvider = new JCRModSeqProvider(locker, sessionRepos);
         JCRMailboxSessionMapperFactory mf = new JCRMailboxSessionMapperFactory(sessionRepos, uidProvider, modSeqProvider);
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
         mailboxManager = new JCRMailboxManager(mf, null, locker, aclResolver, groupMembershipResolver);
         mailboxManager.init();
-
     }
-    
+
     @After
     public void tearDown() {
-        MailboxSession session = mailboxManager.createSystemSession("test", LoggerFactory.getLogger("Test"));
+        MailboxSession session = mailboxManager.createSystemSession("test", LoggerFactory.getLogger(JCRStressTest.class));
         session.close();
         repository.shutdown();
         new File(JACKRABBIT_HOME).delete();
@@ -84,5 +82,5 @@ public class JCRStressTest extends AbstractStressTest {
     protected MailboxManager getMailboxManager() {
         return mailboxManager;
     }
- 
+
 }

@@ -44,7 +44,7 @@
         <constructor-arg index="3" ref="aclResolver"/>
         <constructor-arg index="4" ref="groupMembershipResolver"/>
     </bean>
-    
+
     <bean id="hbase-sessionMapperFactory" class="org.apache.james.mailbox.hbase.HBaseMailboxSessionMapperFactory">
         <constructor-arg index="0" ref="hbase-conf"/>
         <constructor-arg index="1" ref="hbase-uidProvider"/>
@@ -56,7 +56,7 @@
     <bean id="hbase-modSeqProvider" class="org.apache.james.mailbox.hbase.mail.HBaseModSeqProvider">
         <constructor-arg index="0" ref="hbase-conf"/>
     </bean>
-    
+
     <alias name="jvm-locker" alias="hbase-locker"/>
 
 </beans>
