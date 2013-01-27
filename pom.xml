@@ -24,13 +24,25 @@
     <parent>
         <artifactId>james-project</artifactId>
         <groupId>org.apache.james</groupId>
-        <version>1.8.1</version>
+        <version>1.8.2-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>apache-james-mailbox</artifactId>
     <version>0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <repositories>
+      <!-- apache.snapshot is needed for james-project SNAPSHOT, see JAMES-1470 -->
+      <repository>
+        <id>apache.snapshots</id>
+        <name>Apache Snapshot Repository</name>
+        <url>http://repository.apache.org/snapshots</url>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
+      </repository>
+    </repositories>
 
     <name>Apache James :: Mailbox</name>
     <description>Apache James Mailbox</description>
@@ -531,38 +543,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>jar</goal>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>auto-clean</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>var</directory>
-                                    <directory>log</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
