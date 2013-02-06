@@ -57,11 +57,11 @@
         <module>jpa</module>
         <module>jcr</module>
         <module>maildir</module>
-        <!-- Disabled for now tests need to be configured -->
-        <!--<module>hbase</module>-->
+        <module>hbase</module>
         <module>spring</module>
         <module>tool</module>
         <module>zoo-seq-provider</module>
+        <module>?</module>
     </modules>
 
     <scm>
@@ -555,7 +555,6 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.3.7</version>
                 <extensions>true</extensions>
             </plugin>
         </plugins>
