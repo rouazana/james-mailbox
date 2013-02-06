@@ -49,7 +49,6 @@ public class StoreMessageResultIterator<Id> implements MessageResultIterator {
     private long to;
     private int batchSize;
     private Type type;
-    private boolean done = false;
     private MessageMapper<Id> mapper;
     private FetchType ftype;
 
@@ -112,15 +111,19 @@ public class StoreMessageResultIterator<Id> implements MessageResultIterator {
 
     @Override
     public boolean hasNext() {
-        if (!done && (next == null || !next.hasNext())) {
+        if (cursor > to) 
+          return false;
+
+        if (next == null || !next.hasNext()) {
             try {
                 readBatch();
             } catch (MailboxException e) {
                 this.exception = e;
-                done = true;
+                return false;
             }
         }
-       return !done;
+        
+        return next.hasNext();
     }
 
     private void readBatch() throws MailboxException {
@@ -142,33 +145,24 @@ public class StoreMessageResultIterator<Id> implements MessageResultIterator {
             break;
         }
         next = mapper.findInMailbox(mailbox, range, ftype, batchSize);
-        if (!next.hasNext()) {
-            done = true;
-        }
     }
 
     @Override
     public MessageResult next() {
-        if (hasNext()) {
-            final Message<Id> message = next.next();
-            MessageResult result;
-            try {
-                result = ResultUtils.loadMessageResult(message, group);
-                cursor = result.getUid();
-            } catch (MailboxException e) {
-                result = new UnloadedMessageResult<Id>(message, e);
-            }
-
-            cursor++;
-            // move the start UID behind the last fetched message UID if needed
-            if (hasNext()) {
-                if (cursor > to) {
-                	done = true;
-                }
-            }
-            return result;
+        if (next == null || !next.hasNext())
+          throw new NoSuchElementException();
+        
+        final Message<Id> message = next.next();
+        MessageResult result;
+        try {
+            result = ResultUtils.loadMessageResult(message, group);
+            cursor = result.getUid();
+        } catch (MailboxException e) {
+            result = new UnloadedMessageResult<Id>(message, e);
         }
-        throw new NoSuchElementException();
+
+        cursor++;
+        return result;
     }
 
     @Override
