@@ -24,7 +24,7 @@
     <parent>
         <artifactId>james-project</artifactId>
         <groupId>org.apache.james</groupId>
-        <version>1.8.2-SNAPSHOT</version>
+        <version>1.8.2</version>
         <relativePath/>
     </parent>
 
@@ -61,7 +61,6 @@
         <module>spring</module>
         <module>tool</module>
         <module>zoo-seq-provider</module>
-        <module>?</module>
     </modules>
 
     <scm>
