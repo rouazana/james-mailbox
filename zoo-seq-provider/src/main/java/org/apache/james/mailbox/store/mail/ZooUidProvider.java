@@ -29,7 +29,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 /**
- * ZooKeepr based implementation of a distribuited sequential UID generator.
+ * ZooKeeper based implementation of a distributed sequential UID generator.
  */
 public class ZooUidProvider<E> implements UidProvider<E> {
     // TODO: use ZK paths to store uid and modSeq, etc.
@@ -43,8 +43,8 @@ public class ZooUidProvider<E> implements UidProvider<E> {
     }
 
     public ZooUidProvider(CuratorFramework client, RetryPolicy retryPolicy) {
-        Preconditions.checkNotNull(client);
-        Preconditions.checkNotNull(retryPolicy);
+        Preconditions.checkNotNull(client, "Curator client is null");
+        Preconditions.checkNotNull(retryPolicy, "Retry policy is null");
         this.client = client;
         this.retryPolicy = retryPolicy;
     }

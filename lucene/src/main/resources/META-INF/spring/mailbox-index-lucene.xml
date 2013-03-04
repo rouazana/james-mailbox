@@ -21,12 +21,24 @@
 <beans xmlns="http://www.springframework.org/schema/beans" 
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="
-          http://www.springframework.org/schema/beans classpath:org/springframework/beans/factory/xml/spring-beans-3.0.xsd">
+          http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <!-- 
-      Mailbox Locker
+      Mailbox Lucene
      -->
 
-    <bean id="jvm-locker" class="org.apache.james.mailbox.store.JVMMailboxPathLocker"/>
-
+    <bean id="lazyIndex" class="org.apache.james.mailbox.store.search.LazyMessageSearchIndex">
+        <constructor-arg index="0" ref="luceneIndex"/>
+    </bean>
+    <bean id="luceneIndex" class="org.apache.james.mailbox.lucene.search.LuceneMessageSearchIndex">
+        <constructor-arg index="0" ref="maildir-sessionMapperFactory"/>
+        <constructor-arg index="1" ref="ramDirectory"/>
+        <constructor-arg index="2" value="false"/>
+        <constructor-arg index="3" value="true"/>
+        <property name="enableSuffixMatch" value="true"/>
+    </bean>
+    <bean id="ramDirectory"  class="org.apache.lucene.store.FSDirectory" factory-method="open">
+        <constructor-arg index="0" value="../var/store/lucene"/>
+    </bean>
+ 
 </beans>
