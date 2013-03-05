@@ -23,10 +23,6 @@
        xsi:schemaLocation="
           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <!-- 
-      Mailbox Locker
-     -->
-
     <bean id="jvm-locker" class="org.apache.james.mailbox.store.JVMMailboxPathLocker"/>
 
 </beans>

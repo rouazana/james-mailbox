@@ -19,31 +19,27 @@
 
 package org.apache.james.mailbox.store;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxPath;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
- * 
- * {@link MailboxPathLocker} implementation which helps to synchronize the access the 
+ * {@link MailboxPathLocker} implementation which helps to synchronize the access the
  * same MailboxPath. This is done using one {@link ReentrantReadWriteLock}
  * per {@link MailboxPath} so its only usable in a single JVM.
- *
  */
 public final class JVMMailboxPathLocker extends AbstractMailboxPathLocker {
 
     private final ConcurrentHashMap<MailboxPath, ReadWriteLock> paths = new ConcurrentHashMap<MailboxPath, ReadWriteLock>();
 
 
-    /**
-     * @see org.apache.james.mailbox.store.AbstractMailboxPathLocker#lock(org.apache.james.mailbox.MailboxSession, org.apache.james.mailbox.model.MailboxPath, boolean)
-     */
+    @Override
     protected void lock(MailboxSession session, MailboxPath path, boolean writeLock) throws MailboxException {
         ReadWriteLock lock = paths.get(path);
         if (lock == null) {
@@ -56,17 +52,16 @@ public final class JVMMailboxPathLocker extends AbstractMailboxPathLocker {
         getLock(lock, writeLock).lock();
     }
 
-    /**
-     * @see org.apache.james.mailbox.store.AbstractMailboxPathLocker#unlock(MailboxSession, MailboxPath, boolean)
-     */
+
+    @Override
     protected void unlock(MailboxSession session, MailboxPath path, boolean writeLock) throws MailboxException {
         ReadWriteLock lock = paths.get(path);
-        
+
         if (lock != null) {
             getLock(lock, writeLock).unlock();
-        }        
+        }
     }
-    
+
     private Lock getLock(ReadWriteLock lock, boolean writeLock) {
         Lock l;
         if (writeLock) {

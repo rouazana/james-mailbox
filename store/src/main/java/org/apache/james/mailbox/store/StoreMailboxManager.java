@@ -19,13 +19,6 @@
 
 package org.apache.james.mailbox.store;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
-
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxPathLocker;
@@ -43,10 +36,10 @@ import org.apache.james.mailbox.exception.MailboxExistsException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxMetaData;
+import org.apache.james.mailbox.model.MailboxMetaData.Selectability;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MailboxQuery;
 import org.apache.james.mailbox.model.MessageRange;
-import org.apache.james.mailbox.model.MailboxMetaData.Selectability;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
@@ -57,35 +50,42 @@ import org.apache.james.mailbox.store.transaction.Mapper;
 import org.apache.james.mailbox.store.transaction.TransactionalMapper;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Random;
+
 /**
  * This base class of an {@link MailboxManager} implementation provides a high-level api for writing your own
- * {@link MailboxManager} implementation. If you plan to write your own {@link MailboxManager} its most times so easiest 
+ * {@link MailboxManager} implementation. If you plan to write your own {@link MailboxManager} its most times so easiest
  * to extend just this class or use it directly.
- * 
+ * <p/>
  * If you need a more low-level api just implement {@link MailboxManager} directly
  *
  * @param <Id>
  */
 public class StoreMailboxManager<Id> implements MailboxManager {
-    
+
     public static final char SQL_WILDCARD_CHAR = '%';
     public static final int DEFAULT_FETCH_BATCH_SIZE = 200;
-    
+
     private MailboxEventDispatcher<Id> dispatcher;
-    private AbstractDelegatingMailboxListener delegatingListener = null;  
-    private final MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory;    
-    
+    private AbstractDelegatingMailboxListener delegatingListener = null;
+    private final MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory;
+
     private final Authenticator authenticator;
-    
+
     private final MailboxACLResolver aclResolver;
-    
+
     private final GroupMembershipResolver groupMembershipResolver;
-    
+
     private final static Random RANDOM = new Random();
-    
+
     private int copyBatchSize = 0;
 
-	private int moveBatchSize = 0;
+    private int moveBatchSize = 0;
 
     private MailboxPathLocker locker;
 
@@ -95,7 +95,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
     private int fetchBatchSize = DEFAULT_FETCH_BATCH_SIZE;
 
-    
+
     public StoreMailboxManager(MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory, final Authenticator authenticator, final MailboxPathLocker locker, final MailboxACLResolver aclResolver, final GroupMembershipResolver groupMembershipResolver) {
         this.authenticator = authenticator;
         this.locker = locker;
@@ -103,53 +103,53 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         this.aclResolver = aclResolver;
         this.groupMembershipResolver = groupMembershipResolver;
     }
-    
+
     public StoreMailboxManager(MailboxSessionMapperFactory<Id> mailboxSessionMapperFactory, final Authenticator authenticator, final MailboxACLResolver aclResolver, final GroupMembershipResolver groupMembershipResolver) {
         this(mailboxSessionMapperFactory, authenticator, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
     }
-   
+
     public void setMailboxSessionIdGenerator(MailboxSessionIdGenerator idGenerator) {
         this.idGenerator = idGenerator;
     }
-    
+
     public void setCopyBatchSize(int copyBatchSize) {
         this.copyBatchSize = copyBatchSize;
     }
-    
+
     public void setMoveBatchSize(int moveBatchSize) {
-		this.moveBatchSize = moveBatchSize;
-	}
+        this.moveBatchSize = moveBatchSize;
+    }
 
     public void setFetchBatchSize(int fetchBatchSize) {
         this.fetchBatchSize = fetchBatchSize;
     }
-    
-    
+
+
     /**
      * Init the {@link MailboxManager}
-     * 
+     *
      * @throws MailboxException
      */
     @SuppressWarnings("rawtypes")
-    public void init() throws MailboxException{
+    public void init() throws MailboxException {
         // The dispatcher need to have the delegating listener added
         dispatcher = new MailboxEventDispatcher<Id>(getDelegationListener());
-        
+
         if (index == null) {
             index = new SimpleMessageSearchIndex<Id>(mailboxSessionMapperFactory);
         }
         if (index instanceof ListeningMessageSearchIndex) {
             addGlobalListener((ListeningMessageSearchIndex) index, null);
         }
-        
+
         if (idGenerator == null) {
             idGenerator = new RandomMailboxSessionIdGenerator();
         }
     }
-    
+
     /**
      * Return the {@link AbstractDelegatingMailboxListener} which is used by this {@link MailboxManager}
-     * 
+     *
      * @return delegatingListener
      */
     public AbstractDelegatingMailboxListener getDelegationListener() {
@@ -158,40 +158,40 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         }
         return delegatingListener;
     }
-    
-    
+
+
     /**
      * Return the {@link MessageSearchIndex} used by this {@link MailboxManager}
-     * 
+     *
      * @return index
      */
     public MessageSearchIndex<Id> getMessageSearchIndex() {
         return index;
     }
-    
-    
+
+
     /**
      * Return the {@link MailboxEventDispatcher} used by thei {@link MailboxManager}
-     * 
+     *
      * @return dispatcher
      */
     public MailboxEventDispatcher<Id> getEventDispatcher() {
         return dispatcher;
     }
-    
+
     /**
      * Return the {@link MailboxSessionMapperFactory} used by this {@link MailboxManager}
-     * 
+     *
      * @return mailboxSessionMapperFactory
      */
     public MailboxSessionMapperFactory<Id> getMapperFactory() {
         return mailboxSessionMapperFactory;
     }
-    
+
     public MailboxPathLocker getLocker() {
         return locker;
     }
-    
+
     public MailboxACLResolver getAclResolver() {
         return aclResolver;
     }
@@ -199,22 +199,22 @@ public class StoreMailboxManager<Id> implements MailboxManager {
     public GroupMembershipResolver getGroupMembershipResolver() {
         return groupMembershipResolver;
     }
-    
+
     /**
      * Set the {@link AbstractDelegatingMailboxListener} to use with this {@link MailboxManager} instance. If none is set here a {@link HashMapDelegatingMailboxListener} instance will
      * be created lazy
-     * 
+     *
      * @param delegatingListener
      */
     public void setDelegatingMailboxListener(AbstractDelegatingMailboxListener delegatingListener) {
         this.delegatingListener = delegatingListener;
         dispatcher = new MailboxEventDispatcher<Id>(getDelegationListener());
     }
-    
+
     /**
      * Set the {@link MessageSearchIndex} which should be used by this {@link MailboxManager}. If none is given this implementation will use a {@link SimpleMessageSearchIndex}
      * by default
-     * 
+     *
      * @param index
      */
     public void setMessageSearchIndex(MessageSearchIndex<Id> index) {
@@ -222,24 +222,22 @@ public class StoreMailboxManager<Id> implements MailboxManager {
     }
 
     /**
-     * Generate an return the next uid validity 
-     * 
+     * Generate an return the next uid validity
+     *
      * @return uidValidity
      */
     protected int randomUidValidity() {
         return Math.abs(RANDOM.nextInt());
     }
-    
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#createSystemSession(java.lang.String, org.slf4j.Logger)
-     */
+
+    @Override
     public MailboxSession createSystemSession(String userName, Logger log) {
         return createSession(userName, null, log, SessionType.System);
     }
 
     /**
-     * Create Session 
-     * 
+     * Create Session
+     *
      * @param userName
      * @param log
      * @return session
@@ -250,23 +248,21 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
     /**
      * Generate and return the next id to use
-     * 
+     *
      * @return id
      */
     protected long randomId() {
         return idGenerator.nextId();
     }
-    
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#getDelimiter()
-     */
+
+    @Override
     public char getDelimiter() {
         return MailboxConstants.DEFAULT_DELIMITER;
     }
 
     /**
      * Log in the user with the given userid and password
-     * 
+     *
      * @param userid the username
      * @param passwd the password
      * @return success true if login success false otherwise
@@ -274,10 +270,8 @@ public class StoreMailboxManager<Id> implements MailboxManager {
     private boolean login(String userid, String passwd) {
         return authenticator.isAuthentic(userid, passwd);
     }
-    
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#login(java.lang.String, java.lang.String, org.slf4j.Logger)
-     */
+
+    @Override
     public MailboxSession login(String userid, String passwd, Logger log) throws BadCredentialsException, MailboxException {
         if (login(userid, passwd)) {
             return createSession(userid, passwd, log, SessionType.User);
@@ -285,7 +279,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
             throw new BadCredentialsException();
         }
     }
-    
+
     /**
      * Close the {@link MailboxSession} if not null
      */
@@ -294,11 +288,11 @@ public class StoreMailboxManager<Id> implements MailboxManager {
             session.close();
         }
     }
-  
+
     /**
      * Create a {@link MailboxManager} for the given Mailbox. By default this will return a {@link StoreMessageManager}. If
      * your implementation needs something different, just override this method
-     * 
+     *
      * @param mailbox
      * @param session
      * @return storeMailbox
@@ -309,9 +303,9 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
     /**
      * Create a Mailbox for the given mailbox path. This will by default return a {@link SimpleMailbox}.
-     * 
+     * <p/>
      * If you need to return something more special just override this method
-     * 
+     *
      * @param mailboxPath
      * @param session
      * @throws MailboxException
@@ -319,13 +313,11 @@ public class StoreMailboxManager<Id> implements MailboxManager {
     protected org.apache.james.mailbox.store.mail.model.Mailbox<Id> doCreateMailbox(MailboxPath mailboxPath, final MailboxSession session) throws MailboxException {
         return new SimpleMailbox<Id>(mailboxPath, randomUidValidity());
     }
-    
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#getMailbox(MailboxPath, MailboxSession)
-     */
+
+    @Override
     public org.apache.james.mailbox.MessageManager getMailbox(MailboxPath mailboxPath, MailboxSession session)
-    throws MailboxException {
-    	final MailboxMapper<Id> mapper = mailboxSessionMapperFactory.getMailboxMapper(session);
+            throws MailboxException {
+        final MailboxMapper<Id> mapper = mailboxSessionMapperFactory.getMailboxMapper(session);
         Mailbox<Id> mailboxRow = mapper.findMailboxByPath(mailboxPath);
 
         if (mailboxRow == null) {
@@ -334,18 +326,16 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
         } else {
             session.getLog().debug("Loaded mailbox " + mailboxPath);
-            
-            StoreMessageManager<Id>  m = createMessageManager(mailboxRow, session);
+
+            StoreMessageManager<Id> m = createMessageManager(mailboxRow, session);
             m.setFetchBatchSize(fetchBatchSize);
             return m;
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#createMailbox(MailboxPath, MailboxSession)
-     */
+    @Override
     public void createMailbox(MailboxPath mailboxPath, final MailboxSession mailboxSession)
-    throws MailboxException {
+            throws MailboxException {
         mailboxSession.getLog().debug("createMailbox " + mailboxPath);
         final int length = mailboxPath.getName().length();
         if (length == 0) {
@@ -373,7 +363,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
                                 }
 
                             });
-                            
+
                             // notify listeners
                             dispatcher.mailboxAdded(mailboxSession, m);
                         }
@@ -385,9 +375,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#deleteMailbox(MailboxPath, MailboxSession)
-     */
+    @Override
     public void deleteMailbox(final MailboxPath mailboxPath, final MailboxSession session) throws MailboxException {
         session.getLog().info("deleteMailbox " + mailboxPath);
         final MailboxMapper<Id> mapper = mailboxSessionMapperFactory.getMailboxMapper(session);
@@ -399,7 +387,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
                 if (mailbox == null) {
                     throw new MailboxNotFoundException("Mailbox not found");
                 }
-                
+
                 // We need to create a copy of the mailbox as maybe we can not refer to the real
                 // mailbox once we remove it 
                 SimpleMailbox<Id> m = new SimpleMailbox<Id>(mailbox);
@@ -413,9 +401,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#renameMailbox(MailboxPath, MailboxPath, MailboxSession)
-     */
+    @Override
     public void renameMailbox(final MailboxPath from, final MailboxPath to, final MailboxSession session) throws MailboxException {
         final Logger log = session.getLog();
         if (log.isDebugEnabled())
@@ -443,7 +429,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
                 // rename submailboxes
                 final MailboxPath children = new MailboxPath(MailboxConstants.USER_NAMESPACE, from.getUser(), from.getName() + getDelimiter() + "%");
                 locker.executeWithLock(session, children, new LockAwareExecution<Void>() {
-                    
+
                     public Void execute() throws MailboxException {
                         final List<Mailbox<Id>> subMailboxes = mapper.findMailboxWithPathLike(children);
                         for (Mailbox<Id> sub : subMailboxes) {
@@ -461,28 +447,21 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
                     }
                 });
-    
-               
-                
             }
-
         });
-
     }
 
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#copyMessages(MessageRange, MailboxPath, MailboxPath, MailboxSession)
-     */
+    @Override
     @SuppressWarnings("unchecked")
-	public List<MessageRange> copyMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException {
+    public List<MessageRange> copyMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException {
         StoreMessageManager<Id> toMailbox = (StoreMessageManager<Id>) getMailbox(to, session);
         StoreMessageManager<Id> fromMailbox = (StoreMessageManager<Id>) getMailbox(from, session);
-        
+
         if (copyBatchSize > 0) {
             List<MessageRange> copiedRanges = new ArrayList<MessageRange>();
             Iterator<MessageRange> ranges = set.split(copyBatchSize).iterator();
-            while(ranges.hasNext()) {
+            while (ranges.hasNext()) {
                 copiedRanges.addAll(fromMailbox.copyTo(ranges.next(), toMailbox, session));
             }
             return copiedRanges;
@@ -491,18 +470,16 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#moveMessages(MessageRange, MailboxPath, MailboxPath, MailboxSession)
-     */
+    @Override
     @SuppressWarnings("unchecked")
-	public List<MessageRange> moveMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException {
+    public List<MessageRange> moveMessages(MessageRange set, MailboxPath from, MailboxPath to, MailboxSession session) throws MailboxException {
         StoreMessageManager<Id> toMailbox = (StoreMessageManager<Id>) getMailbox(to, session);
         StoreMessageManager<Id> fromMailbox = (StoreMessageManager<Id>) getMailbox(from, session);
-        
+
         if (moveBatchSize > 0) {
             List<MessageRange> movedRanges = new ArrayList<MessageRange>();
             Iterator<MessageRange> ranges = set.split(moveBatchSize).iterator();
-            while(ranges.hasNext()) {
+            while (ranges.hasNext()) {
                 movedRanges.addAll(fromMailbox.copyTo(ranges.next(), toMailbox, session));
             }
             return movedRanges;
@@ -511,11 +488,9 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         }
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#search(org.apache.james.mailbox.model.MailboxQuery, org.apache.james.mailbox.MailboxSession)
-     */
+    @Override
     public List<MailboxMetaData> search(final MailboxQuery mailboxExpression, MailboxSession session)
-    throws MailboxException {
+            throws MailboxException {
         final char localWildcard = mailboxExpression.getLocalWildcard();
         final char freeWildcard = mailboxExpression.getFreeWildcard();
         final String baseName = mailboxExpression.getBase().getName();
@@ -526,19 +501,19 @@ public class StoreMailboxManager<Id> implements MailboxManager {
             baseLength = baseName.length();
         }
         final String combinedName = mailboxExpression.getCombinedName()
-                                    .replace(freeWildcard, SQL_WILDCARD_CHAR)
-                                    .replace(localWildcard, SQL_WILDCARD_CHAR);
+                .replace(freeWildcard, SQL_WILDCARD_CHAR)
+                .replace(localWildcard, SQL_WILDCARD_CHAR);
         final MailboxPath search = new MailboxPath(mailboxExpression.getBase(), combinedName);
 
         final MailboxMapper<Id> mapper = mailboxSessionMapperFactory.getMailboxMapper(session);
         final List<Mailbox<Id>> mailboxes = mapper.findMailboxWithPathLike(search);
         final List<MailboxMetaData> results = new ArrayList<MailboxMetaData>(mailboxes.size());
-        for (Mailbox<Id> mailbox: mailboxes) {
+        for (Mailbox<Id> mailbox : mailboxes) {
             final String name = mailbox.getName();
             if (name.startsWith(baseName)) {
                 final String match = name.substring(baseLength);
                 if (mailboxExpression.isExpressionMatch(match)) {
-                    final MailboxMetaData.Children inferiors; 
+                    final MailboxMetaData.Children inferiors;
                     if (mapper.hasChildren(mailbox, session.getPathDelimiter())) {
                         inferiors = MailboxMetaData.Children.HAS_CHILDREN;
                     } else {
@@ -553,9 +528,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         return results;
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#mailboxExists(MailboxPath, MailboxSession)
-     */
+    @Override
     public boolean mailboxExists(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
         try {
             final MailboxMapper<Id> mapper = mailboxSessionMapperFactory.getMailboxMapper(session);
@@ -567,33 +540,30 @@ public class StoreMailboxManager<Id> implements MailboxManager {
 
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#addListener(MailboxPath, MailboxListener, MailboxSession)
-     */
+    @Override
     public void addListener(MailboxPath path, MailboxListener listener, MailboxSession session) throws MailboxException {
         delegatingListener.addListener(path, listener, session);
     }
 
-     /**
+    /**
      * End processing of Request for session
      */
+    @Override
     public void endProcessingRequest(MailboxSession session) {
         if (mailboxSessionMapperFactory instanceof RequestAware) {
-            ((RequestAware)mailboxSessionMapperFactory).endProcessingRequest(session);
+            ((RequestAware) mailboxSessionMapperFactory).endProcessingRequest(session);
         }
     }
 
     /**
      * Do nothing. Sub classes should override this if needed
      */
+    @Override
     public void startProcessingRequest(MailboxSession session) {
         // do nothing
-        
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxManager#list(org.apache.james.mailbox.MailboxSession)
-     */
+    @Override
     public List<MailboxPath> list(MailboxSession session) throws MailboxException {
         List<MailboxPath> mList = new ArrayList<MailboxPath>();
         List<Mailbox<Id>> mailboxes = mailboxSessionMapperFactory.getMailboxMapper(session).list();
@@ -602,27 +572,22 @@ public class StoreMailboxManager<Id> implements MailboxManager {
             mList.add(new MailboxPath(m.getNamespace(), m.getUser(), m.getName()));
         }
         return Collections.unmodifiableList(mList);
-        
+
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxListenerSupport#addGlobalListener(org.apache.james.mailbox.MailboxListener, org.apache.james.mailbox.MailboxSession)
-     */
+    @Override
     public void addGlobalListener(MailboxListener listener, MailboxSession session) throws MailboxException {
         delegatingListener.addGlobalListener(listener, session);
     }
 
-    /**
-     * @see org.apache.james.mailbox.MailboxListenerSupport#removeListener(org.apache.james.mailbox.model.MailboxPath, org.apache.james.mailbox.MailboxListener, org.apache.james.mailbox.MailboxSession)
-     */
+    @Override
     public void removeListener(MailboxPath mailboxPath, MailboxListener listener, MailboxSession session) throws MailboxException {
         delegatingListener.removeListener(mailboxPath, listener, session);
-        
+
     }
 
     @Override
     public void removeGlobalListener(MailboxListener listener, MailboxSession session) throws MailboxException {
         delegatingListener.removeGlobalListener(listener, session);
-        
     }
 }
