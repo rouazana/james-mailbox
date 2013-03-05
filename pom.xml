@@ -17,18 +17,19 @@
     specific language governing permissions and limitations
     under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <artifactId>james-project</artifactId>
         <groupId>org.apache.james</groupId>
         <version>1.8.2</version>
-        <relativePath />
+        <relativePath/>
     </parent>
 
     <artifactId>apache-james-mailbox</artifactId>
-    <version>0.5</version>
+    <version>0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <repositories>
@@ -63,9 +64,9 @@
     </modules>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/james/mailbox/tags/apache-james-mailbox-0.5</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/james/mailbox/tags/apache-james-mailbox-0.5</developerConnection>
-        <url>http://svn.apache.org/viewcvs.cgi/james/mailbox/trunk/tags/apache-james-mailbox-0.5?root=Apache-SVN</url>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/james/mailbox/trunk</connection>
+        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/james/mailbox/trunk</developerConnection>
+        <url>http://svn.apache.org/viewcvs.cgi/james/mailbox/trunk?root=Apache-SVN</url>
     </scm>
     <issueManagement>
         <system>JIRA</system>
