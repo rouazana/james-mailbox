@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
 /**
@@ -1409,12 +1410,13 @@ public class SearchQuery implements Serializable {
     public static final class FlagCriterion extends Criterion {
         private static final long serialVersionUID = 1L;
 
-        private final Flag flag;
+        // Flags not Flag because Flags are serializable and Flag is not
+        private final Flags flag;        
         private final BooleanOperator operator;
 
         private FlagCriterion(final Flag flag, final BooleanOperator operator) {
             super();
-            this.flag = flag;
+            this.flag = new Flags(flag);
             this.operator = operator;
         }
 
@@ -1424,7 +1426,9 @@ public class SearchQuery implements Serializable {
          * @return the flag, not null
          */
         public Flag getFlag() {
-            return flag;
+           // safe because the Flags(Flag) does system flags, 
+           // and James code also constructs FlagCriterion only with system flags
+           return flag.getSystemFlags()[0];
         }
 
         /**
