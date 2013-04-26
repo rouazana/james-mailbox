@@ -40,16 +40,12 @@ public abstract class AbstractDelegatingMailboxListener implements MailboxListen
     public void event(Event event) {
         MailboxPath path = event.getMailboxPath();
         Map<MailboxPath, List<MailboxListener>> listeners = getListeners();
+        List<MailboxListener> mListeners = null;
         synchronized (listeners) {
-            List<MailboxListener> mListeners = listeners.get(path);
+            mListeners = listeners.get(path);
             if (mListeners != null && mListeners.isEmpty() == false) {
-                
-                int sz = mListeners.size();
-                for (int i = 0; i < sz; i++) {
-                    MailboxListener l = mListeners.get(i);
-                    l.event(event);
-                    
-                }
+             // take snapshot of the listeners list for later
+                mListeners = new ArrayList<MailboxListener>(mListeners);
                 
                 if (event instanceof MailboxDeletion) {
                     // remove listeners if the mailbox was deleted
@@ -63,17 +59,24 @@ public abstract class AbstractDelegatingMailboxListener implements MailboxListen
                     }
                 }
                 
-            }  
+            }
             
         }
-        
+        //outside the synchronized block against deadlocks from propagated events wanting to lock the listeners
+        if (mListeners != null) {
+            int sz = mListeners.size();
+            for (int i = 0; i < sz; i++) {
+                MailboxListener l = mListeners.get(i);
+                l.event(event);
+            }
+        }
         
         List<MailboxListener> globalListeners = getGlobalListeners();
         if (globalListeners != null) {
             synchronized (globalListeners) {
                 if (globalListeners.isEmpty() == false) {
                     List<MailboxListener> closedListener = new ArrayList<MailboxListener>();
-                    
+                    //TODO do not fire them inside synchronized block too?
                     int sz = globalListeners.size();
                     for (int i = 0; i < sz; i++) {
                         MailboxListener l = globalListeners.get(i);
