@@ -50,13 +50,14 @@
 
     <modules>
         <module>api</module>
-        <module>store</module>
-        <module>lucene</module>
-        <module>memory</module>
-        <module>jpa</module>
-        <module>jcr</module>
-        <module>maildir</module>
+        <module>caching</module>
         <module>hbase</module>
+        <module>jcr</module>
+        <module>jpa</module>
+        <module>lucene</module>
+        <module>maildir</module>
+        <module>memory</module>
+        <module>store</module>
         <module>spring</module>
         <module>tool</module>
         <module>zoo-seq-provider</module>

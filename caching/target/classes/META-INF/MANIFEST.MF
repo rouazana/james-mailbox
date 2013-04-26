@@ -1,0 +1,37 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1366981115083
+Build-Jdk: 1.6.0_33
+Built-By: eric
+Bundle-Description: Apache James Mailbox
+Bundle-DocURL: http://www.apache.org/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache James :: Mailbox :: Caching
+Bundle-SymbolicName: org.apache.james.apache-james-mailbox-caching
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 0.6.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.mailbox.caching;uses:="org.apache.james.mailb
+ ox.store.mail.model,org.apache.james.mailbox,org.apache.james.mailbox.e
+ xception,org.apache.james.mailbox.store.mail,org.apache.james.mailbox.m
+ odel,org.apache.james.mailbox.store.transaction,org.apache.james.mailbo
+ x.store.user,org.apache.james.mailbox.store,javax.mail";version="0.6.0.
+ SNAPSHOT",org.apache.mailbox.caching.guava;uses:="com.google.common.cac
+ he,org.apache.mailbox.caching,org.apache.james.mailbox.store.mail.model
+ ,org.apache.james.mailbox.exception,org.apache.james.mailbox.store.mail
+ ,org.apache.james.mailbox.model";version="0.6.0.SNAPSHOT"
+Implementation-Title: Apache James :: Mailbox :: Caching
+Implementation-Vendor: The Apache Software Foundation
+Implementation-Vendor-Id: org.apache.james
+Implementation-Version: 0.6-SNAPSHOT
+Import-Package: com.google.common.cache;version="[13.0,14)",javax.mail,o
+ rg.apache.james.mailbox,org.apache.james.mailbox.exception,org.apache.j
+ ames.mailbox.model,org.apache.james.mailbox.store;version="[0.6,1)",org
+ .apache.james.mailbox.store.mail;version="[0.6,1)",org.apache.james.mai
+ lbox.store.mail.model;version="[0.6,1)",org.apache.james.mailbox.store.
+ transaction;version="[0.6,1)",org.apache.james.mailbox.store.user;versi
+ on="[0.6,1)"
+Specification-Title: Apache James :: Mailbox :: Caching
+Specification-Vendor: The Apache Software Foundation
+Specification-Version: 0.6-SNAPSHOT
+Tool: Bnd-1.50.0

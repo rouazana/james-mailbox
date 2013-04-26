@@ -41,19 +41,19 @@ public class MaildirMailboxSessionMapperFactory extends
     
     
     @Override
-    protected MailboxMapper<Integer> createMailboxMapper(MailboxSession session)
+    public MailboxMapper<Integer> createMailboxMapper(MailboxSession session)
             throws MailboxException {
         return new MaildirMailboxMapper(store, session);
     }
 
     @Override
-    protected MessageMapper<Integer> createMessageMapper(MailboxSession session)
+    public MessageMapper<Integer> createMessageMapper(MailboxSession session)
             throws MailboxException {
         return new MaildirMessageMapper(session, store);
     }
 
     @Override
-    protected SubscriptionMapper createSubscriptionMapper(MailboxSession session)
+    public SubscriptionMapper createSubscriptionMapper(MailboxSession session)
             throws SubscriptionException {
         return new MaildirSubscriptionMapper(store);
     }

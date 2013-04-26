@@ -114,17 +114,17 @@ public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactor
     }
 
     @Override
-    protected MessageMapper<UUID> createMessageMapper(MailboxSession session) throws MailboxException {
+    public MessageMapper<UUID> createMessageMapper(MailboxSession session) throws MailboxException {
         return new HBaseMessageMapper(session, uidProvider, modSeqProvider, this.conf);
     }
 
     @Override
-    protected MailboxMapper<UUID> createMailboxMapper(MailboxSession session) throws MailboxException {
+    public MailboxMapper<UUID> createMailboxMapper(MailboxSession session) throws MailboxException {
         return new HBaseMailboxMapper(this.conf);
     }
 
     @Override
-    protected SubscriptionMapper createSubscriptionMapper(MailboxSession session) throws SubscriptionException {
+    public SubscriptionMapper createSubscriptionMapper(MailboxSession session) throws SubscriptionException {
         return new HBaseSubscriptionMapper(this.conf);
     }
 

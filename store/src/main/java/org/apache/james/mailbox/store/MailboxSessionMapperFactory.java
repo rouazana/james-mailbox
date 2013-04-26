@@ -62,7 +62,7 @@ public abstract class MailboxSessionMapperFactory <Id> implements RequestAware, 
      * @return messageMapper
      * @throws MailboxException
      */
-    protected abstract MessageMapper<Id> createMessageMapper(MailboxSession session) throws MailboxException;
+    public abstract MessageMapper<Id> createMessageMapper(MailboxSession session) throws MailboxException;
 
 
     /**
@@ -85,7 +85,7 @@ public abstract class MailboxSessionMapperFactory <Id> implements RequestAware, 
      * @return mailboxMapper
      * @throws MailboxException
      */
-    protected abstract MailboxMapper<Id> createMailboxMapper(MailboxSession session) throws MailboxException;
+    public abstract MailboxMapper<Id> createMailboxMapper(MailboxSession session) throws MailboxException;
 
     /**
      * Create a {@link SubscriptionMapper} instance or return the one which exists for the {@link MailboxSession} already
@@ -108,7 +108,7 @@ public abstract class MailboxSessionMapperFactory <Id> implements RequestAware, 
      * @return subscriptionMapper
      * @throws SubscriptionException
      */
-    protected abstract SubscriptionMapper createSubscriptionMapper(MailboxSession session) throws SubscriptionException;
+    public abstract SubscriptionMapper createSubscriptionMapper(MailboxSession session) throws SubscriptionException;
 
     /**
      * Call endRequest on {@link Mapper} instances
