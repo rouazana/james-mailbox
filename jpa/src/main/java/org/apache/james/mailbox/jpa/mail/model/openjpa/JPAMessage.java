@@ -50,7 +50,7 @@ public class JPAMessage extends AbstractJPAMessage {
 
 
     /** The value for the header field. Lazy loaded */
-    /** We use a max length to represent 1gb data. Thats prolly overkill, but who knows */
+    /** We use a max length to represent 10mb data. Thats prolly overkill, but who knows */
     @Basic(optional = false, fetch = FetchType.LAZY)
     @Column(name = "HEADER_BYTES", length = 10485760, nullable = false)
     @Lob private byte[] header;
