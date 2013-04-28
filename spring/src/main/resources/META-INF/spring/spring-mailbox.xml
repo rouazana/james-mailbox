@@ -27,7 +27,6 @@
      -->
 
     <import resource="classpath:META-INF/spring/mailbox-locker.xml"/>
-    <import resource="classpath:META-INF/spring/mailbox-authenticator.xml"/>
     <!-- TODO: fix dependency issues with lucene and JCR and re-enable -->
     <!--<import resource="classpath:META-INF/spring/mailbox-index-lucene.xml" />-->
     <import resource="classpath:META-INF/spring/mailbox-jpa.xml"/>
