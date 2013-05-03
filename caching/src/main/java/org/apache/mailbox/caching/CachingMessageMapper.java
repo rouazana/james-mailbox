@@ -9,12 +9,18 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
-import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
+/**
+ * A MessageMapper implementation that uses a MailboxMetadataCache to cache the information
+ * from the underlying MessageMapper
+ * 
+ * @param <Id>
+ */
 public class CachingMessageMapper<Id> implements MessageMapper<Id> {
+
 	
 	private MessageMapper<Id> underlying;
 	private MailboxMetadataCache<Id> cache;
@@ -24,15 +30,7 @@ public class CachingMessageMapper<Id> implements MessageMapper<Id> {
 		this.cache = cache;
 	}
 	
-    public CachingMessageMapper(MessageMapper<Id> createMessageMapper, MailboxByPathCache<Id> mailboxByPathCache) {
-        // TODO(eric) Auto-generated constructor stub
-    }
-
-    public CachingMessageMapper(MailboxMapper<Id> mailboxMapper, MailboxMetadataCache<Id> mailboxMetadataCache) {
-        // TODO(eric) Auto-generated constructor stub
-    }
-
-    @Override
+	@Override
 	public void endRequest() {
 		underlying.endRequest();
 	}

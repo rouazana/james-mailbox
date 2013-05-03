@@ -7,6 +7,12 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
+/**
+ * A MailboxMapper implementation that uses a MailboxByPathCache to cache the information
+ * from the underlying MailboxMapper
+ * 
+ * @param <Id>
+ */
 
 public class CachingMailboxMapper<Id> implements MailboxMapper<Id> {
 
@@ -36,7 +42,7 @@ public class CachingMailboxMapper<Id> implements MailboxMapper<Id> {
 
 	@Override
 	public void delete(Mailbox<Id> mailbox) throws MailboxException {
-		cache.invalidate(mailbox);
+		invalidate(mailbox);
 		underlying.delete(mailbox);
 	}
 
@@ -62,7 +68,7 @@ public class CachingMailboxMapper<Id> implements MailboxMapper<Id> {
 	public boolean hasChildren(Mailbox<Id> mailbox, char delimiter)
 			throws MailboxException, MailboxNotFoundException {
 		// TODO possible to meaningfully cache it?
-		return hasChildren(mailbox, delimiter);
+		return underlying.hasChildren(mailbox, delimiter);
 	}
 
 	@Override

@@ -9,12 +9,20 @@ import org.apache.mailbox.caching.MailboxByPathCache;
 
 import com.google.common.cache.Cache;
 
+/**
+ * Guava-based implementation of MailboxByPathCache.
+ * Note: for efficiency/simplicity reasons the cache key is MailboxPath.toString()
+ * That may help also make it compatible with other cache backends in the future.
+ *
+ * @param <Id>
+ */
 public class GuavaMailboxByPathCache<Id> extends AbstractGuavaCache implements MailboxByPathCache<Id> {
 	
 	private final Cache<String, Mailbox<Id>> findMailboxByPathCache = BUILDER.build();
 
 	private final MailboxByPathCacheWrapper wrapper;
 
+	
 	public GuavaMailboxByPathCache() {
 		this.wrapper = new MailboxByPathCacheWrapper(findMailboxByPathCache);
 	}

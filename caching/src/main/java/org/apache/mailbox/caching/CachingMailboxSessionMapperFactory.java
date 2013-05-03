@@ -8,6 +8,13 @@ import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.user.SubscriptionMapper;
 
+/**
+ * A MailboxSessionMapperFactory that uses the underlying MailboxSessionMapperFactory to provide
+ * caching variants of MessageMapper and MailboxMapper built around the MessageMapper and MailboxMapper
+ * provided by it
+ * 
+ * @param <Id>
+ */
 public class CachingMailboxSessionMapperFactory<Id> extends
 		MailboxSessionMapperFactory<Id> {
 
@@ -24,14 +31,13 @@ public class CachingMailboxSessionMapperFactory<Id> extends
 	@Override
 	public MessageMapper<Id> createMessageMapper(MailboxSession session)
 			throws MailboxException {
-		return new CachingMessageMapper<Id>(underlying.createMessageMapper(session), mailboxByPathCache);
+		return new CachingMessageMapper<Id>(underlying.createMessageMapper(session), mailboxMetadataCache);
 	}
 
 	@Override
 	public MailboxMapper<Id> createMailboxMapper(MailboxSession session)
 			throws MailboxException {
-	    //TODO(eric) this cast will not work!!! Temporary adding it to compile the project...
-		return (MailboxMapper<Id>) new CachingMessageMapper<Id>(underlying.createMailboxMapper(session), mailboxMetadataCache);
+		return new CachingMailboxMapper<Id>(underlying.createMailboxMapper(session), mailboxByPathCache);
 	}
 
 	@Override

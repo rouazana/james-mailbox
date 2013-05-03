@@ -6,6 +6,11 @@ import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
+/**
+ * Caches the MailboxPath -> Mailbox mapping
+ * 
+ * @param <Id>
+ */
 public interface MailboxByPathCache<Id> {
 
 	public abstract Mailbox<Id> findMailboxByPath(MailboxPath mailboxName,

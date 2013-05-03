@@ -3,7 +3,11 @@ package org.apache.mailbox.caching;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxListenerSupport;
 import org.apache.james.mailbox.exception.MailboxException;
-
+/**
+ * A MailboxListener that invalidates the configured caches in response to Events
+ * 
+ * @param <Id>
+ */
 public class CacheInvalidatingMailboxListener<Id> implements MailboxListener {
 
 	private MailboxByPathCache<Id> mailboxCacheByPath;
@@ -14,6 +18,13 @@ public class CacheInvalidatingMailboxListener<Id> implements MailboxListener {
 		this.mailboxMetadataCache = mailboxMetadataCache;
 	}
 	
+	/**
+	 * Used to register the CacheInvalidatingMailboxListener as a global listener 
+	 * into the main MailboxListener
+	 * 
+	 * @param listener
+	 * @throws MailboxException
+	 */
 	public void register(MailboxListenerSupport listener) throws MailboxException {
 		listener.addGlobalListener(this, null);
 	}
