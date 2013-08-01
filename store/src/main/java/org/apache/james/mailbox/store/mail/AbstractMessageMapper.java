@@ -34,13 +34,12 @@ import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.transaction.TransactionalMapper;
 
 /**
- * Abstract base class for {@link MessageMapper} implementation which already takes care of most uid / mod-seq handling
- * 
+ * Abstract base class for {@link MessageMapper} implementation
+ * which already takes care of most uid / mod-seq handling.
  *
  * @param <Id>
  */
 public abstract class AbstractMessageMapper<Id> extends TransactionalMapper implements MessageMapper<Id>{
-   
     protected final MailboxSession mailboxSession;
     private final UidProvider<Id> uidProvider;
     private final ModSeqProvider<Id> modSeqProvider;
@@ -50,7 +49,6 @@ public abstract class AbstractMessageMapper<Id> extends TransactionalMapper impl
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
     }
-    
     
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#getHighestModSeq(org.apache.james.mailbox.store.mail.model.Mailbox)
@@ -66,9 +64,6 @@ public abstract class AbstractMessageMapper<Id> extends TransactionalMapper impl
         return uidProvider.lastUid(mailboxSession, mailbox);
     }
     
-
-
-    
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#updateFlags(org.apache.james.mailbox.store.mail.model.Mailbox, javax.mail.Flags, boolean, boolean, org.apache.james.mailbox.model.MessageRange)
      */
@@ -77,7 +72,7 @@ public abstract class AbstractMessageMapper<Id> extends TransactionalMapper impl
         Iterator<Message<Id>> messages = findInMailbox(mailbox, set, FetchType.Metadata, -1);
         
         long modSeq = -1;
-        if (messages.hasNext() == false) {
+        if (messages.hasNext()) {
             // if a mailbox does not support mod-sequences the provider may be null
             if (modSeqProvider != null) {
                 modSeq = modSeqProvider.nextModSeq(mailboxSession, mailbox);
