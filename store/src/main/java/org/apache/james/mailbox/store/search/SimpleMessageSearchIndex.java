@@ -18,15 +18,16 @@
  ****************************************************************/
 package org.apache.james.mailbox.store.search;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.SearchQuery;
+import org.apache.james.mailbox.model.SearchQuery.ConjunctionCriterion;
 import org.apache.james.mailbox.model.SearchQuery.Criterion;
 import org.apache.james.mailbox.model.SearchQuery.NumericRange;
 import org.apache.james.mailbox.model.SearchQuery.UidCriterion;
@@ -52,66 +53,58 @@ public class SimpleMessageSearchIndex<Id> implements MessageSearchIndex<Id>{
         this.factory = factory;
     }
     
+    /**
+     * Walks down the query tree's conjunctions to find a UidCriterion
+     * @param crits - list of Criterion to search from
+     * @return
+     *      first UidCriterion found
+     *      null - if not found
+     */
+  	private static UidCriterion findConjugatedUidCriterion(List<Criterion> crits) {
+		for (Criterion crit : crits) {
+			if (crit instanceof UidCriterion) {
+				return (UidCriterion) crit;
+			} else if (crit instanceof ConjunctionCriterion) {
+				return findConjugatedUidCriterion(((ConjunctionCriterion) crit)
+						.getCriteria());
+			}
+		}
+		return null;
+	}
+    
     @Override
     public Iterator<Long> search(MailboxSession session, Mailbox<Id> mailbox, SearchQuery query) throws MailboxException {
-        List<Criterion> crits = query.getCriterias();
         MessageMapper<Id> mapper = factory.getMessageMapper(session);
-        
-        // Ok we only search for a range so we can optimize the call
-        if (crits.size() == 1  && crits.get(0) instanceof UidCriterion) {
-            final List<Long> uids = new ArrayList<Long>();
-            UidCriterion uidCrit = (UidCriterion) crits.get(0);
+
+        final SortedSet<Message<?>> hitSet = new TreeSet<Message<?>>();
+
+        UidCriterion uidCrit = findConjugatedUidCriterion(query.getCriterias());
+        if (uidCrit != null) {
+            // if there is a conjugated uid range criterion in the query tree we can optimize by
+            // only fetching this uid range
             NumericRange[] ranges = uidCrit.getOperator().getRange();
             for (int i = 0; i < ranges.length; i++) {
                 NumericRange r = ranges[i];
-                Iterator<Message<Id>> messages = mapper.findInMailbox(mailbox, MessageRange.range(r.getLowValue(), r.getHighValue()), FetchType.Metadata, -1);
-                
-                while(messages.hasNext()) {
-                    long uid = messages.next().getUid();
-                    if (uids.contains(uid) == false) {
-                        uids.add(uid);
-                    }
+                Iterator<Message<Id>> it = mapper.findInMailbox(mailbox, MessageRange.range(r.getLowValue(), r.getHighValue()), FetchType.Metadata, -1);
+                while(it.hasNext()) {
+                	hitSet.add(it.next());
                 }
             }
-            Collections.sort(uids);
-            return uids.iterator();
-            
-           
         } else {
-            
-            final List<Message<Id>> hits = new ArrayList<Message<Id>>();
-
+        	// we have to fetch all messages
             Iterator<Message<Id>> messages = mapper.findInMailbox(mailbox, MessageRange.all(), FetchType.Full, -1);
             while(messages.hasNext()) {
             	Message<Id> m = messages.next();
-                if (hits.contains(m) == false) {
-                    hits.add(m);
-                }
-            }
-            Collections.sort(hits);
-            
-            Iterator<Message<?>> it = new Iterator<Message<?>>() {
-                final Iterator<Message<Id>> it = hits.iterator();
-                public boolean hasNext() {
-                    return it.hasNext();
-                }
-
-                public Message<?> next() {
-                    return it.next();
-                }
-
-                public void remove() {
-                    it.remove();
-                }
-                
-            };
-            
-            if (session == null) {
-                return new MessageSearches(it, query).iterator();
-            } else {
-                return new MessageSearches(it, query, session.getLog()).iterator();
+            	hitSet.add(m);
             }
         }
+        
+        // MessageSearches does the filtering for us
+        if (session == null) {
+			return new MessageSearches(hitSet.iterator(), query).iterator();
+		} else {
+			return new MessageSearches(hitSet.iterator(), query, session.getLog()).iterator();
+		}
     }
 
 }
