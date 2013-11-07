@@ -21,7 +21,8 @@ public abstract class GuavaCacheWrapper<Key, Value, Underlying, KeyRepresentatio
 			return value;
 		else {
 			value = load(key, underlying);
-			cache.put(getKeyRepresentation(key), value);
+			if (value != null)
+				cache.put(getKeyRepresentation(key), value);
 			return value;
 		}
 
