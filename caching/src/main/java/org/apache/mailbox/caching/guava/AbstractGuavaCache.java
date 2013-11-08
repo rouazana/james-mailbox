@@ -10,6 +10,7 @@ public class AbstractGuavaCache {
 	protected static final CacheBuilder<Object, Object> BUILDER = 
 			CacheBuilder.newBuilder()			
 			.maximumSize(100000)
+			.recordStats()
 			.expireAfterWrite(15, TimeUnit.MINUTES);
 
 }
