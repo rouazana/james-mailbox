@@ -1,9 +1,9 @@
-package org.apache.mailbox.caching.guava;
+package org.apache.james.mailbox.caching.guava;
 
+import org.apache.james.mailbox.caching.MailboxMetadataCache;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.apache.mailbox.caching.MailboxMetadataCache;
 
 import com.google.common.cache.Cache;
 /**

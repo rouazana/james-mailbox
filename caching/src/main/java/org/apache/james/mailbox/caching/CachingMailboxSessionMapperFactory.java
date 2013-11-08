@@ -1,4 +1,4 @@
-package org.apache.mailbox.caching;
+package org.apache.james.mailbox.caching;
 
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;

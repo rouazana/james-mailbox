@@ -1,4 +1,4 @@
-package org.apache.mailbox.caching.guava;
+package org.apache.james.mailbox.caching.guava;
 
 import java.util.concurrent.TimeUnit;
 

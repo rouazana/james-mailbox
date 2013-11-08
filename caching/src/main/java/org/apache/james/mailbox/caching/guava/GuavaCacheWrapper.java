@@ -1,6 +1,6 @@
-package org.apache.mailbox.caching.guava;
+package org.apache.james.mailbox.caching.guava;
 
-import org.apache.mailbox.caching.CacheLoaderFromUnderlying;
+import org.apache.james.mailbox.caching.CacheLoaderFromUnderlying;
 
 import com.google.common.cache.Cache;
 
