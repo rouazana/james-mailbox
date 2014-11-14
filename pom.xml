@@ -122,6 +122,7 @@
         <cassandra-driver-core.version>2.0.1</cassandra-driver-core.version>
         <cassandra-unit.version>2.0.2.1</cassandra-unit.version>
         <assertj.version>2.0.0</assertj.version>
+        <jackson-databinding.version>2.3.3</jackson-databinding.version>
     </properties>
 
     <dependencyManagement>
@@ -362,6 +363,11 @@
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils-core</artifactId>
                 <version>${commons-beanutils-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-databinding.version}</version>
             </dependency>
             <!--
                 END Commons

@@ -27,6 +27,7 @@ import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.model.SimpleMailboxACL;
 import org.apache.james.mailbox.store.Authenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
@@ -46,7 +47,9 @@ public class CassandraMailboxManager extends StoreMailboxManager<UUID> {
 
     @Override
     protected Mailbox<UUID> doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
-        return new SimpleMailbox<UUID>(mailboxPath, randomUidValidity());
+        SimpleMailbox<UUID> cassandraMailbox = new SimpleMailbox<>(mailboxPath, randomUidValidity());
+        cassandraMailbox.setACL(SimpleMailboxACL.EMPTY);
+        return cassandraMailbox;
     }
 
     @Override
