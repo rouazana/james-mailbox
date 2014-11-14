@@ -33,12 +33,11 @@ import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.datastax.driver.core.Session;
 
 /**
  * CassandraMailboxMapper unit tests.
@@ -47,26 +46,29 @@ import com.datastax.driver.core.Session;
 public class CassandraMailboxMapperTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraMailboxMapperTest.class);
-    public static final CassandraClusterSingleton CLUSTER = CassandraClusterSingleton.build();
+    public static final CassandraClusterSingleton CASSANDRA = CassandraClusterSingleton.build();
     private static CassandraMailboxMapper mapper;
     private static List<SimpleMailbox<UUID>> mailboxList;
     private static List<MailboxPath> pathsList;
     private static final int NAMESPACES = 5;
     private static final int USERS = 5;
     private static final int MAILBOX_NO = 5;
+    private static final int MAX_RETRY = 100;
     private static final char SEPARATOR = '%';
-    private Session session;
 
     @Before
     public void setUp() throws Exception {
-        CLUSTER.ensureAllTables();
-        CLUSTER.clearAllTables();
-        session = CLUSTER.getConf();
+        CASSANDRA.ensureAllTables();
         fillMailboxList();
-        mapper = new CassandraMailboxMapper(session);
+        mapper = new CassandraMailboxMapper(CASSANDRA.getConf(), MAX_RETRY);
         for (SimpleMailbox<UUID> mailbox : mailboxList) {
             mapper.save(mailbox);
         }
+    }
+
+    @After
+    public void cleanUp() {
+        CASSANDRA.clearAllTables();
     }
 
     /**
@@ -119,7 +121,7 @@ public class CassandraMailboxMapperTest {
             if (i % 2 == 0) {
                 newPath.setUser(null);
             }
-            addMailbox(new SimpleMailbox<UUID>(newPath, 1234));
+            addMailbox(new SimpleMailbox<>(newPath, 1234));
         }
         result = mapper.findMailboxWithPathLike(path);
         assertEquals(end - start + 1, result.size());
@@ -193,7 +195,7 @@ public class CassandraMailboxMapperTest {
         LOG.info("hasChildren");
         String oldName;
         for (MailboxPath path : pathsList) {
-            final SimpleMailbox<UUID> mailbox = new SimpleMailbox<UUID>(path, 12455);
+            final SimpleMailbox<UUID> mailbox = new SimpleMailbox<>(path, 12455);
             oldName = mailbox.getName();
             if (path.getUser().equals("user3")) {
                 mailbox.setName("test");
@@ -210,8 +212,8 @@ public class CassandraMailboxMapperTest {
     }
 
     private static void fillMailboxList() {
-        mailboxList = new ArrayList<SimpleMailbox<UUID>>();
-        pathsList = new ArrayList<MailboxPath>();
+        mailboxList = new ArrayList<>();
+        pathsList = new ArrayList<>();
         MailboxPath path;
         String name;
         for (int i = 0; i < NAMESPACES; i++) {
@@ -224,7 +226,7 @@ public class CassandraMailboxMapperTest {
                     }
                     path = new MailboxPath("namespace" + i, "user" + j, name);
                     pathsList.add(path);
-                    mailboxList.add(new SimpleMailbox<UUID>(path, 13));
+                    mailboxList.add(new SimpleMailbox<>(path, 13));
                 }
             }
         }

@@ -23,8 +23,6 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datastax.driver.core.Session;
-
 /**
  * Class that will creates a single instance of Cassandra session.
  */
@@ -40,7 +38,7 @@ public final class CassandraClusterSingleton {
 
     /**
      * Builds a MiniCluster instance.
-     * 
+     *
      * @return the {@link CassandraClusterSingleton} instance
      * @throws RuntimeException
      */
@@ -66,16 +64,16 @@ public final class CassandraClusterSingleton {
 
     /**
      * Return a configuration for the runnning MiniCluster.
-     * 
+     *
      * @return
      */
-    public Session getConf() {
+    public CassandraSession getConf() {
         return session;
     }
 
     /**
      * Create a specific table.
-     * 
+     *
      * @param tableName
      *            the table name
      */
@@ -94,6 +92,14 @@ public final class CassandraClusterSingleton {
                     + "flagVersion bigint,"+ "PRIMARY KEY (mailboxId, uid)" + ");");
         } else if (tableName.equals("subscription")) {
             session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".subscription (" + "user text," + "mailbox text," + "PRIMARY KEY (mailbox, user)" + ");");
+        } else if (tableName.equals("quota")) {
+            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".quota ("
+                    + "user text PRIMARY KEY,"
+                    + "size_quota counter,"
+                    + "count_quota counter"
+                    + ");");
+        }  else if (tableName.equals("acl")) {
+            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".acl (id uuid PRIMARY KEY, acl text, version bigint);");
         } else {
             throw new NotImplementedException("We don't support the class " + tableName);
         }
@@ -107,6 +113,7 @@ public final class CassandraClusterSingleton {
         ensureTable("mailboxCounters");
         ensureTable("message");
         ensureTable("subscription");
+        ensureTable("acl");
     }
 
     /**
@@ -126,6 +133,7 @@ public final class CassandraClusterSingleton {
         clearTable("mailboxCounters");
         clearTable("message");
         clearTable("subscription");
+        clearTable("acl");
     }
 
 }
