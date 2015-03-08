@@ -480,7 +480,7 @@ public class StoreMailboxManager<Id> implements MailboxManager {
             List<MessageRange> movedRanges = new ArrayList<MessageRange>();
             Iterator<MessageRange> ranges = set.split(moveBatchSize).iterator();
             while (ranges.hasNext()) {
-                movedRanges.addAll(fromMailbox.copyTo(ranges.next(), toMailbox, session));
+                movedRanges.addAll(fromMailbox.moveTo(ranges.next(), toMailbox, session));
             }
             return movedRanges;
         } else {
