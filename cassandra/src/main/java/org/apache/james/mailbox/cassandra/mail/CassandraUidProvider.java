@@ -19,10 +19,11 @@
 
 package org.apache.james.mailbox.cassandra.mail;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.MAILBOX_ID;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.NEXT_UID;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.TABLE_NAME;
@@ -38,24 +39,40 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 
 public class CassandraUidProvider implements UidProvider<UUID> {
+    public final static int DEFAULT_MAX_RETRY = 100000;
+
     private Session session;
     private final int applied = 0;
+    private int maxRetry;
+
+    public CassandraUidProvider(Session session, int maxRetry) {
+        this.session = session;
+        this.maxRetry = maxRetry;
+    }
 
     public CassandraUidProvider(Session session) {
-        this.session = session;
+        this(session, DEFAULT_MAX_RETRY);
     }
 
     @Override
     public long nextUid(MailboxSession mailboxSession, Mailbox<UUID> mailbox) throws MailboxException {
-        ResultSet resultat = null;
         long lastUid = lastUid(mailboxSession, mailbox);
         if (lastUid == 0) {
-            resultat = session.execute(update(TABLE_NAME).with(set(NEXT_UID, ++lastUid)).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
-        } else {
-            do {
-                lastUid = lastUid(mailboxSession, mailbox);
-                resultat = session.execute(update(TABLE_NAME).onlyIf(eq(NEXT_UID, lastUid)).with(set(NEXT_UID, ++lastUid)).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
-            } while (!resultat.one().getBool(applied));
+            ResultSet result = session.execute(insertInto(TABLE_NAME).value(NEXT_UID, ++lastUid).value(MAILBOX_ID, mailbox.getMailboxId()).ifNotExists());
+            if(result.one().getBool(applied)) {
+                return lastUid;
+            }
+        }
+        int tries = 0;
+        boolean isApplied;
+        do {
+            tries++;
+            lastUid = lastUid(mailboxSession, mailbox);
+            ResultSet result = session.execute(update(TABLE_NAME).onlyIf(eq(NEXT_UID, lastUid)).with(set(NEXT_UID, ++lastUid)).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
+            isApplied = result.one().getBool(applied);
+        } while (! isApplied && tries < maxRetry);
+        if( ! isApplied ) {
+            throw new MailboxException("Can not obtain rights to manage UID");
         }
         return lastUid;
     }
