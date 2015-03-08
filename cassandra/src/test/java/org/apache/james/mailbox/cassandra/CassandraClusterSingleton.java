@@ -91,7 +91,7 @@ public final class CassandraClusterSingleton {
         } else if (tableName.equals("message")) {
             session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".message (" + "mailboxId UUID," + "uid bigint," + "internalDate timestamp," + "bodyStartOctet int," + "content blob," + "modSeq bigint," + "mediaType text," + "subType text," + "fullContentOctets int,"
                     + "bodyOctets int," + "textualLineCount bigint," + "bodyContent blob," + "headerContent blob," + "flagAnswered boolean," + "flagDeleted boolean," + "flagDraft boolean," + "flagRecent boolean," + "flagSeen boolean," + "flagFlagged boolean," + "flagUser boolean,"
-                    + "PRIMARY KEY (mailboxId, uid)" + ");");
+                    + "flagVersion bigint,"+ "PRIMARY KEY (mailboxId, uid)" + ");");
         } else if (tableName.equals("subscription")) {
             session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".subscription (" + "user text," + "mailbox text," + "PRIMARY KEY (mailbox, user)" + ");");
         } else {

@@ -19,9 +19,12 @@
 package org.apache.james.mailbox.cassandra.mail;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -32,8 +35,11 @@ import javax.mail.util.SharedByteArrayInputStream;
 
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
+import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.model.MessageRange;
+import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
@@ -136,6 +142,69 @@ public class CassandraMessageMapperTest {
         testAdd();
         testGetLastUid();
         testGetHighestModSeq();
+        testMessageUpdateReplace();
+        testMessageUpdateAddition();
+    }
+
+    /**
+     * Test message flag replacement
+     */
+    private void testMessageUpdateReplace() throws MailboxException {
+        LOG.info("message update : replace flags");
+        Flags flags = new Flags();
+        flags.add(Flags.Flag.ANSWERED);
+        flags.add(Flags.Flag.DRAFT);
+        messageMapper.updateFlags(MBOXES.get(1), flags, true, true, MessageRange.all());
+        Iterator<Message<UUID>> messageIterator = messageMapper.findInMailbox(MBOXES.get(1), MessageRange.all(), MessageMapper.FetchType.Full, 100);
+        while(messageIterator.hasNext()) {
+            Message<UUID> message = messageIterator.next();
+            assertTrue(message.isAnswered());
+            assertTrue(message.isDraft());
+            assertFalse(message.isDeleted());
+            assertFalse(message.isRecent());
+            assertFalse(message.isSeen());
+            assertFalse(message.isFlagged());
+        }
+    }
+
+    /**
+     * Test message flag set to true
+     */
+    private void testMessageUpdateAddition() throws MailboxException {
+        LOG.info("message update : flag addition");
+        Flags flags = new Flags();
+        flags.add(Flags.Flag.FLAGGED);
+        messageMapper.updateFlags(MBOXES.get(1), flags, true, false, MessageRange.all());
+        Iterator<Message<UUID>> messageIterator = messageMapper.findInMailbox(MBOXES.get(1), MessageRange.all(), MessageMapper.FetchType.Full, 100);
+        while(messageIterator.hasNext()) {
+            Message<UUID> message = messageIterator.next();
+            assertTrue(message.isAnswered());
+            assertTrue(message.isDraft());
+            assertFalse(message.isDeleted());
+            assertFalse(message.isRecent());
+            assertFalse(message.isSeen());
+            assertTrue(message.isFlagged());
+        }
+    }
+
+    /**
+     * Test message flag removal
+     */
+    private void testMessageUpdateRemove() throws MailboxException {
+        LOG.info("message update : flag removal");
+        Flags flags = new Flags();
+        flags.add(Flags.Flag.ANSWERED);
+        messageMapper.updateFlags(MBOXES.get(1), flags, false, false, MessageRange.all());
+        Iterator<Message<UUID>> messageIterator = messageMapper.findInMailbox(MBOXES.get(1), MessageRange.all(), MessageMapper.FetchType.Full, 100);
+        while(messageIterator.hasNext()) {
+            Message<UUID> message = messageIterator.next();
+            assertFalse(message.isAnswered());
+            assertTrue(message.isDraft());
+            assertFalse(message.isDeleted());
+            assertFalse(message.isRecent());
+            assertFalse(message.isSeen());
+            assertTrue(message.isFlagged());
+        }
     }
 
     /**
