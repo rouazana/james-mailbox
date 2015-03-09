@@ -18,7 +18,9 @@
  ****************************************************************/
 package org.apache.james.mailbox.cassandra;
 
+import com.google.common.base.Throwables;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.james.mailbox.cassandra.mail.utils.FunctionRunnerWithRetry;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,9 @@ public final class CassandraClusterSingleton {
     private final static int CLUSTER_PORT_TEST = 9142;
     private final static String KEYSPACE_NAME = "apache_james";
     private final static int DEFAULT_REPLICATION_FACTOR = 1;
+    
+    private static final long DELAY_BEFORE_RETRY_IN_MS = 200;
+    private static final int MAX_RETRY = 200;
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraClusterSingleton.class);
     private static CassandraClusterSingleton cluster = null;
@@ -51,14 +56,29 @@ public final class CassandraClusterSingleton {
     }
 
     private CassandraClusterSingleton() throws RuntimeException {
-       try {
+        try {
             EmbeddedCassandraServerHelper.startEmbeddedCassandra();
-            // Let Cassandra initialization before creating
-            // the session. Solve very fast computer tests run.
-            Thread.sleep(2000);
-            this.session = new CassandraSession(CLUSTER_IP, CLUSTER_PORT_TEST, KEYSPACE_NAME, DEFAULT_REPLICATION_FACTOR);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            new FunctionRunnerWithRetry(MAX_RETRY).execute(
+                () -> {
+                    try {
+                        this.session = new CassandraSession(CLUSTER_IP, CLUSTER_PORT_TEST, KEYSPACE_NAME, DEFAULT_REPLICATION_FACTOR);
+                        return true;
+                    } catch (Exception exception) {
+                        sleep(DELAY_BEFORE_RETRY_IN_MS);
+                        return false;
+                    }
+                }
+            );
+        } catch(Exception exception) {
+            Throwables.propagate(exception);
+        }
+    }
+
+    private void sleep(long sleep_ms) {
+        try {
+            Thread.sleep(sleep_ms);
+        } catch(InterruptedException interruptedException) {
+            Throwables.propagate(interruptedException);
         }
     }
 
