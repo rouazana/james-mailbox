@@ -125,7 +125,9 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
         MaildirFolder folder = new MaildirFolder(mailboxFile.getAbsolutePath(), mailboxPath, locker);
         folder.setMessageNameStrictParse(isMessageNameStrictParse());
         try {
-            return new MaildirMailbox<Integer>(session, mailboxPath, folder);
+            Mailbox<Integer> loadedMailbox = new MaildirMailbox<Integer>(session, mailboxPath, folder);
+            loadedMailbox.setACL(folder.getACL(session));
+            return loadedMailbox;
         } catch (IOException e) {
             throw new MailboxException("Unable to load Mailbox " + mailboxPath, e);
         }
