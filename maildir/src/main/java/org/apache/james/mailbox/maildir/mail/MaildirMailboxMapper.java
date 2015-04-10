@@ -112,7 +112,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
     public List<Mailbox<Integer>> findMailboxWithPathLike(MailboxPath mailboxPath)
             throws MailboxException {
         final Pattern searchPattern = Pattern.compile("[" + MaildirStore.maildirDelimiter + "]"
-            + mailboxPath.getName().replace(".", "\\.").replace(MaildirStore.WILDCARD, ".*"));
+                + mailboxPath.getName().replace(".", "\\.").replace(MaildirStore.WILDCARD, ".*"));
         FilenameFilter filter = MaildirMessageName.createRegexFilter(searchPattern);
         File root = maildirStore.getMailboxRootForUser(mailboxPath.getUser());
         File[] folders = root.listFiles(filter);
@@ -137,7 +137,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
     public boolean hasChildren(Mailbox<Integer> mailbox, char delimiter) throws MailboxException, MailboxNotFoundException {
         String searchString = mailbox.getName() + MaildirStore.maildirDelimiter + MaildirStore.WILDCARD;
         List<Mailbox<Integer>> mailboxes = findMailboxWithPathLike(
-            new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), searchString));
+                new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), searchString));
         return (mailboxes.size() > 0);
     }
 
