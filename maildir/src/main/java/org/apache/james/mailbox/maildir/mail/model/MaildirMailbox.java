@@ -20,22 +20,4 @@ public class MaildirMailbox<Id> extends SimpleMailbox<Id> {
         this.session = session;
     }
 
-    @Override
-    public MailboxACL getACL() {
-        try {
-            return folder.getACL(session);
-        } catch (MailboxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void setACL(MailboxACL acl) {
-        try {
-            folder.setACL(session, acl);
-        } catch (MailboxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 }

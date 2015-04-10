@@ -34,6 +34,7 @@ import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.maildir.MaildirFolder;
 import org.apache.james.mailbox.maildir.MaildirMessageName;
 import org.apache.james.mailbox.maildir.MaildirStore;
+import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
@@ -111,7 +112,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
     public List<Mailbox<Integer>> findMailboxWithPathLike(MailboxPath mailboxPath)
             throws MailboxException {
         final Pattern searchPattern = Pattern.compile("[" + MaildirStore.maildirDelimiter + "]"
-                + mailboxPath.getName().replace(".", "\\.").replace(MaildirStore.WILDCARD, ".*"));
+            + mailboxPath.getName().replace(".", "\\.").replace(MaildirStore.WILDCARD, ".*"));
         FilenameFilter filter = MaildirMessageName.createRegexFilter(searchPattern);
         File root = maildirStore.getMailboxRootForUser(mailboxPath.getUser());
         File[] folders = root.listFiles(filter);
@@ -136,7 +137,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
     public boolean hasChildren(Mailbox<Integer> mailbox, char delimiter) throws MailboxException, MailboxNotFoundException {
         String searchString = mailbox.getName() + MaildirStore.maildirDelimiter + MaildirStore.WILDCARD;
         List<Mailbox<Integer>> mailboxes = findMailboxWithPathLike(
-                new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), searchString));
+            new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), searchString));
         return (mailboxes.size() > 0);
     }
 
@@ -193,6 +194,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                                 new IOException("Could not rename folder " + originalFolder));
                 }
             }
+            folder.setACL(session, mailbox.getACL());
         } catch (MailboxNotFoundException e) {
             // it cannot be found and is thus new
             MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
@@ -214,6 +216,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                 throw new MailboxException("Failed to save Mailbox " + mailbox, ioe);
 
             }
+            folder.setACL(session, mailbox.getACL());
         }
         
     }
@@ -320,4 +323,11 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
         
     }
 
+    @Override
+    public void updateACL(Mailbox<Integer> mailbox, MailboxACL.MailboxACLCommand mailboxACLCommand) throws MailboxException {
+        MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
+        MailboxACL newACL = mailbox.getACL().apply(mailboxACLCommand);
+        folder.setACL(session, newACL);
+        mailbox.setACL(newACL);
+    }
 }
