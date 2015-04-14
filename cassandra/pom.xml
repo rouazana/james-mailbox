@@ -31,11 +31,6 @@
     <description>Apache James Mailbox implementation over Cassandra</description>
     <name>Apache James :: Mailbox :: Cassandra</name>
 
-    <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>${javax.mail.groupId}</groupId>
@@ -209,6 +204,14 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>1.8</source>
+                            <target>1.8</target>
                         </configuration>
                     </plugin>
                 </plugins>
