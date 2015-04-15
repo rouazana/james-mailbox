@@ -169,4 +169,37 @@ public class UpdatedFlags {
             return false;
         }
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof UpdatedFlags)) {
+            return false;
+        }
+
+        UpdatedFlags that = (UpdatedFlags) other;
+
+        if (uid != that.uid) {
+            return false;
+        }
+        if (modSeq != that.modSeq) {
+            return false;
+        }
+        if (oldFlags != null ? !oldFlags.equals(that.oldFlags) : that.oldFlags != null) {
+            return false;
+        }
+        return !(newFlags != null ? !newFlags.equals(that.newFlags) : that.newFlags != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (uid ^ (uid >>> 32));
+        result = 31 * result + (oldFlags != null ? oldFlags.hashCode() : 0);
+        result = 31 * result + (newFlags != null ? newFlags.hashCode() : 0);
+        result = 31 * result + (int) (modSeq ^ (modSeq >>> 32));
+        return result;
+    }
 }
