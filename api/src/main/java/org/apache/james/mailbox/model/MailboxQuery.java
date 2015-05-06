@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox.model;
 
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 
@@ -67,9 +68,7 @@ public final class MailboxQuery {
             this.expression = expression;
         }
         this.pathDelimiter = pathDelimiter;
-
-        // Compile some pattern which is used later
-        pattern = Pattern.compile(this.expression.replaceAll("\\" + pathDelimiter ,"\\\\" + pathDelimiter).replaceAll("\\*", "\\.\\*").replaceAll("\\%", "[^\\" + pathDelimiter  + "]*"));
+        pattern = constructEscapedRegex();
     }
 
     /**
@@ -187,6 +186,27 @@ public final class MailboxQuery {
     public String toString() {
         final String TAB = " ";
         return "MailboxExpression [ " + "base = " + this.base + TAB + "expression = " + this.expression + TAB + "freeWildcard = " + this.getFreeWildcard() + TAB + "localWildcard = " + this.getLocalWildcard() + TAB + " ]";
+    }
+
+
+    private Pattern constructEscapedRegex() {
+        StringBuilder stringBuilder = new StringBuilder();
+        StringTokenizer tokenizer = new StringTokenizer(expression, "*%", true);
+        while (tokenizer.hasMoreTokens()) {
+            stringBuilder.append(getRegexPartAssociatedWithToken(tokenizer));
+        }
+        return Pattern.compile(stringBuilder.toString());
+    }
+
+    private String getRegexPartAssociatedWithToken(StringTokenizer tokenizer) {
+        String token = tokenizer.nextToken();
+        if (token.equals("*")) {
+            return ".*";
+        } else if (token.equals("%")) {
+            return "[^" + pathDelimiter + "]*";
+        } else {
+            return Pattern.quote(token);
+        }
     }
 
 }
