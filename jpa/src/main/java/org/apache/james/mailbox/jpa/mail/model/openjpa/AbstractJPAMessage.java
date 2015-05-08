@@ -237,7 +237,7 @@ public abstract class AbstractJPAMessage extends AbstractMessage<Long> {
                 @ElementJoinColumn(name="MAIL_UID", referencedColumnName="MAIL_UID")})
     private List<JPAProperty> properties;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch=FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, fetch=FetchType.LAZY, orphanRemoval = true)
     @OrderBy("id")
     @ElementJoinColumns({@ElementJoinColumn(name="MAILBOX_ID", referencedColumnName="MAILBOX_ID"),
     @ElementJoinColumn(name="MAIL_UID", referencedColumnName="MAIL_UID")})
