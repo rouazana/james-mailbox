@@ -27,12 +27,11 @@ import java.util.UUID;
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.datastax.driver.core.Session;
 
 /**
  * Unit tests for UidProvider and ModSeqProvider.
@@ -41,8 +40,7 @@ import com.datastax.driver.core.Session;
 public class CassandraUidAndModSeqProviderTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraUidAndModSeqProviderTest.class);
-    private static final CassandraClusterSingleton CLUSTER = CassandraClusterSingleton.build();
-    private static Session session;
+    private static final CassandraClusterSingleton CASSANDRA = CassandraClusterSingleton.build();
     private static CassandraUidProvider uidProvider;
     private static CassandraModSeqProvider modSeqProvider;
     private static CassandraMailboxMapper mapper;
@@ -51,25 +49,29 @@ public class CassandraUidAndModSeqProviderTest {
     private static final int NAMESPACES = 5;
     private static final int USERS = 5;
     private static final int MAILBOX_NO = 5;
+    private static final int MAX_RETRY = 100;
     private static final char SEPARATOR = '%';
 
     @Before
     public void setUpClass() throws Exception {
-        CLUSTER.ensureAllTables();
-        CLUSTER.ensureAllTables();
-        session = CLUSTER.getConf();
-        uidProvider = new CassandraUidProvider(session);
-        modSeqProvider = new CassandraModSeqProvider(session);
-        mapper = new CassandraMailboxMapper(session);
+        CASSANDRA.ensureAllTables();
+        uidProvider = new CassandraUidProvider(CASSANDRA.getConf());
+        modSeqProvider = new CassandraModSeqProvider(CASSANDRA.getConf());
+        mapper = new CassandraMailboxMapper(CASSANDRA.getConf(), MAX_RETRY);
         fillMailboxList();
         for (SimpleMailbox<UUID> mailbox : mailboxList) {
             mapper.save(mailbox);
         }
     }
 
+    @After
+    public void cleanUp() {
+        CASSANDRA.clearAllTables();
+    }
+
     private static void fillMailboxList() {
-        mailboxList = new ArrayList<SimpleMailbox<UUID>>();
-        pathsList = new ArrayList<MailboxPath>();
+        mailboxList = new ArrayList<>();
+        pathsList = new ArrayList<>();
         MailboxPath path;
         String name;
         for (int i = 0; i < NAMESPACES; i++) {
@@ -82,7 +84,7 @@ public class CassandraUidAndModSeqProviderTest {
                     }
                     path = new MailboxPath("namespace" + i, "user" + j, name);
                     pathsList.add(path);
-                    mailboxList.add(new SimpleMailbox<UUID>(path, 13));
+                    mailboxList.add(new SimpleMailbox<>(path, 13));
                 }
             }
         }
@@ -97,7 +99,7 @@ public class CassandraUidAndModSeqProviderTest {
     public void testLastUid() throws Exception {
         LOG.info("lastUid");
         final MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
-        final SimpleMailbox<UUID> newBox = new SimpleMailbox<UUID>(path, 1234);
+        final SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
         mapper.save(newBox);
         mailboxList.add(newBox);
         pathsList.add(path);
@@ -133,7 +135,7 @@ public class CassandraUidAndModSeqProviderTest {
         LOG.info("highestModSeq");
         LOG.info("lastUid");
         MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
-        SimpleMailbox<UUID> newBox = new SimpleMailbox<UUID>(path, 1234);
+        SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
         mapper.save(newBox);
         mailboxList.add(newBox);
         pathsList.add(path);

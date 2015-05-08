@@ -20,37 +20,19 @@
 
 package org.apache.james.mailbox.exception;
 
-import org.apache.james.mailbox.model.MailboxACL.MailboxACLRight;
+public class MalformedSoredACLException extends MailboxException {
 
-/**
- * Thrown when the current system does not support the given right.
- * 
- */
-public class UnsupportedRightException extends MailboxSecurityException {
-
-    private static final char INVALID_RIGHT = 0;
-    private static final long serialVersionUID = 2959248897018370078L;
-    private char unsupportedRight = INVALID_RIGHT;
-
-    public UnsupportedRightException() {
-        super();
+    public MalformedSoredACLException() {
+        
     }
 
-    public UnsupportedRightException(char right) {
-        super("Unsupported right flag '"+ right +"'.");
-        this.unsupportedRight  = right;
-    }
-    
-    public UnsupportedRightException(MailboxACLRight unsupportedRight) {
-        this(unsupportedRight.getValue());
+    public MalformedSoredACLException(String message) {
+        super(message);
     }
 
-    public UnsupportedRightException(String msg, Exception cause) {
+    public MalformedSoredACLException(String msg, Exception cause) {
         super(msg, cause);
     }
 
-    public char getUnsupportedRight() {
-        return unsupportedRight;
-    }
-
+    
 }

@@ -39,14 +39,22 @@ import com.datastax.driver.core.Session;
  * 
  */
 public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFactory<UUID> {
+    private static final int DEFAULT_MAX_RETRY = 1000;
+
     private Session session;
     private CassandraUidProvider uidProvider;
     private ModSeqProvider<UUID> modSeqProvider;
+    private int maxRetry;
 
     public CassandraMailboxSessionMapperFactory(CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider, CassandraSession session) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.session = session;
+        this.maxRetry = DEFAULT_MAX_RETRY;
+    }
+
+    public void setMaxRetry(int maxRetry) {
+        this.maxRetry = maxRetry;
     }
 
     @Override
@@ -56,7 +64,7 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
 
     @Override
     public MailboxMapper<UUID> createMailboxMapper(MailboxSession mailboxSession) {
-        return new CassandraMailboxMapper(session);
+        return new CassandraMailboxMapper(session, maxRetry);
     }
 
     @Override
@@ -70,5 +78,9 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
 
     public UidProvider<UUID> getUidProvider() {
         return uidProvider;
+    }
+
+    Session getSession() {
+        return session;
     }
 }

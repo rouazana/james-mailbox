@@ -31,13 +31,15 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * A Cassandra session with the default keyspace
- * 
+ *
  */
 public class CassandraSession implements Session {
     private final static String DEFAULT_CLUSTER_IP = "localhost";
     private final static int DEFAULT_CLUSTER_PORT = 9042;
     private final static String DEFAULT_KEYSPACE_NAME = "apache_james";
     private final static int DEFAULT_REPLICATION_FACTOR = 1;
+    
+    public static final int LIGHTWEIGHT_TRANSACTION_APPLIED = 0;
 
     private Session session;
 
@@ -59,6 +61,7 @@ public class CassandraSession implements Session {
         session.execute("CREATE TABLE IF NOT EXISTS " + keyspace + ".message (" + "mailboxId UUID," + "uid bigint," + "internalDate timestamp," + "bodyStartOctet int," + "content blob," + "modSeq bigint," + "mediaType text," + "subType text," + "fullContentOctets int," + "bodyOctets int,"
                 + "textualLineCount bigint," + "bodyContent blob," + "headerContent blob," + "flagAnswered boolean," + "flagDeleted boolean," + "flagDraft boolean," + "flagRecent boolean," + "flagSeen boolean," + "flagFlagged boolean," + "flagUser boolean," + "flagVersion bigint," + "PRIMARY KEY (mailboxId, uid)" + ");");
         session.execute("CREATE TABLE IF NOT EXISTS " + keyspace + ".subscription (" + "user text," + "mailbox text," + "PRIMARY KEY (mailbox, user)" + ");");
+        session.execute("CREATE TABLE IF NOT EXISTS " + keyspace + ".acl (id uuid PRIMARY KEY, acl text, version bigint);");
         session.close();
     }
 
