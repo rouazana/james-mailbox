@@ -203,7 +203,7 @@ public final class MailboxQuery {
         if (token.equals("*")) {
             return ".*";
         } else if (token.equals("%")) {
-            return "[^" + pathDelimiter + "]*";
+            return "[^" + Pattern.quote(String.valueOf(pathDelimiter)) + "]*";
         } else {
             return Pattern.quote(token);
         }
