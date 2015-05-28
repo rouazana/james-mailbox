@@ -18,23 +18,33 @@
  ****************************************************************/
 package org.apache.james.mailbox.cassandra;
 
-import org.apache.commons.lang.NotImplementedException;
+
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
+import com.google.common.base.Throwables;
+import org.apache.james.mailbox.cassandra.mail.utils.FunctionRunnerWithRetry;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 /**
  * Class that will creates a single instance of Cassandra session.
  */
 public final class CassandraClusterSingleton {
-    private final static String CLUSTER_IP = "localhost";
-    private final static int CLUSTER_PORT_TEST = 9142;
-    private final static String KEYSPACE_NAME = "apache_james";
-    private final static int DEFAULT_REPLICATION_FACTOR = 1;
+    private static final String CLUSTER_IP = "localhost";
+    private static final int CLUSTER_PORT_TEST = 9142;
+    private static final String KEYSPACE_NAME = "apache_james";
+    private static final int REPLICATION_FACTOR = 1;
+
+    private static final long SLEEP_BEFORE_RETRY = 200;
+    private static final int MAX_RETRY = 200;
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraClusterSingleton.class);
     private static CassandraClusterSingleton cluster = null;
-    private CassandraSession session;
+    private Session session;
 
     /**
      * Builds a MiniCluster instance.
@@ -51,89 +61,45 @@ public final class CassandraClusterSingleton {
     }
 
     private CassandraClusterSingleton() throws RuntimeException {
-       try {
+        try {
             EmbeddedCassandraServerHelper.startEmbeddedCassandra();
-            // Let Cassandra initialization before creating
-            // the session. Solve very fast computer tests run.
-            Thread.sleep(2000);
-            this.session = new CassandraSession(CLUSTER_IP, CLUSTER_PORT_TEST, KEYSPACE_NAME, DEFAULT_REPLICATION_FACTOR);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            session = new FunctionRunnerWithRetry<Session>(MAX_RETRY)
+                .executeAndRetrieveObject(CassandraClusterSingleton.this::tryInitializeSession);
+        } catch(Exception exception) {
+            Throwables.propagate(exception);
         }
     }
 
-    /**
-     * Return a configuration for the runnning MiniCluster.
-     *
-     * @return
-     */
-    public CassandraSession getConf() {
+    public Session getConf() {
         return session;
     }
 
-    /**
-     * Create a specific table.
-     *
-     * @param tableName
-     *            the table name
-     */
-    public void ensureTable(String tableName) {
-        if (tableName.equals("mailbox")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".mailbox (" + "id uuid PRIMARY KEY," + "name text, namespace text," + "uidvalidity bigint," + "user text," + "path text" + ");");
+    public void ensureAllTables() {
+        new CassandraTableManager(session).ensureAllTables();
+    }
 
-            session.execute("CREATE INDEX IF NOT EXISTS ON " + session.getLoggedKeyspace() + ".mailbox(path);");
-        } else if (tableName.equals("messageCounter")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".messageCounter (" + "mailboxId UUID PRIMARY KEY," + "nextUid bigint," + ");");
-        } else if (tableName.equals("mailboxCounters")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".mailboxCounters (" + "mailboxId UUID PRIMARY KEY," + "count counter," + "unseen counter," + "nextModSeq counter" + ");");
-        } else if (tableName.equals("message")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".message (" + "mailboxId UUID," + "uid bigint," + "internalDate timestamp," + "bodyStartOctet int," + "content blob," + "modSeq bigint," + "mediaType text," + "subType text," + "fullContentOctets int,"
-                    + "bodyOctets int," + "textualLineCount bigint," + "bodyContent blob," + "headerContent blob," + "flagAnswered boolean," + "flagDeleted boolean," + "flagDraft boolean," + "flagRecent boolean," + "flagSeen boolean," + "flagFlagged boolean," + "flagUser boolean,"
-                    + "flagVersion bigint,"+ "PRIMARY KEY (mailboxId, uid)" + ");");
-        } else if (tableName.equals("subscription")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".subscription (" + "user text," + "mailbox text," + "PRIMARY KEY (mailbox, user)" + ");");
-        } else if (tableName.equals("quota")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".quota ("
-                    + "user text PRIMARY KEY,"
-                    + "size_quota counter,"
-                    + "count_quota counter"
-                    + ");");
-        }  else if (tableName.equals("acl")) {
-            session.execute("CREATE TABLE IF NOT EXISTS " + session.getLoggedKeyspace() + ".acl (id uuid PRIMARY KEY, acl text, version bigint);");
-        } else {
-            throw new NotImplementedException("We don't support the class " + tableName);
+    public void clearAllTables() {
+        new CassandraTableManager(session).clearAllTables();
+    }
+
+    private Optional<Session> tryInitializeSession() {
+        try {
+            Cluster cluster = new ClusterFactory().createClusterForSingleServerWithoutPassWord(CLUSTER_IP, CLUSTER_PORT_TEST);
+            Cluster clusterWithInitializedKeyspace = new ClusterWithKeyspaceCreatedFactory()
+                .clusterWithInitializedKeyspace(cluster, KEYSPACE_NAME, REPLICATION_FACTOR);
+            return Optional.of(new SessionFactory().createSession(clusterWithInitializedKeyspace, KEYSPACE_NAME));
+        } catch (NoHostAvailableException exception) {
+            sleep(SLEEP_BEFORE_RETRY);
+            return Optional.empty();
         }
     }
 
-    /**
-     * Ensure all tables
-     */
-    public void ensureAllTables() {
-        ensureTable("mailbox");
-        ensureTable("mailboxCounters");
-        ensureTable("message");
-        ensureTable("subscription");
-        ensureTable("acl");
-    }
-
-    /**
-     * Delete all rows from specified table.
-     * 
-     * @param tableName
-     */
-    public void clearTable(String tableName) {
-        session.execute("TRUNCATE " + tableName + ";");
-    }
-
-    /**
-     * Delete all rows for all tables.
-     */
-    public void clearAllTables() {
-        clearTable("mailbox");
-        clearTable("mailboxCounters");
-        clearTable("message");
-        clearTable("subscription");
-        clearTable("acl");
+    private void sleep(long sleepMs) {
+        try {
+            Thread.sleep(sleepMs);
+        } catch(InterruptedException interruptedException) {
+            Throwables.propagate(interruptedException);
+        }
     }
 
 }

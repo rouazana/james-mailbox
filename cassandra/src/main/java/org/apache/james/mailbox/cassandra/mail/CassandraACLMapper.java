@@ -25,7 +25,7 @@ import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import org.apache.james.mailbox.cassandra.CassandraSession;
+import org.apache.james.mailbox.cassandra.CassandraConstants;
 import org.apache.james.mailbox.cassandra.mail.utils.SimpleMailboxACLJsonConverter;
 import org.apache.james.mailbox.cassandra.mail.utils.FunctionRunnerWithRetry;
 import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
@@ -92,7 +92,7 @@ public class CassandraACLMapper {
                         .map((x) -> x.apply(command))
                         .map(this::updateStoredACL)
                         .orElseGet(() -> insertACL(applyCommandOnEmptyACL(command)));
-                return resultSet.one().getBool(CassandraSession.LIGHTWEIGHT_TRANSACTION_APPLIED);
+                return resultSet.one().getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED);
             }
         );
     }

@@ -22,11 +22,17 @@ package org.apache.james.mailbox.cassandra.mail.utils;
 import com.google.common.base.Preconditions;
 import org.apache.james.mailbox.exception.MailboxException;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
 
-public class FunctionRunnerWithRetry {
-    
+public class FunctionRunnerWithRetry<Id> {
+
+    @FunctionalInterface
+    public interface OptionalSupplier<Id> {
+        Optional<Id> getAsOptional();
+    }
+
     private final int maxRetry;
 
     public FunctionRunnerWithRetry(int maxRetry) {
@@ -36,10 +42,17 @@ public class FunctionRunnerWithRetry {
 
     public void execute(BooleanSupplier functionNotifyingSuccess) throws MailboxException {
         IntStream.range(0, maxRetry)
-            .filter(
-                (x) -> functionNotifyingSuccess.getAsBoolean()
-            ).findFirst()
+            .filter((x) -> functionNotifyingSuccess.getAsBoolean())
+            .findFirst()
             .orElseThrow(() -> new MailboxException("Can not execute Boolean Supplier."));
     }
-    
+
+    public Id executeAndRetrieveObject(OptionalSupplier<Id> functionNotifyingSuccess) throws MailboxException {
+        return IntStream.range(0, maxRetry)
+            .mapToObj((x) -> functionNotifyingSuccess.getAsOptional())
+            .filter(Optional::isPresent)
+            .findFirst()
+            .orElseThrow(() -> new MailboxException("Can not execute Optional Supplier. " + maxRetry + " retries."))
+            .get();
+    }
 }

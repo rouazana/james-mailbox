@@ -50,17 +50,31 @@
         <constructor-arg index="0" ref="cassandra-session"/>
     </bean>
 
+    <alias name="jvm-locker" alias="cassandra-locker"/>
+
     <!--
-      The parameters are : the IP of a Cassendra cluster, the port, the keyspace and the replication factor
-      Default values are : localhost, 9042, apache_james and 1
+      The Cluster factory is responsible for connecting the cluster
+
+      The ClusterWithKeyspaceCreatedFactory is responsible for creating the keyspace if not present.
+
+      The SessionFactory is responsible for giving a session we can work with
     -->
-    <bean id="cassandra-session" class="org.apache.james.mailbox.cassandra.CassandraSession">
+    <bean id="cassandra-cluster" class="org.apache.james.mailbox.cassandra.ClusterFactory" factory-method="createClusterForSingleServerWithoutPassWord">
         <constructor-arg index="0" value="localhost"/>
         <constructor-arg index="1" value="9042" type="int"/>
-        <constructor-arg index="2" value="apache_james"/>
-        <constructor-arg index="3" value="1" type="int"/>
     </bean>
 
-    <alias name="jvm-locker" alias="cassandra-locker"/>
+    <bean id="cassandra-cluster-initialized" class="org.apache.james.mailbox.cassandra.ClusterWithKeyspaceCreatedFactory" factory-method="clusterWithInitializedKeyspace">
+        <constructor-arg index="0" ref="cassandra-cluster"/>
+        <constructor-arg index="1" value="apache_james"/>
+        <constructor-arg index="2" value="1" type="int"/>
+    </bean>
+
+    <bean id="cassandra-session" class="org.apache.james.mailbox.cassandra.SessionFactory" factory-method="">
+        <constructor-arg index="0" ref="cassandra-cluster-initialized"/>
+        <constructor-arg index="1" value="apache_james"/>
+    </bean>
+
+
 
 </beans>

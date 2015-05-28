@@ -22,7 +22,6 @@ import org.apache.james.mailbox.AbstractMailboxManagerTest;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.mail.CassandraModSeqProvider;
 import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
-import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable;
 import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
@@ -36,7 +35,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
 
-    private static final CassandraClusterSingleton CLUSTER = CassandraClusterSingleton.build();
+    private static final CassandraClusterSingleton CASSANDRA = CassandraClusterSingleton.build();
 
     /**
      * Setup the mailboxManager.
@@ -45,8 +44,8 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
      */
     @Before
     public void setup() throws Exception {
-        CLUSTER.ensureAllTables();
-        CLUSTER.clearAllTables();
+        CASSANDRA.ensureAllTables();
+        CASSANDRA.clearAllTables();
         createMailboxManager();
     }
 
@@ -70,9 +69,9 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
      */
     @Override
     protected void createMailboxManager() throws MailboxException {
-        final CassandraUidProvider uidProvider = new CassandraUidProvider(CLUSTER.getConf());
-        final CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(CLUSTER.getConf());
-        final CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider, modSeqProvider, (CassandraSession) CLUSTER.getConf());
+        final CassandraUidProvider uidProvider = new CassandraUidProvider(CASSANDRA.getConf());
+        final CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(CASSANDRA.getConf());
+        final CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider, modSeqProvider, CASSANDRA.getConf());
 
         final CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new JVMMailboxPathLocker());
         manager.init();
@@ -84,7 +83,7 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
 
     private void deleteAllMailboxes() throws BadCredentialsException, MailboxException {
         MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
-        CLUSTER.clearTable(CassandraMailboxTable.TABLE_NAME);
+        CASSANDRA.clearAllTables();
         session.close();
     }
 }

@@ -46,7 +46,7 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
     private ModSeqProvider<UUID> modSeqProvider;
     private int maxRetry;
 
-    public CassandraMailboxSessionMapperFactory(CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider, CassandraSession session) {
+    public CassandraMailboxSessionMapperFactory(CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider, Session session) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.session = session;
