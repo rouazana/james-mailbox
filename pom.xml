@@ -23,8 +23,7 @@
     <parent>
         <artifactId>james-project</artifactId>
         <groupId>org.apache.james</groupId>
-        <version>1.8.2</version>
-        <relativePath />
+        <version>1.8.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>apache-james-mailbox</artifactId>
@@ -114,7 +113,7 @@
         <geronimo-annotation-spec.version>1.1.1</geronimo-annotation-spec.version>
         <geronimo-activation-spec.version>1.1</geronimo-activation-spec.version>
         <geronimo-javamail-mail.version>1.8.3</geronimo-javamail-mail.version>
-        <apache-mailet.version>2.5.0</apache-mailet.version>
+        <apache-mailet.version>2.5.1-SNAPSHOT</apache-mailet.version>
         <slf4j.version>1.7.7</slf4j.version>
         <junit.version>4.11</junit.version>
         <jasypt.version>1.9.0</jasypt.version>
