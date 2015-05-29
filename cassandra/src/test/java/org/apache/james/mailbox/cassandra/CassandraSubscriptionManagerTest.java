@@ -16,14 +16,29 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.cassandra.mail;
 
-import org.apache.james.mailbox.store.mail.model.AbstractMailboxMapperTest;
+package org.apache.james.mailbox.cassandra;
 
-import java.util.UUID;
+import org.apache.james.mailbox.AbstractSubscriptionManagerTest;
+import org.apache.james.mailbox.SubscriptionManager;
+import org.apache.james.mailbox.cassandra.mail.CassandraModSeqProvider;
+import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
 
-public class CassandraMailboxMapperTest extends AbstractMailboxMapperTest<UUID> {
-    public CassandraMailboxMapperTest() {
-        super(new CassandraMapperProvider());
+/**
+ * Test Cassandra subscription against some general purpose written code.
+ */
+public class CassandraSubscriptionManagerTest extends AbstractSubscriptionManagerTest {
+
+    private static final CassandraClusterSingleton cassandra = CassandraClusterSingleton.build();
+    
+    @Override
+    public SubscriptionManager createSubscriptionManager() {
+        return new CassandraSubscriptionManager(
+                new CassandraMailboxSessionMapperFactory(
+                        new CassandraUidProvider(cassandra.getConf()),
+                        new CassandraModSeqProvider(cassandra.getConf()),
+                        cassandra.getConf()
+                )
+        );
     }
 }

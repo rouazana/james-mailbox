@@ -16,14 +16,21 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.cassandra.mail;
 
-import org.apache.james.mailbox.store.mail.model.AbstractMailboxMapperTest;
+package org.apache.james.mailbox.store.mail.model;
 
-import java.util.UUID;
+import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.store.mail.MailboxMapper;
+import org.apache.james.mailbox.store.mail.MessageMapper;
 
-public class CassandraMailboxMapperTest extends AbstractMailboxMapperTest<UUID> {
-    public CassandraMailboxMapperTest() {
-        super(new CassandraMapperProvider());
-    }
+public interface MapperProvider<Id> {
+    MailboxMapper<Id> createMailboxMapper() throws MailboxException;
+
+    MessageMapper<Id> createMessageMapper() throws MailboxException;
+
+    Id generateId();
+
+    void clearMapper() throws MailboxException;
+
+    void ensureMapperPrepared() throws MailboxException;
 }

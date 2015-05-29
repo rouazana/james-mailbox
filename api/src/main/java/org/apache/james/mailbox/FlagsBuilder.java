@@ -16,14 +16,39 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.cassandra.mail;
 
-import org.apache.james.mailbox.store.mail.model.AbstractMailboxMapperTest;
+package org.apache.james.mailbox;
 
-import java.util.UUID;
+import javax.mail.Flags;
 
-public class CassandraMailboxMapperTest extends AbstractMailboxMapperTest<UUID> {
-    public CassandraMailboxMapperTest() {
-        super(new CassandraMapperProvider());
+public class FlagsBuilder {
+
+    private Flags internalFlags;
+
+    public FlagsBuilder() {
+        internalFlags = new Flags();
+    }
+
+    public FlagsBuilder add(Flags.Flag... flags) {
+        for(Flags.Flag flag : flags) {
+            internalFlags.add(flag);
+        }
+        return this;
+    }
+
+    public FlagsBuilder add(String... flags) {
+        for(String userFlag : flags) {
+            internalFlags.add(userFlag);
+        }
+        return this;
+    }
+
+    public FlagsBuilder add(Flags flags) {
+        internalFlags.add(flags);
+        return this;
+    }
+
+    public Flags build() {
+        return new Flags(internalFlags);
     }
 }
