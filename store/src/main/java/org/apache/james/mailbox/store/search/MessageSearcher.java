@@ -155,9 +155,7 @@ public class MessageSearcher {
             final CharBuffer buffer) throws IOException, MimeException {
         try {
             boolean result = false;
-            MimeConfig config = new MimeConfig();
-            config.setMaxLineLen(-1);
-            config.setMaxHeaderLen(-1);
+            MimeConfig config = MimeConfig.custom().setMaxLineLen(-1).setMaxHeaderLen(-1).build();
 
             MimeTokenStream parser = new MimeTokenStream(config);            parser.parse(input);
             while (!result && parser.next() != EntityState.T_END_OF_STREAM) {

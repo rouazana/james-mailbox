@@ -54,7 +54,7 @@ import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
 import org.apache.james.mime4j.dom.datetime.DateTime;
 import org.apache.james.mime4j.field.address.AddressFormatter;
-import org.apache.james.mime4j.field.address.LenientAddressBuilder;
+import org.apache.james.mime4j.field.address.LenientAddressParser;
 import org.apache.james.mime4j.field.datetime.parser.DateTimeParser;
 import org.apache.james.mime4j.field.datetime.parser.ParseException;
 import org.slf4j.Logger;
@@ -367,7 +367,7 @@ public class MessageSearches implements Iterable<Long> {
             final String name = header.getName();
             if (headerName.equalsIgnoreCase(name)) {
                 final String value = header.getValue();
-                AddressList aList = LenientAddressBuilder.DEFAULT.parseAddressList(value);
+                AddressList aList = LenientAddressParser.DEFAULT.parseAddressList(value);
                 for (int i = 0; i < aList.size(); i++) {
                     Address address = aList.get(i);
                     if (address instanceof Mailbox) {

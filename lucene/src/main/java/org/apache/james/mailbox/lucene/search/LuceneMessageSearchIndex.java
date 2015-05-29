@@ -70,7 +70,7 @@ import org.apache.james.mime4j.dom.address.MailboxList;
 import org.apache.james.mime4j.dom.datetime.DateTime;
 import org.apache.james.mime4j.dom.field.DateTimeField;
 import org.apache.james.mime4j.field.address.AddressFormatter;
-import org.apache.james.mime4j.field.address.LenientAddressBuilder;
+import org.apache.james.mime4j.field.address.LenientAddressParser;
 import org.apache.james.mime4j.field.datetime.parser.DateTimeParser;
 import org.apache.james.mime4j.message.SimpleContentHandler;
 import org.apache.james.mime4j.parser.MimeStreamParser;
@@ -519,7 +519,7 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
                         if (field != null) {
                                 // not sure if we really should reparse it. It maybe be better to check just for the right type.
                                 // But this impl was easier in the first place
-                                AddressList aList = LenientAddressBuilder.DEFAULT.parseAddressList(MimeUtil.unfold(f.getBody()));
+                                AddressList aList = LenientAddressParser.DEFAULT.parseAddressList(MimeUtil.unfold(f.getBody()));
                                 for (int i = 0; i < aList.size(); i++) {
                                     Address address = aList.get(i);
                                     if (address instanceof org.apache.james.mime4j.dom.address.Mailbox) {
@@ -625,10 +625,11 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
             }
  
         };
-        MimeConfig config = new MimeConfig();
-        config.setMaxLineLen(-1);
+        MimeConfig config = MimeConfig.custom()
+                .setMaxLineLen(-1)
+                .setMaxContentLen(-1)
+                .build();
         //config.setStrictParsing(false);
-        config.setMaxContentLen(-1);
         MimeStreamParser parser = new MimeStreamParser(config);
         parser.setContentDecoding(true);
         parser.setContentHandler(handler);

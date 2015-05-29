@@ -227,8 +227,7 @@ public class MaildirMessage extends AbstractMessage<Integer> {
             // Disable line length... This should be handled by the smtp server
             // component and not the parser itself
             // https://issues.apache.org/jira/browse/IMAP-122
-            MimeConfig config = new MimeConfig();
-            config.setMaxLineLen(-1);
+            MimeConfig config = MimeConfig.custom().setMaxLineLen(-1).build();
             final MimeTokenStream parser = new MimeTokenStream(config, new DefaultBodyDescriptorBuilder());
             parser.setRecursionMode(RecursionMode.M_NO_RECURSE);
             parser.parse(tmpMsgIn.newStream(0, -1));

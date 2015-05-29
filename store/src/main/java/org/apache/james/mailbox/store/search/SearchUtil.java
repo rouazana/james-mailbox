@@ -28,7 +28,7 @@ import org.apache.james.mime4j.dom.address.AddressList;
 import org.apache.james.mime4j.dom.address.Group;
 import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
-import org.apache.james.mime4j.field.address.LenientAddressBuilder;
+import org.apache.james.mime4j.field.address.LenientAddressParser;
 import org.apache.james.mime4j.util.MimeUtil;
 
 /**
@@ -107,7 +107,7 @@ public class SearchUtil {
      * @return display
      */
     public static String getDisplayAddress(String headerValue) {
-        AddressList addressList = LenientAddressBuilder.DEFAULT.parseAddressList(MimeUtil.unfold(headerValue));
+        AddressList addressList = LenientAddressParser.DEFAULT.parseAddressList(MimeUtil.unfold(headerValue));
         if (addressList != null && addressList.isEmpty() == false) {
             Address address = addressList.get(0);
             if (address instanceof Mailbox) {
@@ -149,7 +149,7 @@ public class SearchUtil {
      * @return mailbox
      */
     public static String getMailboxAddress(String headerValue) {
-        AddressList aList = LenientAddressBuilder.DEFAULT.parseAddressList(headerValue);
+        AddressList aList = LenientAddressParser.DEFAULT.parseAddressList(headerValue);
         for (int i = 0; i < aList.size(); i++) {
             Address address = aList.get(i);
             if (address instanceof Mailbox) {

@@ -55,9 +55,7 @@ public class ResultUtils {
 
     public static List<MessageResult.Header> createHeaders(final Message<?> document) throws IOException {
         final List<MessageResult.Header> results = new ArrayList<MessageResult.Header>();
-        MimeConfig config = new MimeConfig();
-        config.setMaxLineLen(-1);
-        config.setMaxHeaderLen(-1);
+        MimeConfig config = MimeConfig.custom().setMaxLineLen(-1).setMaxHeaderLen(-1).build();
         final MimeStreamParser parser = new MimeStreamParser(config);
         parser.setContentHandler(new AbstractContentHandler() {
             @Override

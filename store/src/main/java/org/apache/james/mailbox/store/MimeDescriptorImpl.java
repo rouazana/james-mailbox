@@ -62,10 +62,7 @@ public class MimeDescriptorImpl implements MimeDescriptor {
     public static MimeDescriptorImpl build(final InputStream stream) throws IOException, MimeException {
         // Disable line length limit
         // See https://issues.apache.org/jira/browse/IMAP-132
-        MimeConfig config = new MimeConfig();
-        config.setMaxLineLen(-1);
-        config.setMaxHeaderLen(-1);
-
+        MimeConfig config = MimeConfig.custom().setMaxLineLen(-1).setMaxHeaderLen(-1).build();
         //
         final MimeTokenStream parser = new MimeTokenStream(config, new DefaultBodyDescriptorBuilder());
         

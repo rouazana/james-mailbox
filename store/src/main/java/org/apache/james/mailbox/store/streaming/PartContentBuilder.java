@@ -49,9 +49,7 @@ public class PartContentBuilder {
     private boolean topLevel = true;
 
     public PartContentBuilder() {
-        MimeConfig config = new MimeConfig();
-        config.setMaxLineLen(-1);
-        config.setMaxHeaderLen(-1);
+        MimeConfig config = MimeConfig.custom().setMaxLineLen(-1).setMaxHeaderLen(-1).build();
 
         parser = new MimeTokenStream(config);
     }
