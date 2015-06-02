@@ -45,8 +45,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractMailboxManagerTest {
     
-    private final static String USER_1 = "USER_1";
-    private final static String USER_2 = "USER_2";
+    public final static String USER_1 = "USER_1";
+    public final static String USER_2 = "USER_2";
 
     /**
      * The mailboxManager that needs to get instanciated

@@ -512,22 +512,33 @@ public class StoreMailboxManager<Id> implements MailboxManager {
         final List<MailboxMetaData> results = new ArrayList<MailboxMetaData>(mailboxes.size());
         for (Mailbox<Id> mailbox : mailboxes) {
             final String name = mailbox.getName();
-            if (name.startsWith(baseName)) {
-                final String match = name.substring(baseLength);
-                if (mailboxExpression.isExpressionMatch(match)) {
-                    final MailboxMetaData.Children inferiors;
-                    if (mapper.hasChildren(mailbox, session.getPathDelimiter())) {
-                        inferiors = MailboxMetaData.Children.HAS_CHILDREN;
-                    } else {
-                        inferiors = MailboxMetaData.Children.HAS_NO_CHILDREN;
+            if(belongsToNamespaceAndUser(mailboxExpression.getBase(), mailbox)) {
+                if (name.startsWith(baseName)) {
+                    final String match = name.substring(baseLength);
+                    if (mailboxExpression.isExpressionMatch(match)) {
+                        final MailboxMetaData.Children inferiors;
+                        if (mapper.hasChildren(mailbox, session.getPathDelimiter())) {
+                            inferiors = MailboxMetaData.Children.HAS_CHILDREN;
+                        } else {
+                            inferiors = MailboxMetaData.Children.HAS_NO_CHILDREN;
+                        }
+                        MailboxPath mailboxPath = new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), name);
+                        results.add(new SimpleMailboxMetaData(mailboxPath, getDelimiter(), inferiors, Selectability.NONE));
                     }
-                    MailboxPath mailboxPath = new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), name);
-                    results.add(new SimpleMailboxMetaData(mailboxPath, getDelimiter(), inferiors, Selectability.NONE));
                 }
             }
         }
         Collections.sort(results, new StandardMailboxMetaDataComparator());
         return results;
+    }
+
+    public boolean belongsToNamespaceAndUser(MailboxPath base, Mailbox<Id> mailbox) {
+        if (mailbox.getUser() == null) {
+            return  base.getUser() == null
+                && mailbox.getNamespace().equals(base.getNamespace());
+        }
+        return mailbox.getNamespace().equals(base.getNamespace())
+            && mailbox.getUser().equals(base.getUser());
     }
 
     @Override

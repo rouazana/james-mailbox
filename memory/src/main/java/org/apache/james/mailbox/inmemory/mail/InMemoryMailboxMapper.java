@@ -79,11 +79,17 @@ public class InMemoryMailboxMapper implements MailboxMapper<Long> {
         final String regex = path.getName().replace("%", ".*");
         List<Mailbox<Long>> results = new ArrayList<Mailbox<Long>>();
         for (final Mailbox<Long> mailbox:mailboxesById.values()) {
-            if (mailbox.getName().matches(regex)) {
+            if (mailboxMatchesRegex(mailbox, path, regex)) {
                 results.add(mailbox);
             }
         }
         return results;
+    }
+
+    private boolean mailboxMatchesRegex(Mailbox<Long> mailbox, MailboxPath path, String regex) {
+        return mailbox.getNamespace().equals(path.getNamespace())
+            && mailbox.getUser().equals(path.getUser())
+            && mailbox.getName().matches(regex);
     }
 
     /**

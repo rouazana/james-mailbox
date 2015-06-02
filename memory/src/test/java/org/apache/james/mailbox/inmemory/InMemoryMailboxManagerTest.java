@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailbox.inmemory;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.apache.james.mailbox.AbstractMailboxManagerTest;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.acl.GroupMembershipResolver;
@@ -26,17 +28,25 @@ import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.exception.BadCredentialsException;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.MailboxMetaData;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.model.MailboxQuery;
 import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * InMemoryMailboxManagerTest that extends the MailboxManagerTest.
  */
 public class InMemoryMailboxManagerTest extends AbstractMailboxManagerTest {
-    
+
+    private MailboxSession session;
+
     /**
      * Setup the mailboxManager.
      * 
@@ -45,6 +55,9 @@ public class InMemoryMailboxManagerTest extends AbstractMailboxManagerTest {
     @Before
     public void setup() throws Exception {
         createMailboxManager();
+
+        session = getMailboxManager().createSystemSession(USER_1, LoggerFactory.getLogger("Test"));
+        getMailboxManager().startProcessingRequest(session);
     }
     
     /**
@@ -55,8 +68,9 @@ public class InMemoryMailboxManagerTest extends AbstractMailboxManagerTest {
      */
     @After
     public void tearDown() throws BadCredentialsException, MailboxException {
-        MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
-        session.close();
+        getMailboxManager().logout(session, true);
+        getMailboxManager().endProcessingRequest(session);
+        getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test")).close();
     }
 
     /* (non-Javadoc)
@@ -74,6 +88,24 @@ public class InMemoryMailboxManagerTest extends AbstractMailboxManagerTest {
         
         setMailboxManager(mailboxManager);
 
+    }
+
+    @Test
+    public void searchShouldNotReturnResultsFromOtherNamespaces() throws Exception {
+        getMailboxManager().createMailbox(new MailboxPath("#namespace", USER_1, "Other"), session);
+        getMailboxManager().createMailbox(MailboxPath.inbox(session), session);
+        List<MailboxMetaData> metaDatas = getMailboxManager().search(new MailboxQuery(new MailboxPath("#private", USER_1, ""), "*", '.'), session);
+        assertThat(metaDatas).hasSize(1);
+        assertThat(metaDatas.get(0).getPath()).isEqualTo(MailboxPath.inbox(session));
+    }
+
+    @Test
+    public void searchShouldNotReturnResultsFromOtherUsers() throws Exception {
+        getMailboxManager().createMailbox(new MailboxPath("#namespace", USER_2, "Other"), session);
+        getMailboxManager().createMailbox(MailboxPath.inbox(session), session);
+        List<MailboxMetaData> metaDatas = getMailboxManager().search(new MailboxQuery(new MailboxPath("#private", USER_1, ""), "*", '.'), session);
+        assertThat(metaDatas).hasSize(1);
+        assertThat(metaDatas.get(0).getPath()).isEqualTo(MailboxPath.inbox(session));
     }
     
 }
