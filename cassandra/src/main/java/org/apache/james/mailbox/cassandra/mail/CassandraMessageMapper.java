@@ -28,12 +28,13 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.incr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.lt;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_CONTENT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_OCTECTS;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_START_OCTET;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.FIELDS;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.FLAG_VERSION;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.FULL_CONTENT_OCTETS;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.HEADER_CONTENT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.IMAP_UID;
@@ -52,7 +53,6 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Fla
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.RECENT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.SEEN;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.USER;
-import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.FLAG_VERSION;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,7 +66,6 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
-import com.datastax.driver.core.querybuilder.Update;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
@@ -114,15 +113,15 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
 
     private final static int DEFAULT_MAX_RETRIES = 10000;
 
-    public CassandraMessageMapper(Session session, CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider) {
+    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider) {
         this(session, uidProvider, modSeqProvider, null, DEFAULT_MAX_RETRIES);
     }
 
-    public CassandraMessageMapper(Session session, CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession) {
+    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession) {
         this(session, uidProvider, modSeqProvider, mailboxSession, DEFAULT_MAX_RETRIES);
     }
 
-    public CassandraMessageMapper(Session session, CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, int maxRetries) {
+    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, int maxRetries) {
         this.session = session;
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;

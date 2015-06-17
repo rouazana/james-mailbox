@@ -24,7 +24,6 @@ import java.util.UUID;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxMapper;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageMapper;
-import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
 import org.apache.james.mailbox.cassandra.user.CassandraSubscriptionMapper;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
@@ -42,11 +41,11 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
     private static final int DEFAULT_MAX_RETRY = 1000;
 
     private Session session;
-    private CassandraUidProvider uidProvider;
+    private UidProvider<UUID> uidProvider;
     private ModSeqProvider<UUID> modSeqProvider;
     private int maxRetry;
 
-    public CassandraMailboxSessionMapperFactory(CassandraUidProvider uidProvider, ModSeqProvider<UUID> modSeqProvider, Session session) {
+    public CassandraMailboxSessionMapperFactory(UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, Session session) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.session = session;
