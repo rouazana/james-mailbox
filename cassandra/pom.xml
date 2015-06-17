@@ -33,6 +33,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0</version>
+        </dependency>
+        <dependency>
             <groupId>${javax.mail.groupId}</groupId>
             <artifactId>${javax.mail.artifactId}</artifactId>
         </dependency>
@@ -65,9 +70,9 @@
             <type>test-jar</type>
         </dependency>
         <dependency>
-	    <groupId>com.datastax.cassandra</groupId>
-	    <artifactId>cassandra-driver-core</artifactId>
-	    <version>${cassandra-driver-core.version}</version>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>${cassandra-driver-core.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -80,8 +85,8 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-    	    <groupId>org.cassandraunit</groupId>
-   	    <artifactId>cassandra-unit</artifactId>
+            <groupId>org.cassandraunit</groupId>
+            <artifactId>cassandra-unit</artifactId>
             <version>${cassandra-unit.version}</version>
             <scope>test</scope>
         </dependency>
