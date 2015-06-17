@@ -64,7 +64,7 @@ public final class CassandraClusterSingleton {
     private CassandraClusterSingleton() throws RuntimeException {
         try {
             EmbeddedCassandraServerHelper.startEmbeddedCassandra();
-            session = new FunctionRunnerWithRetry<Session>(MAX_RETRY)
+            session = new FunctionRunnerWithRetry(MAX_RETRY)
                 .executeAndRetrieveObject(CassandraClusterSingleton.this::tryInitializeSession);
             typesProvider = new CassandraTypesProvider(session);
         } catch(Exception exception) {

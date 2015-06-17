@@ -26,11 +26,11 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.stream.IntStream;
 
-public class FunctionRunnerWithRetry<Id> {
+public class FunctionRunnerWithRetry {
 
     @FunctionalInterface
-    public interface OptionalSupplier<Id> {
-        Optional<Id> getAsOptional();
+    public interface OptionalSupplier<T> {
+        Optional<T> getAsOptional();
     }
 
     private final int maxRetry;
@@ -47,7 +47,7 @@ public class FunctionRunnerWithRetry<Id> {
             .orElseThrow(() -> new MailboxException("Can not execute Boolean Supplier."));
     }
 
-    public Id executeAndRetrieveObject(OptionalSupplier<Id> functionNotifyingSuccess) throws MailboxException {
+    public <T> T executeAndRetrieveObject(OptionalSupplier<T> functionNotifyingSuccess) throws MailboxException {
         return IntStream.range(0, maxRetry)
             .mapToObj((x) -> functionNotifyingSuccess.getAsOptional())
             .filter(Optional::isPresent)
