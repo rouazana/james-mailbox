@@ -27,6 +27,7 @@ public class SessionFactory {
 
     public static Session createSession(Cluster cluster, String keyspace) {
         Session session = cluster.connect(keyspace);
+        new CassandraTypesProvider(session);
         new CassandraTableManager(session)
             .ensureAllTables();
         return session;

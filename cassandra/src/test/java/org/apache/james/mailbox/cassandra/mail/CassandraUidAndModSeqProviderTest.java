@@ -57,7 +57,7 @@ public class CassandraUidAndModSeqProviderTest {
         CASSANDRA.ensureAllTables();
         uidProvider = new CassandraUidProvider(CASSANDRA.getConf());
         modSeqProvider = new CassandraModSeqProvider(CASSANDRA.getConf());
-        mapper = new CassandraMailboxMapper(CASSANDRA.getConf(), MAX_RETRY);
+        mapper = new CassandraMailboxMapper(CASSANDRA.getConf(), CASSANDRA.getTypesProvider(), MAX_RETRY);
         fillMailboxList();
         for (SimpleMailbox<UUID> mailbox : mailboxList) {
             mapper.save(mailbox);

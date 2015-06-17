@@ -3,6 +3,7 @@ package org.apache.james.mailbox.cassandra.mail;
 import com.datastax.driver.core.utils.UUIDs;
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
 import org.apache.james.mailbox.cassandra.CassandraMailboxSessionMapperFactory;
+import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
@@ -20,7 +21,8 @@ public class CassandraMapperProvider implements MapperProvider<UUID> {
         return new CassandraMailboxSessionMapperFactory(
             new CassandraUidProvider(cassandra.getConf()),
             new CassandraModSeqProvider(cassandra.getConf()),
-            cassandra.getConf()
+            cassandra.getConf(),
+            cassandra.getTypesProvider()
         ).getMailboxMapper(new MockMailboxSession("benwa"));
     }
 
@@ -29,7 +31,8 @@ public class CassandraMapperProvider implements MapperProvider<UUID> {
         return new CassandraMailboxSessionMapperFactory(
             new CassandraUidProvider(cassandra.getConf()),
             new CassandraModSeqProvider(cassandra.getConf()),
-            cassandra.getConf()
+            cassandra.getConf(),
+            cassandra.getTypesProvider()
         ).getMessageMapper(new MockMailboxSession("benwa"));
     }
 

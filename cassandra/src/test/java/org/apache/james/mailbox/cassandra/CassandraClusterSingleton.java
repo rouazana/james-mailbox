@@ -45,6 +45,7 @@ public final class CassandraClusterSingleton {
     private static final Logger LOG = LoggerFactory.getLogger(CassandraClusterSingleton.class);
     private static CassandraClusterSingleton cluster = null;
     private Session session;
+    private CassandraTypesProvider typesProvider;
 
     /**
      * Builds a MiniCluster instance.
@@ -65,6 +66,7 @@ public final class CassandraClusterSingleton {
             EmbeddedCassandraServerHelper.startEmbeddedCassandra();
             session = new FunctionRunnerWithRetry<Session>(MAX_RETRY)
                 .executeAndRetrieveObject(CassandraClusterSingleton.this::tryInitializeSession);
+            typesProvider = new CassandraTypesProvider(session);
         } catch(Exception exception) {
             Throwables.propagate(exception);
         }
@@ -102,4 +104,7 @@ public final class CassandraClusterSingleton {
         }
     }
 
+    public CassandraTypesProvider getTypesProvider() {
+        return typesProvider;
+    }
 }

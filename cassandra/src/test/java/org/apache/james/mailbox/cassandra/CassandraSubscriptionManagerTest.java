@@ -34,11 +34,12 @@ public class CassandraSubscriptionManagerTest extends AbstractSubscriptionManage
     @Override
     public SubscriptionManager createSubscriptionManager() {
         return new CassandraSubscriptionManager(
-                new CassandraMailboxSessionMapperFactory(
-                        new CassandraUidProvider(cassandra.getConf()),
-                        new CassandraModSeqProvider(cassandra.getConf()),
-                        cassandra.getConf()
-                )
+            new CassandraMailboxSessionMapperFactory(
+                new CassandraUidProvider(cassandra.getConf()),
+                new CassandraModSeqProvider(cassandra.getConf()),
+                cassandra.getConf(),
+                cassandra.getTypesProvider()
+            )
         );
     }
 }

@@ -71,7 +71,10 @@ public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
     protected void createMailboxManager() throws MailboxException {
         final CassandraUidProvider uidProvider = new CassandraUidProvider(CASSANDRA.getConf());
         final CassandraModSeqProvider modSeqProvider = new CassandraModSeqProvider(CASSANDRA.getConf());
-        final CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider, modSeqProvider, CASSANDRA.getConf());
+        final CassandraMailboxSessionMapperFactory mapperFactory = new CassandraMailboxSessionMapperFactory(uidProvider,
+            modSeqProvider,
+            CASSANDRA.getConf(),
+            CASSANDRA.getTypesProvider());
 
         final CassandraMailboxManager manager = new CassandraMailboxManager(mapperFactory, null, new JVMMailboxPathLocker());
         manager.init();

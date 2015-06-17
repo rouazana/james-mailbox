@@ -40,6 +40,7 @@
         <constructor-arg index="0" ref="cassandra-uidProvider"/>
         <constructor-arg index="1" ref="cassandra-modSeqProvider"/>
         <constructor-arg index="2" ref="cassandra-session"/>
+        <constructor-arg index="3" ref="cassandra-type-provider"/>
     </bean>
 
     <bean id="cassandra-uidProvider" class="org.apache.james.mailbox.cassandra.mail.CassandraUidProvider">
@@ -78,6 +79,10 @@
     <bean id="cassandra-session" class="org.apache.james.mailbox.cassandra.SessionFactory" factory-method="createSession">
         <constructor-arg index="0" ref="cassandra-cluster-initialized"/>
         <constructor-arg index="1" value="${cassandra.keyspace}"/>
+    </bean>
+
+    <bean id="cassandra-type-provider" class="org.apache.james.mailbox.cassandra.CassandraTypesProvider">
+        <constructor-arg index="0" ref="cassandra-session"/>
     </bean>
 
 </beans>

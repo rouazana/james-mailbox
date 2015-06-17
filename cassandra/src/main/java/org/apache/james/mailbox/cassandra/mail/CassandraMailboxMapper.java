@@ -27,6 +27,8 @@ import java.util.UUID;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Preconditions;
+import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
+import org.apache.james.mailbox.cassandra.CassandraTypesProvider.TYPE;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxACL;
@@ -47,12 +49,15 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
  */
 public class CassandraMailboxMapper implements MailboxMapper<UUID> {
 
-    private Session session;
-    private int maxRetry;
+    public static final String WILDCARD = "%";
+    private final Session session;
+    private final int maxRetry;
+    private final CassandraTypesProvider typesProvider;
 
-    public CassandraMailboxMapper(Session session, int maxRetry) {
+    public CassandraMailboxMapper(Session session, CassandraTypesProvider typesProvider, int maxRetry) {
         this.session = session;
         this.maxRetry = maxRetry;
+        this.typesProvider = typesProvider;
     }
 
     @Override
