@@ -44,7 +44,7 @@ public class CassandraTableManager {
         Mailbox(CassandraMailboxTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraMailboxTable.TABLE_NAME)
                 .ifNotExists()
-                .addPartitionKey(CassandraMailboxTable.ID, uuid())
+                .addPartitionKey(CassandraMailboxTable.ID, timeuuid())
                 .addColumn(CassandraMailboxTable.NAMESPACE, text())
                 .addColumn(CassandraMailboxTable.USER, text())
                 .addColumn(CassandraMailboxTable.NAME, text())
@@ -53,19 +53,19 @@ public class CassandraTableManager {
         MailboxCounter(CassandraMailboxCountersTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraMailboxCountersTable.TABLE_NAME)
                 .ifNotExists()
-                .addPartitionKey(CassandraMailboxCountersTable.MAILBOX_ID, uuid())
+                .addPartitionKey(CassandraMailboxCountersTable.MAILBOX_ID, timeuuid())
                 .addColumn(CassandraMailboxCountersTable.COUNT, counter())
                 .addColumn(CassandraMailboxCountersTable.UNSEEN, counter())
                 .addColumn(CassandraMailboxCountersTable.NEXT_MOD_SEQ, counter())),
         MessageUid(CassandraMessageUidTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraMessageUidTable.TABLE_NAME)
                 .ifNotExists()
-                .addPartitionKey(CassandraMessageUidTable.MAILBOX_ID, uuid())
+                .addPartitionKey(CassandraMessageUidTable.MAILBOX_ID, timeuuid())
                 .addColumn(CassandraMessageUidTable.NEXT_UID, bigint())),
         Message(CassandraMessageTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraMessageTable.TABLE_NAME)
                 .ifNotExists()
-                .addPartitionKey(CassandraMessageTable.MAILBOX_ID, uuid())
+                .addPartitionKey(CassandraMessageTable.MAILBOX_ID, timeuuid())
                 .addClusteringColumn(CassandraMessageTable.IMAP_UID, bigint())
                 .addColumn(CassandraMessageTable.INTERNAL_DATE, timestamp())
                 .addColumn(CassandraMessageTable.BODY_START_OCTET, cint())
@@ -94,7 +94,7 @@ public class CassandraTableManager {
         Acl(CassandraACLTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraACLTable.TABLE_NAME)
                 .ifNotExists()
-                .addPartitionKey(CassandraACLTable.ID, uuid())
+                .addPartitionKey(CassandraACLTable.ID, timeuuid())
                 .addColumn(CassandraACLTable.ACL, text())
                 .addColumn(CassandraACLTable.VERSION, bigint())
         )

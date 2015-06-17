@@ -25,6 +25,7 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.*;
 import java.util.List;
 import java.util.UUID;
 
+import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Preconditions;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
@@ -94,7 +95,7 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
         Preconditions.checkArgument(mailbox instanceof SimpleMailbox);
         SimpleMailbox<UUID> cassandraMailbox = (SimpleMailbox<UUID>) mailbox;
         if (cassandraMailbox.getMailboxId() == null) {
-            cassandraMailbox.setMailboxId(UUID.randomUUID());
+            cassandraMailbox.setMailboxId(UUIDs.timeBased());
         }
         upsertMailbox(cassandraMailbox);
     }

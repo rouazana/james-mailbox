@@ -1,5 +1,6 @@
 package org.apache.james.mailbox.cassandra.mail;
 
+import com.datastax.driver.core.utils.UUIDs;
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
 import org.apache.james.mailbox.cassandra.CassandraMailboxSessionMapperFactory;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -34,7 +35,7 @@ public class CassandraMapperProvider implements MapperProvider<UUID> {
 
     @Override
     public UUID generateId() {
-        return UUID.randomUUID();
+        return UUIDs.timeBased();
     }
 
     @Override

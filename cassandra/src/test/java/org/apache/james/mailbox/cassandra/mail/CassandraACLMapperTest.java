@@ -55,7 +55,7 @@ public class CassandraACLMapperTest {
         cassandra.ensureAllTables();
         uidValidity = 10;
         mailbox = new SimpleMailbox<>(new MailboxPath("#private", "benwa@linagora.com", "INBOX"), uidValidity);
-        mailbox.setMailboxId(UUID.fromString("87B045A5-7657-44B7-81E8-40C2937BC9FE"));
+        mailbox.setMailboxId(UUID.fromString("464765a0-e4e7-11e4-aba4-710c1de3782b"));
         maxRetry = 100;
         cassandraACLMapper = new CassandraACLMapper(mailbox, cassandra.getConf(), maxRetry);
         executor = Executors.newFixedThreadPool(2);
