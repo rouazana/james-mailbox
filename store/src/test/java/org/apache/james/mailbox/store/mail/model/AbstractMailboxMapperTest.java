@@ -26,7 +26,6 @@ import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -172,14 +171,12 @@ public abstract class AbstractMailboxMapperTest<Id> {
         assertThat(mailboxMapper.hasChildren(esnDevGroupInboxMailbox, DELIMITER)).isTrue();
     }
 
-    @Ignore("See MAILBOX-11 and JWC-125")
     @Test
     public void hasChildrenShouldNotBeAcrossUsersAndNamespace() throws MailboxException {
         saveAll();
         assertThat(mailboxMapper.hasChildren(bobInboxMailbox, '.')).isFalse();
     }
 
-    @Ignore("See MAILBOX-11 and JWC-125")
     @Test
     public void findMailboxWithPathLikeShouldBeLimitedToUserAndNamespace() throws MailboxException {
         saveAll();
@@ -209,10 +206,6 @@ public abstract class AbstractMailboxMapperTest<Id> {
         mailboxMapper.findMailboxByPath(esnDevGroupJamesPath);
     }
 
-    // findMailboxWithPathLike does not behave as intended in Cassandra Mailbox implementation
-    // It matches .*namespace.*:.*user.*:.*name%.* instead of namespace:user:name.*
-    // For instance see this method in use line 436 of StoreMailboxManager
-    @Ignore
     @Test
     public void findMailboxWithPathLikeWithChildRegexShouldRetrieveChildren() throws MailboxException {
         saveAll();
@@ -220,8 +213,6 @@ public abstract class AbstractMailboxMapperTest<Id> {
         assertThat(mailboxMapper.findMailboxWithPathLike(regexPath)).containsOnly(benwaWorkMailbox, benwaWorkTodoMailbox, benwaWorkDoneMailbox);
     }
 
-    // Same thing
-    @Ignore
     @Test
     public void findMailboxWithPathLikeWithNullUserWithChildRegexShouldRetrieveChildren() throws MailboxException {
         saveAll();
@@ -229,8 +220,6 @@ public abstract class AbstractMailboxMapperTest<Id> {
         assertThat(mailboxMapper.findMailboxWithPathLike(regexPath)).contains(obmTeamGroupInboxMailbox, obmTeamGroupOPushMailbox, obmTeamGroupRoundCubeMailbox);
     }
 
-    // Same thing
-    @Ignore
     @Test
     public void findMailboxWithPathLikeWithRegexShouldRetrieveCorrespondingMailbox() throws MailboxException {
         saveAll();
@@ -238,8 +227,6 @@ public abstract class AbstractMailboxMapperTest<Id> {
         assertThat(mailboxMapper.findMailboxWithPathLike(regexPath)).containsOnly(benwaInboxMailbox);
     }
 
-    // Same thing
-    @Ignore
     @Test
     public void findMailboxWithPathLikeWithNullUserWithRegexShouldRetrieveCorrespondingMailbox() throws MailboxException {
         saveAll();
@@ -247,7 +234,6 @@ public abstract class AbstractMailboxMapperTest<Id> {
         assertThat(mailboxMapper.findMailboxWithPathLike(regexPath)).contains(esnDevGroupInboxMailbox);
     }
 
-    @Ignore("Mailbox name is not escaped")
     @Test
     public void findMailboxWithPathLikeShouldEscapeMailboxName() throws MailboxException {
         saveAll();

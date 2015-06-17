@@ -22,13 +22,21 @@ package org.apache.james.mailbox.cassandra.mail;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
 import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.*;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Preconditions;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider.TYPE;
+import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxACL;
@@ -76,7 +84,12 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
     }
 
     private SimpleMailbox<UUID> mailbox(Row row) {
-        SimpleMailbox<UUID> mailbox = new SimpleMailbox<UUID>(new MailboxPath(row.getString(NAMESPACE), row.getString(USER), row.getString(NAME)), row.getLong(UIDVALIDITY));
+        SimpleMailbox<UUID> mailbox = new SimpleMailbox<>(
+            new MailboxPath(
+                row.getUDTValue(MAILBOX_BASE).getString(MailboxBase.NAMESPACE),
+                row.getUDTValue(MAILBOX_BASE).getString(MailboxBase.USER),
+                row.getString(NAME)),
+            row.getLong(UIDVALIDITY));
         mailbox.setMailboxId(row.getUUID(ID));
         mailbox.setACL(new CassandraACLMapper(mailbox, session, maxRetry).getACL());
         return mailbox;
@@ -84,15 +97,25 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
 
     @Override
     public List<Mailbox<UUID>> findMailboxWithPathLike(MailboxPath path) throws MailboxException {
-        final String regexWithUser = ".*" + path.getNamespace() + ".*" + path.getUser() + ".*" + path.getName() + ".*";
-        final String regexWithoutUser = ".*" + path.getNamespace() + ".*null.*" + path.getName() + ".*";
-        Builder<Mailbox<UUID>> result = ImmutableList.<Mailbox<UUID>> builder();
-        for (Row row : session.execute(select(FIELDS).from(TABLE_NAME))) {
-            if (row.getString(PATH).matches(regexWithUser) || row.getString(PATH).matches(regexWithoutUser)) {
-                result.add(mailbox(row));
-            }
-        }
-        return result.build();
+        Pattern regex = Pattern.compile(constructEscapedRegexForMailboxNameMatching(path));
+        return getMailboxFilteredByNamespaceAndUserStream(path.getNamespace(), path.getUser())
+            .filter((row) -> regex.matcher(row.getString(NAME)).matches())
+            .map(this::mailbox)
+            .collect(Collectors.toList());
+    }
+
+    private String constructEscapedRegexForMailboxNameMatching(MailboxPath path) {
+        return Collections
+            .list(new StringTokenizer(path.getName(), WILDCARD, true))
+            .stream()
+            .map((token) -> {
+                    if (token.equals(WILDCARD)) {
+                        return ".*";
+                    } else {
+                        return Pattern.quote((String) token);
+                    }
+                }
+            ).collect(Collectors.joining());
     }
 
     @Override
@@ -110,9 +133,11 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
             insertInto(TABLE_NAME)
                 .value(ID, mailbox.getMailboxId())
                 .value(NAME, mailbox.getName())
-                .value(NAMESPACE, mailbox.getNamespace())
                 .value(UIDVALIDITY, mailbox.getUidValidity())
-                .value(USER, mailbox.getUser())
+                .value(MAILBOX_BASE, typesProvider.getDefinedUserType(TYPE.MailboxBase)
+                    .newValue()
+                    .setString(MailboxBase.NAMESPACE, mailbox.getNamespace())
+                    .setString(MailboxBase.USER, mailbox.getUser()))
                 .value(PATH, path(mailbox).toString())
         );
     }
@@ -128,14 +153,21 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
 
     @Override
     public boolean hasChildren(Mailbox<UUID> mailbox, char delimiter) {
-        final String regexWithUser = ".*" + mailbox.getNamespace() + ".*" + mailbox.getUser() + ".*" + mailbox.getName() + delimiter + ".*";
-        final String regexWithoutUser = ".*" + mailbox.getNamespace() + ".*null.*" + mailbox.getName() + delimiter + ".*";
-        for (Row row : session.execute(select(PATH).from(TABLE_NAME))) {
-            if (row.getString(PATH).matches(regexWithUser) || row.getString(PATH).matches(regexWithoutUser)) {
-                return true;
-            }
-        }
-        return false;
+        final Pattern regex = Pattern.compile(Pattern.quote( mailbox.getName() + String.valueOf(delimiter)) + ".*");
+        return getMailboxFilteredByNamespaceAndUserStream(mailbox.getNamespace(), mailbox.getUser())
+            .anyMatch((row) -> regex.matcher(row.getString(NAME)).matches());
+    }
+
+    private Stream<Row> getMailboxFilteredByNamespaceAndUserStream (String namespace, String user) {
+        return StreamSupport.stream(session.execute(
+                select(FIELDS)
+                    .from(TABLE_NAME)
+                    .where(eq(MAILBOX_BASE, typesProvider.getDefinedUserType(TYPE.MailboxBase)
+                        .newValue()
+                        .setString(MailboxBase.NAMESPACE, namespace)
+                        .setString(MailboxBase.USER, user))))
+                .spliterator(),
+            true);
     }
 
     @Override

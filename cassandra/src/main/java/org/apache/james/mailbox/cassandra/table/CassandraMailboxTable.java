@@ -19,13 +19,18 @@
 
 package org.apache.james.mailbox.cassandra.table;
 
+
 public interface CassandraMailboxTable {
     String TABLE_NAME = "mailbox";
     String ID = "id";
-    String USER = "user";
     String PATH = "path";
-    String NAMESPACE = "namespace";
+    String MAILBOX_BASE = "mailboxbase";
     String UIDVALIDITY = "uidvalidity";
     String NAME = "name";
-    String[] FIELDS = { ID, USER, NAMESPACE, UIDVALIDITY, NAME, PATH };
+    String[] FIELDS = { ID, MAILBOX_BASE, UIDVALIDITY, NAME, PATH };
+
+    interface MailboxBase {
+        String USER = "user";
+        String NAMESPACE = "namespace";
+    }
 }

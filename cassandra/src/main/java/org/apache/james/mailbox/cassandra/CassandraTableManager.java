@@ -45,8 +45,7 @@ public class CassandraTableManager {
             SchemaBuilder.createTable(CassandraMailboxTable.TABLE_NAME)
                 .ifNotExists()
                 .addPartitionKey(CassandraMailboxTable.ID, timeuuid())
-                .addColumn(CassandraMailboxTable.NAMESPACE, text())
-                .addColumn(CassandraMailboxTable.USER, text())
+                .addUDTColumn(CassandraMailboxTable.MAILBOX_BASE, SchemaBuilder.frozen(CassandraTypesProvider.TYPE.MailboxBase.getName()))
                 .addColumn(CassandraMailboxTable.NAME, text())
                 .addColumn(CassandraMailboxTable.PATH, text())
                 .addColumn(CassandraMailboxTable.UIDVALIDITY, bigint())),
@@ -112,7 +111,14 @@ public class CassandraTableManager {
         MailboxPath(SchemaBuilder.createIndex(CassandraMailboxTable.TABLE_NAME)
             .ifNotExists()
             .onTable(CassandraMailboxTable.TABLE_NAME)
-            .andColumn(CassandraMailboxTable.PATH));
+            .andColumn(CassandraMailboxTable.PATH)),
+        AggregateNamespaceUser(
+            SchemaBuilder.createIndex(CassandraMailboxTable.MAILBOX_BASE)
+                .ifNotExists()
+                .onTable(CassandraMailboxTable.TABLE_NAME)
+                .andColumn(CassandraMailboxTable.MAILBOX_BASE)
+        ),
+        ;
         private SchemaStatement createIndexStatement;
 
         INDEX(SchemaStatement createIndexStatement) {
