@@ -419,7 +419,17 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
                 throw new MailboxException("Max retries reached when asking an update of flags on message " + uid + " for mailbox " + mailbox.getMailboxId());
             }
         }
+        manageUnseenMessageCounts(mailbox, originFlags, updatedFlags);
         result.add(new UpdatedFlags(message.getUid(), message.getModSeq(), originFlags, updatedFlags));
+    }
+
+    private void manageUnseenMessageCounts(Mailbox<UUID> mailbox, Flags oldFlags, Flags newFlags) {
+        if (oldFlags.contains(Flag.SEEN) && !newFlags.contains(Flag.SEEN)) {
+            incrementUnseen(mailbox);
+        }
+        if (!oldFlags.contains(Flag.SEEN) && newFlags.contains(Flag.SEEN)) {
+            decrementUnseen(mailbox);
+        }
     }
 
     private Row findMessageByUid(Mailbox<UUID> mailbox, long uid) {
@@ -446,8 +456,13 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
 
     @Override
     public MessageMetaData copy(Mailbox<UUID> mailbox, Message<UUID> original) throws MailboxException {
+
         original.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         original.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
+        incrementCount(mailbox);
+        if(!original.isSeen()) {
+            incrementUnseen(mailbox);
+        }
         return save(mailbox, original);
     }
 

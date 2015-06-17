@@ -115,8 +115,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(messageMapper.countUnseenMessagesInMailbox(benwaInboxMailbox)).isEqualTo(5);
     }
 
-    // We should decrement mailbox unseen count when a message is marked as read.
-    @Ignore
     @Test
     public void mailboxUnSeenCountShouldBeDecrementedAfterAMessageIsMarkedSeen() throws MailboxException {
         saveMessages();
@@ -410,8 +408,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(messageMapper.getLastUid(benwaInboxMailbox)).isGreaterThan(uid);
     }
 
-    // Message count should be modified upon copy
-    @Ignore
     @Test
     public void copyShouldIncrementMessageCount() throws MailboxException, IOException {
         saveMessages();
@@ -419,8 +415,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(messageMapper.countMessagesInMailbox(benwaInboxMailbox)).isEqualTo(6);
     }
 
-    // Message unseen count should be modified upon copy.
-    @Ignore
     @Test
     public void copyOfUnSeenMessageShouldIncrementUnSeenMessageCount() throws MailboxException, IOException {
         saveMessages();
@@ -436,8 +430,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(messageMapper.getHighestModSeq(benwaInboxMailbox)).isGreaterThan(modSeq);
     }
 
-    // ModSeq of copied messages is not set
-    @Ignore
     @Test
     public void copyShouldCreateAMessageInDestination() throws MailboxException, IOException {
         saveMessages();
