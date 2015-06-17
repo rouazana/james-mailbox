@@ -20,40 +20,130 @@
 package org.apache.james.mailbox.cassandra.mail;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.incr;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable.MAILBOX_ID;
-import static org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable.NEXT_MOD_SEQ;
-import static org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable.TABLE_NAME;
+import static org.apache.james.mailbox.cassandra.CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTable.MAILBOX_ID;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTable.NEXT_MODSEQ;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTable.TABLE_NAME;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.cassandra.mail.utils.FunctionRunnerWithRetry;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.BuiltStatement;
+import com.google.common.base.Throwables;
 
 public class CassandraModSeqProvider implements ModSeqProvider<UUID> {
 
-    private Session session;
+    private static final int DEFAULT_MAX_RETRY = 100000;
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraModSeqProvider.class);
+    private static final ModSeq FIRST_MODSEQ = new ModSeq(0);
+    
+    private final Session session;
+    private final FunctionRunnerWithRetry runner;
+
+    public CassandraModSeqProvider(Session session, int maxRetry) {
+        this.session = session;
+        this.runner = new FunctionRunnerWithRetry(maxRetry);
+    }
 
     public CassandraModSeqProvider(Session session) {
-        this.session = session;
+        this(session, DEFAULT_MAX_RETRY);
     }
 
     @Override
     public long nextModSeq(MailboxSession mailboxSession, Mailbox<UUID> mailbox) throws MailboxException {
-        session.execute(update(TABLE_NAME).with(incr(NEXT_MOD_SEQ)).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
-        return highestModSeq(mailboxSession, mailbox);
+        if (findHighestModSeq(mailboxSession, mailbox).isFirst()) {
+            Optional<ModSeq> optional = tryInsertModSeq(mailbox, FIRST_MODSEQ);
+            if (optional.isPresent()) {
+                return optional.get().getValue();
+            }
+        }
+        
+        return runner.executeAndRetrieveObject(
+                    () -> {
+                        try {
+                            return tryUpdateModSeq(mailbox, findHighestModSeq(mailboxSession, mailbox))
+                                    .map(ModSeq::getValue);
+                        } catch (Exception exception) {
+                            LOG.error("Can not retrieve next ModSeq", exception);
+                            throw Throwables.propagate(exception);
+                        }
+                    });
     }
 
     @Override
     public long highestModSeq(MailboxSession mailboxSession, Mailbox<UUID> mailbox) throws MailboxException {
-        ResultSet result = session.execute(select(NEXT_MOD_SEQ).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
-        return result.isExhausted() ? 0 : result.one().getLong(NEXT_MOD_SEQ);
+        return findHighestModSeq(mailboxSession, mailbox).getValue();
+    }
+    
+    private ModSeq findHighestModSeq(MailboxSession mailboxSession, Mailbox<UUID> mailbox) throws MailboxException {
+        ResultSet result = session.execute(
+                select(NEXT_MODSEQ)
+                    .from(TABLE_NAME)
+                    .where(eq(MAILBOX_ID, mailbox.getMailboxId())));
+        if (result.isExhausted()) {
+            return FIRST_MODSEQ;
+        } else {
+            return new ModSeq(result.one().getLong(NEXT_MODSEQ));
+        }
+    }
+
+    private Optional<ModSeq> tryInsertModSeq(Mailbox<UUID> mailbox, ModSeq modSeq) {
+        ModSeq nextModSeq = modSeq.next();
+        return transactionalStatementToOptionalModSeq(nextModSeq,
+                insertInto(TABLE_NAME)
+                    .value(NEXT_MODSEQ, nextModSeq.getValue())
+                    .value(MAILBOX_ID, mailbox.getMailboxId())
+                    .ifNotExists());
+    }
+    
+    private Optional<ModSeq> tryUpdateModSeq(Mailbox<UUID> mailbox, ModSeq modSeq) {
+        ModSeq nextModSeq = modSeq.next();
+        return transactionalStatementToOptionalModSeq(nextModSeq,
+                update(TABLE_NAME)
+                    .onlyIf(eq(NEXT_MODSEQ, modSeq.getValue()))
+                    .with(set(NEXT_MODSEQ, nextModSeq.getValue()))
+                    .where(eq(MAILBOX_ID, mailbox.getMailboxId())));
+    }
+
+    private Optional<ModSeq> transactionalStatementToOptionalModSeq(ModSeq modSeq, BuiltStatement statement) {
+        if(session.execute(statement).one().getBool(LIGHTWEIGHT_TRANSACTION_APPLIED)) {
+            return Optional.of(modSeq);
+        }
+        return Optional.empty();
+    }
+    
+    private static class ModSeq {
+        
+        private final long value;
+        
+        public ModSeq(long value) {
+            this.value = value;
+        }
+        
+        public ModSeq next() {
+            return new ModSeq(value + 1);
+        }
+        
+        public long getValue() {
+            return value;
+        }
+        
+        public boolean isFirst() {
+            return value == FIRST_MODSEQ.value;
+        }
     }
 }

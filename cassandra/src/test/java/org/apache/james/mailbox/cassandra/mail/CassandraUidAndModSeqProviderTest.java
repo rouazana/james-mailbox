@@ -18,20 +18,25 @@
  ****************************************************************/
 package org.apache.james.mailbox.cassandra.mail;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongConsumer;
+import java.util.stream.LongStream;
 
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
+import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Throwables;
 
 /**
  * Unit tests for UidProvider and ModSeqProvider.
@@ -39,18 +44,18 @@ import org.slf4j.LoggerFactory;
  */
 public class CassandraUidAndModSeqProviderTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CassandraUidAndModSeqProviderTest.class);
     private static final CassandraClusterSingleton CASSANDRA = CassandraClusterSingleton.build();
-    private static CassandraUidProvider uidProvider;
-    private static CassandraModSeqProvider modSeqProvider;
-    private static CassandraMailboxMapper mapper;
-    private static List<SimpleMailbox<UUID>> mailboxList;
-    private static List<MailboxPath> pathsList;
     private static final int NAMESPACES = 5;
     private static final int USERS = 5;
     private static final int MAILBOX_NO = 5;
     private static final int MAX_RETRY = 100;
     private static final char SEPARATOR = '%';
+    
+    private CassandraUidProvider uidProvider;
+    private CassandraModSeqProvider modSeqProvider;
+    private CassandraMailboxMapper mapper;
+    private List<SimpleMailbox<UUID>> mailboxList;
+    private List<MailboxPath> pathsList;
 
     @Before
     public void setUpClass() throws Exception {
@@ -63,13 +68,13 @@ public class CassandraUidAndModSeqProviderTest {
             mapper.save(mailbox);
         }
     }
-
+    
     @After
     public void cleanUp() {
         CASSANDRA.clearAllTables();
     }
 
-    private static void fillMailboxList() {
+    private void fillMailboxList() {
         mailboxList = new ArrayList<>();
         pathsList = new ArrayList<>();
         MailboxPath path;
@@ -88,52 +93,40 @@ public class CassandraUidAndModSeqProviderTest {
                 }
             }
         }
-
-        LOG.info("Created test case with {} mailboxes and {} paths", mailboxList.size(), pathsList.size());
     }
 
-    /**
-     * Test of lastUid method, of class CassandraUidProvider.
-     */
     @Test
-    public void testLastUid() throws Exception {
-        LOG.info("lastUid");
-        final MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
-        final SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
+    public void lastUidShouldRetrieveValueStoredByNextUid() throws Exception {
+        MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
+        SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
         mapper.save(newBox);
         mailboxList.add(newBox);
         pathsList.add(path);
 
-        final long result = uidProvider.lastUid(null, newBox);
+        long result = uidProvider.lastUid(null, newBox);
         assertEquals(0, result);
-        for (int i = 1; i < 10; i++) {
-            final long uid = uidProvider.nextUid(null, newBox);
-            assertEquals(uid, uidProvider.lastUid(null, newBox));
-        }
+        LongStream.range(1, 10)
+            .forEach(propagateException(value -> {
+                        long uid = uidProvider.nextUid(null, newBox);
+                        assertThat(uid).isEqualTo(uidProvider.lastUid(null, newBox));
+                })
+            );
     }
 
-    /**
-     * Test of nextUid method, of class CassandraUidProvider.
-     */
     @Test
-    public void testNextUid() throws Exception {
-        LOG.info("nextUid");
-        final SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
-        final long lastUid = uidProvider.lastUid(null, mailbox);
-        long result;
-        for (int i = (int) lastUid + 1; i < (lastUid + 10); i++) {
-            result = uidProvider.nextUid(null, mailbox);
-            assertEquals(i, result);
-        }
+    public void nextUidShouldIncrementValueByOne() throws Exception {
+        SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
+        long lastUid = uidProvider.lastUid(null, mailbox);
+        LongStream.range(lastUid + 1, lastUid + 10)
+            .forEach(propagateException(value -> {
+                        long result = uidProvider.nextUid(null, mailbox);
+                        assertThat(value).isEqualTo(result);
+                })
+            );
     }
 
-    /**
-     * Test of highestModSeq method, of class CassandraModSeqProvider.
-     */
     @Test
-    public void testHighestModSeq() throws Exception {
-        LOG.info("highestModSeq");
-        LOG.info("lastUid");
+    public void highestModSeqShouldRetrieveValueStoredNextModSeq() throws Exception {
         MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
         SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
         mapper.save(newBox);
@@ -142,24 +135,53 @@ public class CassandraUidAndModSeqProviderTest {
 
         long result = modSeqProvider.highestModSeq(null, newBox);
         assertEquals(0, result);
-        for (int i = 1; i < 10; i++) {
-            long uid = modSeqProvider.nextModSeq(null, newBox);
-            assertEquals(uid, modSeqProvider.highestModSeq(null, newBox));
-        }
+        LongStream.range(1, 10)
+            .forEach(propagateException(value -> {
+                        long uid = modSeqProvider.nextModSeq(null, newBox);
+                        assertThat(uid).isEqualTo(modSeqProvider.highestModSeq(null, newBox));
+                })
+            );
     }
 
-    /**
-     * Test of nextModSeq method, of class CassandraModSeqProvider.
-     */
     @Test
-    public void testNextModSeq() throws Exception {
-        LOG.info("nextModSeq");
-        final SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
-        final long lastUid = modSeqProvider.highestModSeq(null, mailbox);
-        long result;
-        for (int i = (int) lastUid + 1; i < (lastUid + 10); i++) {
-            result = modSeqProvider.nextModSeq(null, mailbox);
-            assertEquals(i, result);
-        }
+    public void nextModSeqShouldIncrementValueByOne() throws Exception {
+        SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
+        long lastUid = modSeqProvider.highestModSeq(null, mailbox);
+        LongStream.range(lastUid + 1, lastUid + 10)
+            .forEach(propagateException(value -> {
+                        long result = modSeqProvider.nextModSeq(null, mailbox);
+                        assertThat(value).isEqualTo(result);
+                })
+            );
+    }
+
+    @Test
+    public void nextModSeqShouldIncrementValueWhenParallelCalls() throws Exception {
+        SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
+        long lastUid = modSeqProvider.highestModSeq(null, mailbox);
+        final AtomicLong previousValue = new AtomicLong();
+        LongStream.range(lastUid + 1, lastUid + 10)
+            .parallel()
+            .forEach(propagateException(value -> {
+                        long result = modSeqProvider.nextModSeq(null, mailbox);
+                        assertThat(result).isGreaterThan(previousValue.get());
+                        previousValue.set(result);
+                })
+            );
+    }
+    
+    @FunctionalInterface
+    private interface ConsumerThatThrowsMailboxException<T> {
+        void apply(T arg) throws MailboxException;
+    }
+    
+    private LongConsumer propagateException(ConsumerThatThrowsMailboxException<Long> function) {
+        return (value) -> {
+            try {
+                function.apply(value);
+            } catch (MailboxException e) {
+                Throwables.propagate(e);
+            }
+        };
     }
 }

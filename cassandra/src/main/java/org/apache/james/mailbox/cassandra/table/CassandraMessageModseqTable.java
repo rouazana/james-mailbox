@@ -19,9 +19,8 @@
 
 package org.apache.james.mailbox.cassandra.table;
 
-public interface CassandraMailboxCountersTable {
-    String TABLE_NAME = "mailboxCounters";
+public interface CassandraMessageModseqTable {
+    String TABLE_NAME = "modseq";
     String MAILBOX_ID = "mailboxId";
-    String COUNT = "count";
-    String UNSEEN = "unseen";
+    String NEXT_MODSEQ = "nextModseq";
 }

@@ -30,13 +30,14 @@ import static com.datastax.driver.core.DataType.timeuuid;
 
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.schemabuilder.Create;
-
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import com.datastax.driver.core.schemabuilder.SchemaStatement;
+
 import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable;
+import org.apache.james.mailbox.cassandra.table.CassandraMessageModseqTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable;
 import org.apache.james.mailbox.cassandra.table.CassandraSubscriptionTable;
@@ -63,8 +64,7 @@ public class CassandraTableManager {
                 .ifNotExists()
                 .addPartitionKey(CassandraMailboxCountersTable.MAILBOX_ID, timeuuid())
                 .addColumn(CassandraMailboxCountersTable.COUNT, counter())
-                .addColumn(CassandraMailboxCountersTable.UNSEEN, counter())
-                .addColumn(CassandraMailboxCountersTable.NEXT_MOD_SEQ, counter())),
+                .addColumn(CassandraMailboxCountersTable.UNSEEN, counter())),
         MessageUid(CassandraMessageUidTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraMessageUidTable.TABLE_NAME)
                 .ifNotExists()
@@ -103,9 +103,14 @@ public class CassandraTableManager {
                 .ifNotExists()
                 .addPartitionKey(CassandraACLTable.ID, timeuuid())
                 .addColumn(CassandraACLTable.ACL, text())
-                .addColumn(CassandraACLTable.VERSION, bigint())
-        )
+                .addColumn(CassandraACLTable.VERSION, bigint())),
+        ModSeq(CassandraMessageModseqTable.TABLE_NAME,
+            SchemaBuilder.createTable(CassandraMessageModseqTable.TABLE_NAME)
+                .ifNotExists()
+                .addPartitionKey(CassandraMessageModseqTable.MAILBOX_ID, timeuuid())
+                .addColumn(CassandraMessageModseqTable.NEXT_MODSEQ, bigint()))
         ;
+
         private Create createStatement;
         private String name;
 
