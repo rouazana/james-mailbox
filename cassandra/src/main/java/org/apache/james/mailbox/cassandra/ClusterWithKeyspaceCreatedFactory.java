@@ -7,22 +7,22 @@ public class ClusterWithKeyspaceCreatedFactory {
 
     private final static int DEFAULT_REPLICATION_FACTOR = 1;
 
-    public Cluster clusterWithInitializedKeyspace(Cluster cluster, String keyspace, int replicationFactor) {
+    public static Cluster clusterWithInitializedKeyspace(Cluster cluster, String keyspace, int replicationFactor) {
         if (isKeyspacePresent(cluster, keyspace)) {
             createKeyspace(cluster, keyspace, replicationFactor);
         }
         return cluster;
     }
 
-    public Cluster clusterWithInitializedKeyspace(Cluster cluster, String keyspace) {
+    public static Cluster clusterWithInitializedKeyspace(Cluster cluster, String keyspace) {
         return clusterWithInitializedKeyspace(cluster, keyspace, DEFAULT_REPLICATION_FACTOR);
     }
 
-    private boolean isKeyspacePresent(Cluster cluster, String keyspace) {
+    private static boolean isKeyspacePresent(Cluster cluster, String keyspace) {
         return cluster.getMetadata().getKeyspace(keyspace) == null;
     }
 
-    private void createKeyspace(Cluster cluster, String keyspace, int replicationFactor) {
+    private static void createKeyspace(Cluster cluster, String keyspace, int replicationFactor) {
         try (Session session = cluster.connect()) {
             session.execute("CREATE KEYSPACE IF NOT EXISTS " + keyspace
                 + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':" + replicationFactor + "};");

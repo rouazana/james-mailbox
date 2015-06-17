@@ -75,7 +75,7 @@
         <constructor-arg index="2" value="${cassandra.replication.factor}" type="int"/>
     </bean>
 
-    <bean id="cassandra-session" class="org.apache.james.mailbox.cassandra.SessionFactory" factory-method="">
+    <bean id="cassandra-session" class="org.apache.james.mailbox.cassandra.SessionFactory" factory-method="createSession">
         <constructor-arg index="0" ref="cassandra-cluster-initialized"/>
         <constructor-arg index="1" value="${cassandra.keyspace}"/>
     </bean>

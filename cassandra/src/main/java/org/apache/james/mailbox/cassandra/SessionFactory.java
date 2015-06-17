@@ -25,14 +25,14 @@ import com.datastax.driver.core.Session;
 public class SessionFactory {
     private final static String DEFAULT_KEYSPACE_NAME = "apache_james";
 
-    public Session createSession(Cluster cluster, String keyspace) {
+    public static Session createSession(Cluster cluster, String keyspace) {
         Session session = cluster.connect(keyspace);
         new CassandraTableManager(session)
             .ensureAllTables();
         return session;
     }
 
-    public Session createSession(Cluster cluster) {
+    public static Session createSession(Cluster cluster) {
         return createSession(cluster, DEFAULT_KEYSPACE_NAME);
     }
 

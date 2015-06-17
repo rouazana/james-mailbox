@@ -40,7 +40,7 @@ public class ClusterFactory {
     private final static String DEFAULT_CLUSTER_IP = "localhost";
     private final static int DEFAULT_CLUSTER_PORT = 9042;
 
-    public Cluster createClusterForClusterWithPassWord(List<CassandraServer> servers, String userName, String password) {
+    public static Cluster createClusterForClusterWithPassWord(List<CassandraServer> servers, String userName, String password) {
         Cluster.Builder clusterBuilder = Cluster.builder();
         servers.forEach(
             (server) -> clusterBuilder.addContactPoint(server.ip).withPort(server.port)
@@ -51,19 +51,19 @@ public class ClusterFactory {
         return clusterBuilder.build();
     }
 
-    public Cluster createClusterForClusterWithoutPassWord(List<CassandraServer> servers) {
+    public static Cluster createClusterForClusterWithoutPassWord(List<CassandraServer> servers) {
         return createClusterForClusterWithPassWord(servers, null, null);
     }
-    
-    public Cluster createClusterForSingleServerWithPassWord(String ip, int port, String userName, String password) {
+
+    public static Cluster createClusterForSingleServerWithPassWord(String ip, int port, String userName, String password) {
         return createClusterForClusterWithPassWord(ImmutableList.of(new CassandraServer(ip, port)), userName, password);
     }
 
-    public Cluster createClusterForSingleServerWithoutPassWord(String ip, int port) {
+    public static Cluster createClusterForSingleServerWithoutPassWord(String ip, int port) {
         return createClusterForClusterWithPassWord(ImmutableList.of(new CassandraServer(ip, port)), null, null);
     }
 
-    public Cluster createDefaultSession() {
+     public static Cluster createDefaultSession() {
         return createClusterForSingleServerWithoutPassWord(DEFAULT_CLUSTER_IP, DEFAULT_CLUSTER_PORT);
     }
 }
