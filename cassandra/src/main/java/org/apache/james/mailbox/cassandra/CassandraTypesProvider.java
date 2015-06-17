@@ -25,6 +25,7 @@ import com.datastax.driver.core.schemabuilder.CreateType;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import com.google.common.collect.ImmutableMap;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable;
+import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -39,7 +40,13 @@ public class CassandraTypesProvider {
             SchemaBuilder.createType(CassandraMailboxTable.MAILBOX_BASE)
                 .ifNotExists()
                 .addColumn(CassandraMailboxTable.MailboxBase.NAMESPACE, text())
-                .addColumn(CassandraMailboxTable.MailboxBase.USER, text()))
+                .addColumn(CassandraMailboxTable.MailboxBase.USER, text())),
+        Property(CassandraMessageTable.PROPERTIES,
+            SchemaBuilder.createType(CassandraMessageTable.PROPERTIES)
+                .ifNotExists()
+                .addColumn(CassandraMessageTable.Properties.NAMESPACE, text())
+                .addColumn(CassandraMessageTable.Properties.NAME, text())
+                .addColumn(CassandraMessageTable.Properties.VALUE, text()))
         ;
 
         private final String name;

@@ -30,6 +30,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Properties;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_CONTENT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_OCTECTS;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_START_OCTET;
@@ -40,9 +41,8 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.HEA
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.IMAP_UID;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.INTERNAL_DATE;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.MAILBOX_ID;
-import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.MEDIA_TYPE;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.MOD_SEQ;
-import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.SUB_TYPE;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.PROPERTIES;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.TABLE_NAME;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.TEXTUAL_LINE_COUNT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.ANSWERED;
@@ -61,13 +61,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import com.datastax.driver.core.UDTValue;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.cassandra.CassandraConstants;
+import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
+import org.apache.james.mailbox.cassandra.CassandraTypesProvider.TYPE;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -82,12 +87,14 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMessage;
+import org.apache.james.mailbox.store.mail.model.impl.SimpleProperty;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.TupleValue;
 import com.datastax.driver.core.querybuilder.Assignment;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -104,30 +111,31 @@ import com.google.common.primitives.Bytes;
  */
 public class CassandraMessageMapper implements MessageMapper<UUID> {
 
-    private Session session;
-    private ModSeqProvider<UUID> modSeqProvider;
-    private MailboxSession mailboxSession;
-    private UidProvider<UUID> uidProvider;
+    private final Session session;
+    private final ModSeqProvider<UUID> modSeqProvider;
+    private final MailboxSession mailboxSession;
+    private final UidProvider<UUID> uidProvider;
+    private final CassandraTypesProvider typesProvider;
 
-    private final int applied = 0;
     private int maxRetries;
 
     private final static int DEFAULT_MAX_RETRIES = 10000;
 
-    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider) {
-        this(session, uidProvider, modSeqProvider, null, DEFAULT_MAX_RETRIES);
+    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, CassandraTypesProvider typesProvider) {
+        this(session, uidProvider, modSeqProvider, null, DEFAULT_MAX_RETRIES, typesProvider);
     }
 
-    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession) {
-        this(session, uidProvider, modSeqProvider, mailboxSession, DEFAULT_MAX_RETRIES);
+    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, CassandraTypesProvider typesProvider) {
+        this(session, uidProvider, modSeqProvider, mailboxSession, DEFAULT_MAX_RETRIES, typesProvider);
     }
 
-    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, int maxRetries) {
+    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, int maxRetries, CassandraTypesProvider typesProvider) {
         this.session = session;
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.mailboxSession = mailboxSession;
         this.maxRetries = maxRetries;
+        this.typesProvider = typesProvider;
     }
 
     @Override
@@ -206,9 +214,10 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     private PropertyBuilder getPropertyBuilder(Row row) {
-        PropertyBuilder property = new PropertyBuilder();
-        property.setSubType(row.getString(SUB_TYPE));
-        property.setMediaType(row.getString(MEDIA_TYPE));
+        PropertyBuilder property = new PropertyBuilder(
+                row.getList(PROPERTIES, UDTValue.class).stream()
+                .map(x -> new SimpleProperty(x.getString(Properties.NAMESPACE), x.getString(Properties.NAME), x.getString(Properties.VALUE)))
+                .collect(Collectors.toList()));
         property.setTextualLineCount(row.getLong(TEXTUAL_LINE_COUNT));
         return property;
     }
@@ -326,9 +335,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
                     .value(IMAP_UID, message.getUid())
                     .value(MOD_SEQ, message.getModSeq())
                     .value(INTERNAL_DATE, message.getInternalDate())
-                    .value(MEDIA_TYPE, message.getMediaType())
                     .value(BODY_START_OCTET, message.getFullContentOctets() - message.getBodyOctets())
-                    .value(SUB_TYPE, message.getSubType())
                     .value(FULL_CONTENT_OCTETS, message.getFullContentOctets())
                     .value(BODY_OCTECTS, message.getBodyOctets())
                     .value(ANSWERED, message.isAnswered())
@@ -340,6 +347,13 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
                     .value(USER, message.createFlags().contains(Flag.USER))
                     .value(BODY_CONTENT, bindMarker())
                     .value(HEADER_CONTENT, bindMarker())
+                    .value(PROPERTIES, message.getProperties().stream()
+                        .map(x -> typesProvider.getDefinedUserType(TYPE.Property)
+                            .newValue()
+                            .setString(Properties.NAMESPACE, x.getNamespace())
+                            .setString(Properties.NAME, x.getLocalName())
+                            .setString(Properties.VALUE, x.getValue()))
+                        .collect(Collectors.toList()))
                     .value(TEXTUAL_LINE_COUNT, message.getTextualLineCount())
                     .value(FLAG_VERSION, 0);
             PreparedStatement preparedStatement = session.prepare(query.toString());
@@ -368,7 +382,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
                         .and(eq(MAILBOX_ID, message.getMailboxId()))
                         .onlyIf(eq(FLAG_VERSION, flagVersion))
         );
-        return resultSet.one().getBool(applied);
+        return resultSet.one().getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED);
     }
 
     private ByteBuffer toByteBuffer(InputStream stream) throws IOException {

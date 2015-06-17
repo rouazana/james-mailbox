@@ -29,17 +29,15 @@ public interface CassandraMessageTable {
     String IMAP_UID = "uid";
     String INTERNAL_DATE = "internalDate";
     String BODY_START_OCTET = "bodyStartOctet";
-    String CONTENT = "content";
     String MOD_SEQ = "modSeq";
-    String MEDIA_TYPE = "mediaType";
-    String SUB_TYPE = "subType";
     String FULL_CONTENT_OCTETS = "fullContentOctets";
     String BODY_OCTECTS = "bodyOctets";
     String TEXTUAL_LINE_COUNT = "textualLineCount";
     String BODY_CONTENT = "bodyContent";
     String HEADER_CONTENT = "headerContent";
+    String PROPERTIES = "properties";
     String FLAG_VERSION = "flagVersion";
-    String[] FIELDS = { MAILBOX_ID, IMAP_UID, INTERNAL_DATE, MOD_SEQ, BODY_START_OCTET, MEDIA_TYPE, SUB_TYPE, FULL_CONTENT_OCTETS, BODY_OCTECTS, Flag.ANSWERED, Flag.DELETED, Flag.DRAFT, Flag.FLAGGED, Flag.RECENT, Flag.SEEN, Flag.USER, BODY_CONTENT, HEADER_CONTENT, TEXTUAL_LINE_COUNT, FLAG_VERSION };
+    String[] FIELDS = { MAILBOX_ID, IMAP_UID, INTERNAL_DATE, MOD_SEQ, BODY_START_OCTET, FULL_CONTENT_OCTETS, BODY_OCTECTS, Flag.ANSWERED, Flag.DELETED, Flag.DRAFT, Flag.FLAGGED, Flag.RECENT, Flag.SEEN, Flag.USER, BODY_CONTENT, HEADER_CONTENT, TEXTUAL_LINE_COUNT, PROPERTIES, FLAG_VERSION };
 
     interface Flag {
         String ANSWERED = "flagAnswered";
@@ -54,5 +52,11 @@ public interface CassandraMessageTable {
         ImmutableMap<String, javax.mail.Flags.Flag> JAVAX_MAIL_FLAG = new Builder<String, javax.mail.Flags.Flag>().put(ANSWERED, javax.mail.Flags.Flag.ANSWERED).put(DELETED, javax.mail.Flags.Flag.DELETED).put(DRAFT, javax.mail.Flags.Flag.DRAFT).put(RECENT, javax.mail.Flags.Flag.RECENT)
                 .put(SEEN, javax.mail.Flags.Flag.SEEN).put(FLAGGED, javax.mail.Flags.Flag.FLAGGED).put(USER, javax.mail.Flags.Flag.USER).build();
 
+    }
+
+    interface Properties {
+        String NAMESPACE = "namespace";
+        String NAME = "name";
+        String VALUE = "value";
     }
 }

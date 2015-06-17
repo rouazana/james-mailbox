@@ -99,4 +99,23 @@ public final class SimpleProperty implements Property {
         + "' value='" + this.value 
         + "')";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SimpleProperty)) return false;
+        SimpleProperty that = (SimpleProperty) o;
+        if (namespace != null ? !namespace.equals(that.namespace) : that.namespace != null) return false;
+        if (localName != null ? !localName.equals(that.localName) : that.localName != null) return false;
+        return !(value != null ? !value.equals(that.value) : that.value != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = namespace != null ? namespace.hashCode() : 0;
+        result = 31 * result + (localName != null ? localName.hashCode() : 0);
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
 }

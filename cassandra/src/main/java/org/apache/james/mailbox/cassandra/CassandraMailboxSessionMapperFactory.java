@@ -60,7 +60,7 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
 
     @Override
     public CassandraMessageMapper createMessageMapper(MailboxSession mailboxSession) {
-        return new CassandraMessageMapper(session, uidProvider, modSeqProvider);
+        return new CassandraMessageMapper(session, uidProvider, modSeqProvider, null, maxRetry, typesProvider);
     }
 
     @Override

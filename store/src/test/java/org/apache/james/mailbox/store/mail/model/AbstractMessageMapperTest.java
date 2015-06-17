@@ -26,6 +26,7 @@ import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMessage;
@@ -73,12 +74,12 @@ public abstract class AbstractMessageMapperTest<Id> {
         messageMapper = mapperProvider.createMessageMapper();
         benwaInboxMailbox = createMailbox(new MailboxPath("#private", "benwa", "INBOX"));
         benwaWorkMailbox = createMailbox( new MailboxPath("#private", "benwa", "INBOX"+DELIMITER+"work"));
-        message1 = createMessage(benwaInboxMailbox, "Subject: Test1 \n\nBody1\n.\n", BODY_START);
-        message2 = createMessage(benwaInboxMailbox, "Subject: Test2 \n\nBody2\n.\n", BODY_START);
-        message3 = createMessage(benwaInboxMailbox, "Subject: Test3 \n\nBody3\n.\n", BODY_START);
-        message4 = createMessage(benwaInboxMailbox, "Subject: Test4 \n\nBody4\n.\n", BODY_START);
-        message5 = createMessage(benwaInboxMailbox, "Subject: Test5 \n\nBody5\n.\n", BODY_START);
-        message6 = createMessage(benwaWorkMailbox, "Subject: Test6 \n\nBody6\n.\n", BODY_START);
+        message1 = createMessage(benwaInboxMailbox, "Subject: Test1 \n\nBody1\n.\n", BODY_START, new PropertyBuilder());
+        message2 = createMessage(benwaInboxMailbox, "Subject: Test2 \n\nBody2\n.\n", BODY_START, new PropertyBuilder());
+        message3 = createMessage(benwaInboxMailbox, "Subject: Test3 \n\nBody3\n.\n", BODY_START, new PropertyBuilder());
+        message4 = createMessage(benwaInboxMailbox, "Subject: Test4 \n\nBody4\n.\n", BODY_START, new PropertyBuilder());
+        message5 = createMessage(benwaInboxMailbox, "Subject: Test5 \n\nBody5\n.\n", BODY_START, new PropertyBuilder());
+        message6 = createMessage(benwaWorkMailbox, "Subject: Test6 \n\nBody6\n.\n", BODY_START, new PropertyBuilder());
     }
 
     @After
@@ -534,7 +535,78 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(messageMapper.updateFlags(benwaInboxMailbox, new Flags(Flags.Flag.SEEN), false, true, MessageRange.all()))
             .hasSize(5);
     }
-    
+        
+    @Test
+    public void messagePropertiesShouldBeStored() throws Exception {
+        PropertyBuilder propBuilder = new PropertyBuilder();
+        propBuilder.setMediaType("text");
+        propBuilder.setSubType("html");
+        propBuilder.setTextualLineCount(2L);
+        propBuilder.setProperty(StandardNames.NAMESPACE_RFC_2045, StandardNames.MIME_CONTENT_TRANSFER_ENCODING_NAME, "7bit");
+        propBuilder.setProperty(StandardNames.MIME_CONTENT_TYPE_PARAMETER_SPACE, StandardNames.MIME_CONTENT_TYPE_PARAMETER_CHARSET_NAME, "US-ASCII");
+
+        SimpleMessage<Id> messageWithProperties = createMessage(benwaWorkMailbox, "Subject: messagePropertiesShouldBeStored \n\nBody\n.\n", BODY_START, propBuilder);
+        MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
+        Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
+        assertThat(message.getProperties()).containsOnlyElementsOf(propBuilder.toProperties());
+    }
+
+    @Test
+    public void messagePropertiesShouldBeStoredWhenDuplicateEntries() throws Exception {
+        PropertyBuilder propBuilder = new PropertyBuilder();
+        propBuilder.setProperty(StandardNames.MIME_CONTENT_LANGUAGE_SPACE, StandardNames.MIME_CONTENT_LANGUAGE_NAME, "us");
+        propBuilder.setProperty(StandardNames.MIME_CONTENT_LANGUAGE_SPACE, StandardNames.MIME_CONTENT_LANGUAGE_NAME, "fr");
+
+        SimpleMessage<Id> messageWithProperties = createMessage(benwaWorkMailbox, "Subject: messagePropertiesShouldBeStoredWhenDuplicateEntries \n\nBody\n.\n", BODY_START, propBuilder);
+        MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
+        Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
+        assertThat(message.getProperties()).containsOnlyElementsOf(propBuilder.toProperties());
+    }
+
+    @Test
+    public void messagePropertiesShouldBeStoredWhenNoProperty() throws Exception {
+        SimpleMessage<Id> messageWithProperties = createMessage(benwaWorkMailbox, "Subject: messagePropertiesShouldBeStoredWhenNoProperty \n\nBody\n.\n", BODY_START, new PropertyBuilder());
+        MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
+        Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
+        assertThat(message.getProperties()).isEmpty();
+    }
+
+    @Test
+    public void textualLineCountShouldBeWellStored() throws Exception {
+        long textualLineCount = 48L;
+        PropertyBuilder propBuilder = new PropertyBuilder();
+        propBuilder.setTextualLineCount(textualLineCount);
+
+        SimpleMessage<Id> messageWithProperties = createMessage(benwaWorkMailbox, "Subject: messagePropertiesShouldBeStoredWhenDuplicateEntries \n\nBody\n.\n", BODY_START, propBuilder);
+        MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
+        Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
+        assertThat(message.getTextualLineCount()).isEqualTo(textualLineCount);
+    }
+
+    @Test
+    public void mediaTypeShouldBeWellStored() throws Exception {
+        String mediaType = "plain";
+        PropertyBuilder propBuilder = new PropertyBuilder();
+        propBuilder.setMediaType(mediaType);
+
+        SimpleMessage<Id> messageWithProperties = createMessage(benwaWorkMailbox, "Subject: messagePropertiesShouldBeStoredWhenDuplicateEntries \n\nBody\n.\n", BODY_START, propBuilder);
+        MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
+        Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
+        assertThat(message.getMediaType()).isEqualTo(mediaType);
+    }
+
+    @Test
+    public void subTypeShouldBeWellStored() throws Exception {
+        String subType = "text";
+        PropertyBuilder propBuilder = new PropertyBuilder();
+        propBuilder.setSubType(subType);
+
+        SimpleMessage<Id> messageWithProperties = createMessage(benwaWorkMailbox, "Subject: messagePropertiesShouldBeStoredWhenDuplicateEntries \n\nBody\n.\n", BODY_START, propBuilder);
+        MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
+        Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
+        assertThat(message.getSubType()).isEqualTo(subType);
+    }
+
     private Map<Long, MessageMetaData> markThenPerformExpunge(MessageRange range) throws MailboxException {
         messageMapper.updateFlags(benwaInboxMailbox, new Flags(Flags.Flag.DELETED), true, true, MessageRange.one(message1.getUid()));
         messageMapper.updateFlags(benwaInboxMailbox, new Flags(Flags.Flag.DELETED), true, true, MessageRange.one(message4.getUid()));
@@ -567,7 +639,7 @@ public abstract class AbstractMessageMapperTest<Id> {
         return messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(message.getUid()), MessageMapper.FetchType.Metadata, LIMIT).next();
     }
     
-    private SimpleMessage<Id> createMessage(Mailbox<Id> mailbox, String content, int bodyStart) {
-        return new SimpleMessage<Id>(new Date(), content.length(), bodyStart, new SharedByteArrayInputStream(content.getBytes()), new Flags(), new PropertyBuilder(), mailbox.getMailboxId());
+    private SimpleMessage<Id> createMessage(Mailbox<Id> mailbox, String content, int bodyStart, PropertyBuilder propertyBuilder) {
+        return new SimpleMessage<Id>(new Date(), content.length(), bodyStart, new SharedByteArrayInputStream(content.getBytes()), new Flags(), propertyBuilder, mailbox.getMailboxId());
     }
 }

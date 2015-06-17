@@ -19,7 +19,14 @@
 
 package org.apache.james.mailbox.cassandra;
 
-import static com.datastax.driver.core.DataType.*;
+import static com.datastax.driver.core.DataType.bigint;
+import static com.datastax.driver.core.DataType.blob;
+import static com.datastax.driver.core.DataType.cboolean;
+import static com.datastax.driver.core.DataType.cint;
+import static com.datastax.driver.core.DataType.counter;
+import static com.datastax.driver.core.DataType.text;
+import static com.datastax.driver.core.DataType.timestamp;
+import static com.datastax.driver.core.DataType.timeuuid;
 
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.schemabuilder.Create;
@@ -73,8 +80,6 @@ public class CassandraTableManager {
                 .addColumn(CassandraMessageTable.BODY_OCTECTS, cint())
                 .addColumn(CassandraMessageTable.TEXTUAL_LINE_COUNT, bigint())
                 .addColumn(CassandraMessageTable.MOD_SEQ, bigint())
-                .addColumn(CassandraMessageTable.MEDIA_TYPE, text())
-                .addColumn(CassandraMessageTable.SUB_TYPE, text())
                 .addColumn(CassandraMessageTable.FULL_CONTENT_OCTETS, cint())
                 .addColumn(CassandraMessageTable.BODY_CONTENT, blob())
                 .addColumn(CassandraMessageTable.HEADER_CONTENT, blob())
@@ -85,6 +90,7 @@ public class CassandraTableManager {
                 .addColumn(CassandraMessageTable.Flag.RECENT, cboolean())
                 .addColumn(CassandraMessageTable.Flag.SEEN, cboolean())
                 .addColumn(CassandraMessageTable.Flag.USER, cboolean())
+                .addUDTListColumn(CassandraMessageTable.PROPERTIES, SchemaBuilder.frozen(CassandraTypesProvider.TYPE.Property.getName()))
                 .addColumn(CassandraMessageTable.FLAG_VERSION, bigint())),
         Subscription(CassandraSubscriptionTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraSubscriptionTable.TABLE_NAME)
