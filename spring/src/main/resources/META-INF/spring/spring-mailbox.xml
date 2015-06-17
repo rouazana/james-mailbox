@@ -33,7 +33,7 @@
 
     <!-- TODO: update spring context creation to match new Jackrabbit version -->
     <!--<import resource="classpath:META-INF/spring/mailbox-jcr.xml" />-->
-
+    
     <import resource="classpath:META-INF/spring/mailbox-maildir.xml"/>
     <import resource="classpath:META-INF/spring/mailbox-memory.xml"/>
     <!-- TODO: Fix hbase build and re-enable -->
@@ -53,4 +53,8 @@
      -->
     <bean id="groupMembershipResolver" class="org.apache.james.mailbox.acl.SimpleGroupMembershipResolver"/>
 
+
+    <beans profile="cassandra">
+        <import resource="classpath:META-INF/spring/mailbox-cassandra.xml"/>
+    </beans>
 </beans>

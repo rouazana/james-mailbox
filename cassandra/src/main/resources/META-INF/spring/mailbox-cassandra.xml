@@ -18,7 +18,7 @@
   under the License.    
 -->
 
-<beans xmlns="http://www.springframework.org/schema/beans" 
+<beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="
           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
@@ -52,6 +52,11 @@
 
     <alias name="jvm-locker" alias="cassandra-locker"/>
 
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name ="location" value="classpath:cassandra.properties"/>
+    </bean>
+
     <!--
       The Cluster factory is responsible for connecting the cluster
 
@@ -60,21 +65,19 @@
       The SessionFactory is responsible for giving a session we can work with
     -->
     <bean id="cassandra-cluster" class="org.apache.james.mailbox.cassandra.ClusterFactory" factory-method="createClusterForSingleServerWithoutPassWord">
-        <constructor-arg index="0" value="localhost"/>
-        <constructor-arg index="1" value="9042" type="int"/>
+        <constructor-arg index="0" value="${cassandra.ip}"/>
+        <constructor-arg index="1" value="${cassandra.port}" type="int"/>
     </bean>
 
     <bean id="cassandra-cluster-initialized" class="org.apache.james.mailbox.cassandra.ClusterWithKeyspaceCreatedFactory" factory-method="clusterWithInitializedKeyspace">
         <constructor-arg index="0" ref="cassandra-cluster"/>
-        <constructor-arg index="1" value="apache_james"/>
-        <constructor-arg index="2" value="1" type="int"/>
+        <constructor-arg index="1" value="${cassandra.keyspace}"/>
+        <constructor-arg index="2" value="${cassandra.replication.factor}" type="int"/>
     </bean>
 
     <bean id="cassandra-session" class="org.apache.james.mailbox.cassandra.SessionFactory" factory-method="">
         <constructor-arg index="0" ref="cassandra-cluster-initialized"/>
-        <constructor-arg index="1" value="apache_james"/>
+        <constructor-arg index="1" value="${cassandra.keyspace}"/>
     </bean>
-
-
 
 </beans>
