@@ -60,6 +60,8 @@ public abstract class AbstractMailboxMapperTest<Id> {
     private MailboxPath benwaWorkDonePath;
     private SimpleMailbox<Id> benwaWorkDoneMailbox;
     private MailboxPath bobInboxPath;
+    private SimpleMailbox<Id> bobyMailbox;
+    private MailboxPath bobyMailboxPath;
     private SimpleMailbox<Id> bobInboxMailbox;
     private MailboxPath esnDevGroupInboxPath;
     private SimpleMailbox<Id> esnDevGroupInboxMailbox;
@@ -73,6 +75,8 @@ public abstract class AbstractMailboxMapperTest<Id> {
     private SimpleMailbox<Id> obmTeamGroupOPushMailbox;
     private MailboxPath obmTeamGroupRoundCubePath;
     private SimpleMailbox<Id> obmTeamGroupRoundCubeMailbox;
+    private MailboxPath bobDifferentNamespacePath;
+    private SimpleMailbox<Id> bobDifferentNamespaceMailbox;
 
     public AbstractMailboxMapperTest(MapperProvider<Id> mapperProvider) {
         this.mapperProvider = mapperProvider;
@@ -83,6 +87,8 @@ public abstract class AbstractMailboxMapperTest<Id> {
         benwaPersoPath = new MailboxPath("#private", "benwa", "INBOX"+DELIMITER+"perso");
         benwaWorkDonePath = new MailboxPath("#private", "benwa", "INBOX"+DELIMITER+"work"+DELIMITER+"done");
         bobInboxPath = new MailboxPath("#private", "bob", "INBOX");
+        bobyMailboxPath = new MailboxPath("#private", "boby", "INBOX.that.is.a.trick");
+        bobDifferentNamespacePath = new MailboxPath("#private_bob", "bob", "INBOX.bob");
         esnDevGroupInboxPath = new MailboxPath("#community_ESN_DEV", null, "INBOX");
         esnDevGroupHublinPath = new MailboxPath("#community_ESN_DEV", null, "INBOX"+DELIMITER+"hublin");
         esnDevGroupJamesPath = new MailboxPath("#community_ESN_DEV", null, "INBOX"+DELIMITER+"james");
@@ -102,6 +108,8 @@ public abstract class AbstractMailboxMapperTest<Id> {
         obmTeamGroupInboxMailbox = createMailbox(obmTeamGroupInboxPath);
         obmTeamGroupOPushMailbox = createMailbox(obmTeamGroupOPushPath);
         obmTeamGroupRoundCubeMailbox = createMailbox(obmTeamGroupRoundCubePath);
+        bobyMailbox = createMailbox(bobyMailboxPath);
+        bobDifferentNamespaceMailbox = createMailbox(bobDifferentNamespacePath);
     }
 
     @Before
@@ -164,6 +172,21 @@ public abstract class AbstractMailboxMapperTest<Id> {
         assertThat(mailboxMapper.hasChildren(esnDevGroupInboxMailbox, DELIMITER)).isTrue();
     }
 
+    @Ignore("See MAILBOX-11 and JWC-125")
+    @Test
+    public void hasChildrenShouldNotBeAcrossUsersAndNamespace() throws MailboxException {
+        saveAll();
+        assertThat(mailboxMapper.hasChildren(bobInboxMailbox, '.')).isFalse();
+    }
+
+    @Ignore("See MAILBOX-11 and JWC-125")
+    @Test
+    public void findMailboxWithPathLikeShouldBeLimitedToUserAndNamespace() throws MailboxException {
+        saveAll();
+        MailboxPath mailboxPathQuery = new MailboxPath(bobInboxMailbox.getNamespace(), bobInboxMailbox.getUser(), "IN" + WILDCARD);
+        assertThat(mailboxMapper.findMailboxWithPathLike(mailboxPathQuery)).containsOnly(bobInboxMailbox);
+    }
+
     @Test(expected=MailboxNotFoundException.class)
     public void deleteShouldEraseTheGivenMailbox() throws MailboxException {
         try {
@@ -223,6 +246,14 @@ public abstract class AbstractMailboxMapperTest<Id> {
         MailboxPath regexPath = new MailboxPath(esnDevGroupInboxPath.getNamespace(), esnDevGroupInboxPath.getUser(), WILDCARD + "X");
         assertThat(mailboxMapper.findMailboxWithPathLike(regexPath)).contains(esnDevGroupInboxMailbox);
     }
+
+    @Ignore("Mailbox name is not escaped")
+    @Test
+    public void findMailboxWithPathLikeShouldEscapeMailboxName() throws MailboxException {
+        saveAll();
+        MailboxPath regexPath = new MailboxPath(benwaInboxPath.getNamespace(), benwaInboxPath.getUser(), "INB?X");
+        assertThat(mailboxMapper.findMailboxWithPathLike(regexPath)).isEmpty();
+    }
     
     private void saveAll() throws MailboxException{
         mailboxMapper.save(benwaInboxMailbox);
@@ -230,13 +261,15 @@ public abstract class AbstractMailboxMapperTest<Id> {
         mailboxMapper.save(benwaWorkTodoMailbox);
         mailboxMapper.save(benwaPersoMailbox);
         mailboxMapper.save(benwaWorkDoneMailbox);
-        mailboxMapper.save(bobInboxMailbox);
         mailboxMapper.save(esnDevGroupInboxMailbox);
         mailboxMapper.save(esnDevGroupHublinMailbox);
         mailboxMapper.save(esnDevGroupJamesMailbox);
         mailboxMapper.save(obmTeamGroupInboxMailbox);
         mailboxMapper.save(obmTeamGroupOPushMailbox);
         mailboxMapper.save(obmTeamGroupRoundCubeMailbox);
+        mailboxMapper.save(bobyMailbox);
+        mailboxMapper.save(bobDifferentNamespaceMailbox);
+        mailboxMapper.save(bobInboxMailbox);
     }
 
     private SimpleMailbox<Id> createMailbox(MailboxPath mailboxPath) {
