@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 
 import com.google.common.base.Throwables;
+
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
 import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -35,10 +36,12 @@ import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class CassandraACLMapperTest {
 
@@ -198,8 +201,9 @@ public class CassandraACLMapperTest {
         assertThat(cassandraACLMapper.getACL()).isEqualTo(new SimpleMailboxACL().union(keyBob, rights).union(keyAlice, rights).union(keyBenwa, rights));
     }
 
-    private void awaitAll(Future<Boolean>... futures) throws InterruptedException, java.util.concurrent.ExecutionException, java.util.concurrent.TimeoutException {
-        for (Future<Boolean> future : futures) {
+    private void awaitAll(Future<?>... futures) 
+            throws InterruptedException, ExecutionException, TimeoutException {
+        for (Future<?> future : futures) {
             future.get(10l, TimeUnit.SECONDS);
         }
     }

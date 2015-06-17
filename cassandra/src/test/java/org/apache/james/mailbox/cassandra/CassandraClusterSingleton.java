@@ -86,10 +86,10 @@ public final class CassandraClusterSingleton {
 
     private Optional<Session> tryInitializeSession() {
         try {
-            Cluster cluster = new ClusterFactory().createClusterForSingleServerWithoutPassWord(CLUSTER_IP, CLUSTER_PORT_TEST);
-            Cluster clusterWithInitializedKeyspace = new ClusterWithKeyspaceCreatedFactory()
+            Cluster cluster = ClusterFactory.createClusterForSingleServerWithoutPassWord(CLUSTER_IP, CLUSTER_PORT_TEST);
+            Cluster clusterWithInitializedKeyspace = ClusterWithKeyspaceCreatedFactory
                 .clusterWithInitializedKeyspace(cluster, KEYSPACE_NAME, REPLICATION_FACTOR);
-            return Optional.of(new SessionFactory().createSession(clusterWithInitializedKeyspace, KEYSPACE_NAME));
+            return Optional.of(SessionFactory.createSession(clusterWithInitializedKeyspace, KEYSPACE_NAME));
         } catch (NoHostAvailableException exception) {
             sleep(SLEEP_BEFORE_RETRY);
             return Optional.empty();
