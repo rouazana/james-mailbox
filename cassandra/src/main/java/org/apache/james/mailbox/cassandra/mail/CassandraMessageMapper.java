@@ -23,10 +23,10 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.asc;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.decr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.gt;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.incr;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.lt;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
@@ -238,11 +238,11 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     private Where selectFrom(Mailbox<UUID> mailbox, long uid) {
-        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(gt(IMAP_UID, uid));
+        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(gte(IMAP_UID, uid));
     }
 
     private Where selectRange(Mailbox<UUID> mailbox, long from, long to) {
-        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(gt(IMAP_UID, from)).and(lt(IMAP_UID, to));
+        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(gte(IMAP_UID, from)).and(lte(IMAP_UID, to));
     }
 
     private Where selectMessage(Mailbox<UUID> mailbox, long uid) {

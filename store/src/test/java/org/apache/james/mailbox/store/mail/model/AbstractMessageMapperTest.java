@@ -167,8 +167,6 @@ public abstract class AbstractMessageMapperTest<Id> {
             .isEqualTo(message1, fetchType);
     }
 
-    // Ranges should be inclusive
-    @Ignore
     @Test
     public void messagesCanBeRetrievedInMailboxWithRangeTypeRange() throws MailboxException, IOException{
         saveMessages();
@@ -177,8 +175,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(retrievedMessageIterator).containsOnly(message1, message2, message3, message4);
     }
 
-    // Ranges should be inclusive
-    @Ignore
     @Test
     public void messagesCanBeRetrievedInMailboxWithRangeTypeRangeContainingAHole() throws MailboxException, IOException {
         saveMessages();
@@ -188,8 +184,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(retrievedMessageIterator).containsOnly(message1, message2, message4);
     }
 
-    // Ranges should be inclusive
-    @Ignore
     @Test
     public void messagesCanBeRetrievedInMailboxWithRangeTypeFrom() throws MailboxException, IOException {
         saveMessages();
@@ -198,8 +192,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(retrievedMessageIterator).containsOnly(message3, message4, message5);
     }
 
-    // Ranges should be inclusive
-    @Ignore
     @Test
     public void messagesCanBeRetrievedInMailboxWithRangeTypeFromContainingAHole() throws MailboxException, IOException {
         saveMessages();
@@ -495,8 +487,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         MessageAssert.assertThat(retrieveMessageFromStorage(message1)).hasFlags(new Flags(Flags.Flag.FLAGGED));
     }
 
-    // Ranges should be inclusive
-    @Ignore
     @Test
     public void updateFlagsOnRangeShouldAffectMessagesContainedInThisRange() throws MailboxException {
         saveMessages();
@@ -504,8 +494,6 @@ public abstract class AbstractMessageMapperTest<Id> {
             .hasSize(3);
     }
 
-    // Ranges should be inclusive
-    @Ignore
     @Test
     public void updateFlagsWithRangeFromShouldAffectMessagesContainedInThisRange() throws MailboxException {
         saveMessages();
