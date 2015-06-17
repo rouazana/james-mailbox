@@ -321,11 +321,30 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
 
     private MessageMetaData save(Mailbox<UUID> mailbox, Message<UUID> message) throws MailboxException {
         try {
-            Insert query = insertInto(TABLE_NAME).value(MAILBOX_ID, mailbox.getMailboxId()).value(IMAP_UID, message.getUid()).value(MOD_SEQ, message.getModSeq()).value(INTERNAL_DATE, message.getInternalDate()).value(MEDIA_TYPE, message.getMediaType())
-                    .value(BODY_START_OCTET, message.getFullContentOctets() - message.getBodyOctets()).value(SUB_TYPE, message.getSubType()).value(FULL_CONTENT_OCTETS, message.getFullContentOctets()).value(BODY_OCTECTS, message.getBodyOctets()).value(ANSWERED, message.isAnswered())
-                    .value(DELETED, message.isDeleted()).value(DRAFT, message.isDraft()).value(FLAGGED, message.isFlagged()).value(RECENT, message.isRecent()).value(SEEN, message.isSeen()).value(USER, message.createFlags().contains(Flag.USER)).value(BODY_CONTENT, bindMarker())
-                    .value(HEADER_CONTENT, bindMarker()).value(TEXTUAL_LINE_COUNT, message.getTextualLineCount()).value(FLAG_VERSION, 0);
+            Insert query = insertInto(TABLE_NAME)
+                    .value(MAILBOX_ID, mailbox.getMailboxId())
+                    .value(IMAP_UID, message.getUid())
+                    .value(MOD_SEQ, message.getModSeq())
+                    .value(INTERNAL_DATE, message.getInternalDate())
+                    .value(MEDIA_TYPE, message.getMediaType())
+                    .value(BODY_START_OCTET, message.getFullContentOctets() - message.getBodyOctets())
+                    .value(SUB_TYPE, message.getSubType())
+                    .value(FULL_CONTENT_OCTETS, message.getFullContentOctets())
+                    .value(BODY_OCTECTS, message.getBodyOctets())
+                    .value(ANSWERED, message.isAnswered())
+                    .value(DELETED, message.isDeleted())
+                    .value(DRAFT, message.isDraft())
+                    .value(FLAGGED, message.isFlagged())
+                    .value(RECENT, message.isRecent())
+                    .value(SEEN, message.isSeen())
+                    .value(USER, message.createFlags().contains(Flag.USER))
+                    .value(BODY_CONTENT, bindMarker())
+                    .value(HEADER_CONTENT, bindMarker())
+                    .value(TEXTUAL_LINE_COUNT, message.getTextualLineCount())
+                    .value(FLAG_VERSION, 0);
             PreparedStatement preparedStatement = session.prepare(query.toString());
+            
+            
             BoundStatement boundStatement = preparedStatement.bind(toByteBuffer(message.getBodyContent()), toByteBuffer(message.getHeaderContent()));
             session.execute(boundStatement);
             return new SimpleMessageMetaData(message);
