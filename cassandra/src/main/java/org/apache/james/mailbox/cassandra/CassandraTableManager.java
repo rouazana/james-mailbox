@@ -38,6 +38,8 @@ import java.util.Arrays;
 
 public class CassandraTableManager {
 
+    private final static String INDEX_PREFIX = "INDEX_";
+
     private Session session;
 
     enum TABLE {
@@ -108,12 +110,12 @@ public class CassandraTableManager {
     }
 
     enum INDEX {
-        MailboxPath(SchemaBuilder.createIndex(CassandraMailboxTable.TABLE_NAME)
+        MailboxPath(SchemaBuilder.createIndex(INDEX_PREFIX + CassandraMailboxTable.TABLE_NAME)
             .ifNotExists()
             .onTable(CassandraMailboxTable.TABLE_NAME)
             .andColumn(CassandraMailboxTable.PATH)),
         AggregateNamespaceUser(
-            SchemaBuilder.createIndex(CassandraMailboxTable.MAILBOX_BASE)
+            SchemaBuilder.createIndex(INDEX_PREFIX + CassandraMailboxTable.MAILBOX_BASE)
                 .ifNotExists()
                 .onTable(CassandraMailboxTable.TABLE_NAME)
                 .andColumn(CassandraMailboxTable.MAILBOX_BASE)
@@ -137,7 +139,7 @@ public class CassandraTableManager {
             );
         Arrays.asList(INDEX.values())
             .forEach(
-                (table) -> session.execute(table.createIndexStatement)
+                (index) -> session.execute(index.createIndexStatement)
             );
         return this;
     }
