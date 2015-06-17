@@ -66,6 +66,7 @@ import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
+import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
@@ -463,6 +464,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         if(!original.isSeen()) {
             incrementUnseen(mailbox);
         }
+        original.setFlags(new FlagsBuilder().add(original.createFlags()).add(Flag.RECENT).build());
         return save(mailbox, original);
     }
 

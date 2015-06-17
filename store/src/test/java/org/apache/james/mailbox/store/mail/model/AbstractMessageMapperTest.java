@@ -439,7 +439,6 @@ public abstract class AbstractMessageMapperTest<Id> {
         assertThat(messageMapper.countUnseenMessagesInMailbox(benwaInboxMailbox)).isEqualTo(0);
     }
 
-    @Ignore("See JWC-147 : RFC3501 Section 6.4.7 : Copied messages should be marked as recent")
     @Test
     public void copiedMessageShouldBeMarkedAsRecent() throws MailboxException {
         MessageMetaData metaData = messageMapper.copy(benwaInboxMailbox, new SimpleMessage<Id>(benwaInboxMailbox, message6));
