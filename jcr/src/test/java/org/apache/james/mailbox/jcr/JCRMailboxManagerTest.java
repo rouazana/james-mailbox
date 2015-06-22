@@ -18,6 +18,13 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
+import static org.junit.Assert.fail;
+
+import java.io.File;
+
+import javax.jcr.RepositoryException;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.ConfigurationException;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
@@ -32,13 +39,9 @@ import org.apache.james.mailbox.jcr.mail.JCRModSeqProvider;
 import org.apache.james.mailbox.jcr.mail.JCRUidProvider;
 import org.apache.james.mailbox.store.JVMMailboxPathLocker;
 import org.junit.After;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
-
-import javax.jcr.RepositoryException;
-import java.io.File;
 
 /**
  * JCRMailboxManagerTest that extends the StoreMailboxManagerTest.
@@ -57,17 +60,14 @@ public class JCRMailboxManagerTest extends AbstractMailboxManagerTest {
     }
 
     @After
-    public void tearDown() throws MailboxException {
+    public void tearDown() throws Exception {
         MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
         session.close();
         repository.shutdown();
-        new File(JACKRABBIT_HOME).delete();
+        FileUtils.forceDelete(new File(JACKRABBIT_HOME));
     }
 
     protected void createMailboxManager() throws MailboxException {
-
-        new File(JACKRABBIT_HOME).delete();
-
         String user = "user";
         String pass = "pass";
         String workspace = null;

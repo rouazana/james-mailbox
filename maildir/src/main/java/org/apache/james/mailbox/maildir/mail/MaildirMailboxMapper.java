@@ -70,30 +70,37 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
         String folderName = maildirStore.getFolderName(mailbox);
         File folder = new File(folderName);
         if (folder.isDirectory()) {
-            try {
-                if (mailbox.getName().equals(MailboxConstants.INBOX)) {
-                    // We must only delete cur, new, tmp and metadata for top INBOX mailbox.
-                    FileUtils.deleteDirectory(new File(folder, MaildirFolder.CUR));
-                    FileUtils.deleteDirectory(new File(folder, MaildirFolder.NEW));
-                    FileUtils.deleteDirectory(new File(folder, MaildirFolder.TMP));
-                    File uidListFile = new File(folder, MaildirFolder.UIDLIST_FILE);
-                    uidListFile.delete();
-                    File validityFile = new File(folder, MaildirFolder.VALIDITY_FILE);
-                    validityFile.delete();
-                }
-                else {
-                    // We simply delete all the folder for non INBOX mailboxes.
-                    FileUtils.deleteDirectory(folder);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new MailboxException("Unable to delete Mailbox " + mailbox, e);
+            // Shouldn't fail on file deletion, else the mailbox will never be deleted
+            if (mailbox.getName().equals(MailboxConstants.INBOX)) {
+                // We must only delete cur, new, tmp and metadata for top INBOX mailbox.
+                delete(new File(folder, MaildirFolder.CUR), 
+                        new File(folder, MaildirFolder.NEW),
+                        new File(folder, MaildirFolder.TMP),
+                        new File(folder, MaildirFolder.UIDLIST_FILE),
+                        new File(folder, MaildirFolder.VALIDITY_FILE));
+            }
+            else {
+                // We simply delete all the folder for non INBOX mailboxes.
+                delete(folder);
             }
         }
         else
             throw new MailboxNotFoundException(mailbox.getName());
     }
 
+    private void delete(File...files) {
+        for (File file : files) {
+            try {
+                if (file.isDirectory()) {
+                        FileUtils.deleteDirectory(file);
+                } else {
+                    FileUtils.forceDelete(file);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
    
     /**
      * @see org.apache.james.mailbox.store.mail.MailboxMapper#findMailboxByPath(org.apache.james.mailbox.model.MailboxPath)
@@ -160,8 +167,7 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                     try {
                         File inboxFolder = originalFolder.getRootFile();
                         File newFolder = folder.getRootFile();
-                        if (!newFolder.mkdirs())
-                            throw new IOException("Could not create folder " + newFolder);
+                        FileUtils.forceMkdir(newFolder);
                         if (!originalFolder.getCurFolder().renameTo(folder.getCurFolder()))
                             throw new IOException("Could not rename folder " + originalFolder.getCurFolder() + " to " + folder.getCurFolder());
                         if (!originalFolder.getNewFolder().renameTo(folder.getNewFolder()))
@@ -178,12 +184,9 @@ public class MaildirMailboxMapper extends NonTransactionalMapper implements Mail
                             throw new IOException("Could not rename file " + oldValidityFile + " to " + newValidityFile);
                         // recreate the INBOX folders, uidvalidity and uidlist will
                         // automatically be recreated later
-                        if (!originalFolder.getCurFolder().mkdir())
-                            throw new IOException("Could not create folder " + originalFolder.getCurFolder());
-                        if (!originalFolder.getNewFolder().mkdir())
-                            throw new IOException("Could not create folder " + originalFolder.getNewFolder());
-                        if (!originalFolder.getTmpFolder().mkdir())
-                            throw new IOException("Could not create folder " + originalFolder.getTmpFolder());
+                        FileUtils.forceMkdir(originalFolder.getCurFolder());
+                        FileUtils.forceMkdir(originalFolder.getNewFolder());
+                        FileUtils.forceMkdir(originalFolder.getTmpFolder());
                     } catch (IOException e) {
                         throw new MailboxException("Failed to save Mailbox " + mailbox, e);
                     }

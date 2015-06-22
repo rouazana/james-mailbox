@@ -18,6 +18,12 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
+import java.io.File;
+import java.io.IOException;
+
+import javax.jcr.RepositoryException;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.james.mailbox.AbstractSubscriptionManagerTest;
@@ -25,9 +31,6 @@ import org.apache.james.mailbox.SubscriptionManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.xml.sax.InputSource;
-
-import javax.jcr.RepositoryException;
-import java.io.File;
 
 public class JCRSubscriptionManagerTest extends AbstractSubscriptionManagerTest {
     private static final String JACKRABBIT_HOME = "target/jackrabbit";
@@ -49,17 +52,15 @@ public class JCRSubscriptionManagerTest extends AbstractSubscriptionManagerTest 
     }
 
     @AfterClass
-    public static void after() {
+    public static void after() throws IOException {
         if (repository != null) {
             repository.shutdown();
         }
-        new File(JACKRABBIT_HOME).delete();
+        FileUtils.forceDelete(new File(JACKRABBIT_HOME));
     }
 
     @Override
     public SubscriptionManager createSubscriptionManager() {
-
-        new File(JACKRABBIT_HOME).delete();
         MailboxSessionJCRRepository sessionRepos = new GlobalMailboxSessionJCRRepository(repository, workspace, user, pass);
         JCRMailboxSessionMapperFactory mf = new JCRMailboxSessionMapperFactory(sessionRepos, null, null);
         JCRSubscriptionManager sm = new JCRSubscriptionManager(mf);

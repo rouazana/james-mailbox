@@ -40,17 +40,18 @@ import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxPathLocker.LockAwareExecution;
+import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxACL;
-import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.SimpleMailboxACL;
 import org.apache.james.mailbox.model.MailboxACL.MailboxACLEntryKey;
 import org.apache.james.mailbox.model.MailboxACL.MailboxACLRights;
-import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.model.SimpleMailboxACL;
 
 public class MaildirFolder {
 
@@ -896,8 +897,7 @@ public class MaildirFolder {
                         }
                     }
                     if (deletedMessage != null) {
-                        if (!deletedMessage.getFile().delete())
-                            throw new IOException("Cannot delete file " + deletedMessage.getFile().getAbsolutePath());
+                        FileUtils.forceDelete(deletedMessage.getFile());
                         writer = new PrintWriter(uidList);
                         writer.println(createUidListHeader());
                         for (String entry : lines)

@@ -18,6 +18,12 @@
  ****************************************************************/
 package org.apache.james.mailbox.jcr;
 
+import java.io.File;
+import java.io.IOException;
+
+import javax.jcr.RepositoryException;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.james.mailbox.AbstractStressTest;
@@ -36,9 +42,6 @@ import org.junit.Before;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
-import javax.jcr.RepositoryException;
-import java.io.File;
-
 public class JCRStressTest extends AbstractStressTest {
 
     private JCRMailboxManager mailboxManager;
@@ -47,9 +50,6 @@ public class JCRStressTest extends AbstractStressTest {
 
     @Before
     public void setUp() throws RepositoryException, MailboxException {
-
-        new File(JACKRABBIT_HOME).delete();
-
         String user = "user";
         String pass = "pass";
         String workspace = null;
@@ -71,11 +71,11 @@ public class JCRStressTest extends AbstractStressTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws IOException {
         MailboxSession session = mailboxManager.createSystemSession("test", LoggerFactory.getLogger(JCRStressTest.class));
         session.close();
         repository.shutdown();
-        new File(JACKRABBIT_HOME).delete();
+        FileUtils.forceDelete(new File(JACKRABBIT_HOME));
     }
 
     @Override
