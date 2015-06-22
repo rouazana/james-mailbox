@@ -18,15 +18,9 @@
  ****************************************************************/
 package org.apache.james.mailbox;
 
-import org.apache.james.mailbox.exception.MailboxException;
-import org.apache.james.mailbox.model.MailboxConstants;
-import org.apache.james.mailbox.model.MailboxPath;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.slf4j.LoggerFactory;
 
-import javax.mail.Flags;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,6 +30,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.mail.Flags;
+
+import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.MailboxConstants;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractStressTest {
 
@@ -50,9 +52,10 @@ public abstract class AbstractStressTest {
         final CountDownLatch latch = new CountDownLatch(APPEND_OPERATIONS);
         final ExecutorService pool = Executors.newFixedThreadPool(APPEND_OPERATIONS / 2);
         final List<Long> uList = new ArrayList<Long>();
-        MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
+        final String username = "username";
+        MailboxSession session = getMailboxManager().createSystemSession(username, LoggerFactory.getLogger("Test"));
         getMailboxManager().startProcessingRequest(session);
-        final MailboxPath path = new MailboxPath(MailboxConstants.USER_NAMESPACE, "username", "INBOX");
+        final MailboxPath path = new MailboxPath(MailboxConstants.USER_NAMESPACE, username, "INBOX");
         getMailboxManager().createMailbox(path, session);
         getMailboxManager().addListener(path, new MailboxListener() {
 
@@ -81,7 +84,7 @@ public abstract class AbstractStressTest {
 
 
                     try {
-                        MailboxSession session = getMailboxManager().createSystemSession("test", LoggerFactory.getLogger("Test"));
+                        MailboxSession session = getMailboxManager().createSystemSession(username, LoggerFactory.getLogger("Test"));
 
                         getMailboxManager().startProcessingRequest(session);
                         MessageManager m = getMailboxManager().getMailbox(path, session);

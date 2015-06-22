@@ -357,7 +357,7 @@ public class SimpleMailboxACL implements MailboxACL {
                     throw new IllegalStateException("Unexpected enum member: " + CompatibilityMode.class.getName() + "." + compatibilityMode.name());
                 }
             default:
-                return (value | flagMaskLookup(flag)) != 0;
+                return (value & flagMaskLookup(flag)) != 0;
             }
         }
 
