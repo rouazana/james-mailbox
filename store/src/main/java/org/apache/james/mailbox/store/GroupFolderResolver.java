@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.store;
 
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 public class GroupFolderResolver {
@@ -30,8 +31,11 @@ public class GroupFolderResolver {
         this.mailboxSession = mailboxSession;
     }
 
-    public boolean isGroupFolder(Mailbox mailbox) {
+    public boolean isGroupFolder(Mailbox<?> mailbox) {
         String namespace = mailbox.getNamespace();
-        return namespace == null || (!namespace.equals(mailboxSession.getPersonalSpace()) && !namespace.equals(mailboxSession.getOtherUsersSpace()));
+        return namespace == null || 
+                (!namespace.equals(mailboxSession.getPersonalSpace())
+                && !namespace.equals(MailboxConstants.USER_NAMESPACE)
+                && !namespace.equals(mailboxSession.getOtherUsersSpace()));
     }
 }
