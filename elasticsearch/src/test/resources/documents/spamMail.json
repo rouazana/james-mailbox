@@ -3,7 +3,7 @@
   "mailboxId": "18",
   "modSeq": 42,
   "size": 25,
-  "date": "2015-06-07T00:00:00+02:00",
+  "date": "2015-06-07T00:00:00+0200",
   "mediaType": "plain",
   "subtype": "text",
   "userFlags": [],
@@ -103,7 +103,7 @@
   "subject": [
 	"[root] UNCHECKED contents in mail FROM <quentin.h@riseup.net>"
   ],
-  "sentDate": "2015-06-03T09:05:46+0000",
+  "sentDate": "2015-06-07T00:00:00+0200",
   "properties": [
 	{
 	  "namespace": "http://james.apache.org/rfc2045/Content-Type",

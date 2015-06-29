@@ -40,7 +40,6 @@ import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 public class CriterionConverter {
 
@@ -129,8 +128,8 @@ public class CriterionConverter {
 
     private FilteredQueryRepresentation dateRangeFilter(String field, SearchQuery.DateOperator dateOperator) {
         SearchQuery.DateResolution dateResolution = dateOperator.getDateResultion();
-        String lowDateString = ISO_OFFSET_DATE_TIME.format(DateResolutionFormater.computeLowerDate(DateResolutionFormater.convertDateToZonedDateTime(dateOperator.getDate()), dateResolution));
-        String upDateString = ISO_OFFSET_DATE_TIME.format(
+        String lowDateString = DateResolutionFormater.DATE_TIME_FOMATTER.format(DateResolutionFormater.computeLowerDate(DateResolutionFormater.convertDateToZonedDateTime(dateOperator.getDate()), dateResolution));
+        String upDateString = DateResolutionFormater.DATE_TIME_FOMATTER.format(
             DateResolutionFormater.computeUpperDate(
                 DateResolutionFormater.convertDateToZonedDateTime(dateOperator.getDate()),
                 dateResolution));

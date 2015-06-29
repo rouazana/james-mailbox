@@ -26,9 +26,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class DateResolutionFormater {
+
+    public static DateTimeFormatter DATE_TIME_FOMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
     public static ZonedDateTime computeUpperDate(ZonedDateTime date, SearchQuery.DateResolution resolution) {
         return date.truncatedTo(convertDateResolutionField(resolution)).plus(1,convertDateResolutionField(resolution));

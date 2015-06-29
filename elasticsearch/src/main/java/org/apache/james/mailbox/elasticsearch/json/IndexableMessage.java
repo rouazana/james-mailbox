@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;
+import org.apache.james.mailbox.elasticsearch.query.DateResolutionFormater;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.Property;
@@ -33,7 +34,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,9 +68,7 @@ public class IndexableMessage {
         this.to = headerCollection.getToAddressSet();
         this.cc = headerCollection.getCcAddressSet();
         this.bcc = headerCollection.getBccAddressSet();
-        this.sentDate = ISO_OFFSET_DATE_TIME.format(
-            headerCollection.getSentDate()
-                .orElse(internalDate));
+        this.sentDate = DateResolutionFormater.DATE_TIME_FOMATTER.format(headerCollection.getSentDate().orElse(internalDate));
     }
 
     private void copyMessageFields(Message<? extends MailboxId> message) {
@@ -78,7 +76,7 @@ public class IndexableMessage {
         this.mailboxId = message.getMailboxId().serialize();
         this.modSeq = message.getModSeq();
         this.size = message.getFullContentOctets();
-        this.date = ISO_OFFSET_DATE_TIME.format(getSanitizedInternalDate(message));
+        this.date = DateResolutionFormater.DATE_TIME_FOMATTER.format(getSanitizedInternalDate(message));
         this.mediaType = message.getMediaType();
         this.subType = message.getSubType();
         this.isAnswered = message.isAnswered();
