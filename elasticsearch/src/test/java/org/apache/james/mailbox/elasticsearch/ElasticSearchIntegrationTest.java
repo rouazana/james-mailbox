@@ -33,6 +33,7 @@ import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
 import org.apache.james.mailbox.elasticsearch.query.CriterionConverter;
 import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
 import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
+import org.apache.james.mailbox.elasticsearch.utils.TestingClientProvider;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryId;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
@@ -44,7 +45,6 @@ import org.apache.james.mailbox.store.MockAuthenticator;
 import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import org.elasticsearch.node.Node;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -55,6 +55,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
+
 
 public class ElasticSearchIntegrationTest {
 
@@ -153,15 +154,13 @@ public class ElasticSearchIntegrationTest {
     }
 
     private void initializeMailboxManager() throws Exception {
-        Node node = NodeMappingFactory.applyMapping(
-            IndexCreationFactory.createIndex(
-                embeddedElasticSearch.getNode()
-            )
+        ClientProvider clientProvider = NodeMappingFactory.applyMapping(
+            IndexCreationFactory.createIndex(new TestingClientProvider(embeddedElasticSearch.getNode()))
         );
         MailboxSessionMapperFactory<InMemoryId> mapperFactory = new InMemoryMailboxSessionMapperFactory();
         elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex<InMemoryId>(mapperFactory,
-            new ElasticSearchIndexer(node),
-            new ElasticSearchSearcher<InMemoryId>(node, new QueryConverter(new CriterionConverter())),
+            new ElasticSearchIndexer(clientProvider),
+            new ElasticSearchSearcher<InMemoryId>(clientProvider, new QueryConverter(new CriterionConverter())),
             new MessageToElasticSearchJson());
         storeMailboxManager = new StoreMailboxManager<>(
             mapperFactory,

@@ -18,22 +18,23 @@
  ****************************************************************/
 package org.apache.james.mailbox.elasticsearch;
 
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.node.Node;
+public class ClientProviderImpl implements ClientProvider {
 
-public class NodeProvider {
-
-    private static final String GLOBAL_NETWORK_HOST_SETTING = "network.host";
+    private final String host;
+    private final int port;
     
-    public static Node createNodeForClusterName(String clusterName, String masterHost) {
-        return nodeBuilder()
-                .clusterName(clusterName)
-                .settings(ImmutableSettings.builder()
-                        .put(GLOBAL_NETWORK_HOST_SETTING, masterHost))
-                .client(true)
-                .node()
-                .start();
+    public ClientProviderImpl(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+    
+    @SuppressWarnings("resource")
+    public Client get() {
+        return new TransportClient()
+            .addTransportAddress(new InetSocketTransportAddress(host, port));
     }
 }

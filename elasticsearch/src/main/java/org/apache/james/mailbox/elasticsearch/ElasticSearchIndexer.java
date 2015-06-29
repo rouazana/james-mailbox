@@ -24,7 +24,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.node.Node;
 
 import com.google.common.base.Preconditions;
 
@@ -33,15 +32,15 @@ public class ElasticSearchIndexer {
     public static final String MAILBOX_INDEX = "mailbox";
     public static final String MESSAGE_TYPE = "message";
     
-    private final Node node;
+    private final ClientProvider clientProvider;
 
-    public ElasticSearchIndexer(Node node) {
-        this.node = node;
+    public ElasticSearchIndexer(ClientProvider clientProvider) {
+        this.clientProvider = clientProvider;
     }
     
     public IndexResponse indexMessage(String id, String content) {
         checkArgument(content);
-        try (Client client = node.client()) {
+        try (Client client = clientProvider.get()) {
             return client.prepareIndex(MAILBOX_INDEX, MESSAGE_TYPE, id)
                 .setSource(content)
                 .get();
@@ -50,7 +49,7 @@ public class ElasticSearchIndexer {
 
     public UpdateResponse updateMessage(String id, String docUpdated) {
         checkArgument(docUpdated);
-        try (Client client = node.client()) {
+        try (Client client = clientProvider.get()) {
             return client.prepareUpdate(MAILBOX_INDEX, MESSAGE_TYPE, id)
                 .setDoc(docUpdated)
                 .get();
@@ -58,14 +57,14 @@ public class ElasticSearchIndexer {
     }
     
     public DeleteResponse deleteMessage(String id) {
-        try (Client client = node.client()) {
+        try (Client client = clientProvider.get()) {
             return client.prepareDelete(MAILBOX_INDEX, MESSAGE_TYPE, id)
                 .get();
         }
     }
     
     public DeleteByQueryResponse deleteAllWithIdStarting(String idStart) {
-        try (Client client = node.client()) {
+        try (Client client = clientProvider.get()) {
             return client.prepareDeleteByQuery(MAILBOX_INDEX)
                 .setTypes(MESSAGE_TYPE)
                 .setQuery(QueryBuilders.prefixQuery("_id", idStart))

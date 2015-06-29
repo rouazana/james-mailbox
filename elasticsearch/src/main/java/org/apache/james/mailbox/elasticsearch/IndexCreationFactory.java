@@ -19,43 +19,43 @@
 
 package org.apache.james.mailbox.elasticsearch;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+import java.io.IOException;
+
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
-import org.elasticsearch.node.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Optional;
-
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class IndexCreationFactory {
 
     private static Logger LOGGER = LoggerFactory.getLogger(IndexCreationFactory.class);
 
-    public static Node createIndex(Node node, int nbShards, int nbReplica) {
+    public static ClientProvider createIndex(ClientProvider clientProvider, int nbShards, int nbReplica) {
         try {
-            return createIndex(node, normalSettings(nbShards, nbReplica));
+            return createIndex(clientProvider, normalSettings(nbShards, nbReplica));
         } catch (IOException e) {
             LOGGER.error("Error while creating index : ", e);
-            return node;
+            return clientProvider;
         }
     }
 
-    public static Node createIndex(Node node) {
+    public static ClientProvider createIndex(ClientProvider clientProvider) {
         try {
-            return createIndex(node, settingForInMemory());
+            return createIndex(clientProvider, settingForInMemory());
         } catch (IOException e) {
             LOGGER.error("Error while creating index : ", e);
-            return node;
+            return clientProvider;
         }
     }
 
-    private static Node createIndex(Node node, XContentBuilder settings) {
+    private static ClientProvider createIndex(ClientProvider clientProvider, XContentBuilder settings) {
         try {
-            try (Client client = node.client()) {
+            try (Client client = clientProvider.get()) {
                 client.admin()
                     .indices()
                     .prepareCreate(ElasticSearchIndexer.MAILBOX_INDEX)
@@ -66,7 +66,7 @@ public class IndexCreationFactory {
         } catch (IndexAlreadyExistsException exception) {
             LOGGER.info("Index [" + ElasticSearchIndexer.MAILBOX_INDEX + "] already exist");
         }
-        return node;
+        return clientProvider;
     }
 
     public static XContentBuilder settingForInMemory() throws IOException {

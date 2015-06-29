@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 
+import org.apache.james.mailbox.elasticsearch.utils.TestingClientProvider;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -32,6 +33,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
+
 
 public class ElasticSearchIndexerTest {
 
@@ -47,7 +49,7 @@ public class ElasticSearchIndexerTest {
     @Before
     public void setup() throws IOException {
         node = embeddedElasticSearch.getNode();
-        testee = new ElasticSearchIndexer(node);
+        testee = new ElasticSearchIndexer(new TestingClientProvider(node));
     }
     
     @Test

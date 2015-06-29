@@ -29,36 +29,34 @@
     </bean>
 
     <bean id="elasticsearch-listener" class="org.apache.james.mailbox.elasticsearch.events.ElasticSearchListeningMessageSearchIndex">
-        <constructor-arg index="0" ref="elasticsearch-node"/>
+        <constructor-arg index="0" ref="messageMapperFactory"/>
         <constructor-arg index="1" ref="elasticsearch-indexer"/>
         <constructor-arg index="2" ref="elasticsearch-searcher"/>
         <constructor-arg index="3" ref="elasticsearch-json"/>
     </bean>
 
     <bean id="elasticsearch-indexer" class="org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer">
-        <constructor-arg index="0" ref="elasticsearch-node"/>
+        <constructor-arg index="0" ref="elasticsearch-clientprovider-2"/>
     </bean>
 
     <bean id="elasticsearch-json" class="org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson"/>
 
     <bean id="elasticsearch-searcher" class="org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher">
-        <constructor-arg index="0" ref="elasticsearch-node"/>
+        <constructor-arg index="0" ref="elasticsearch-clientprovider-2"/>
         <constructor-arg index="1" ref="query-converter"/>
     </bean>
 
-    <bean id="elasticsearch-node-no-index" class="org.apache.james.mailbox.cassandra.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
-        <constructor-arg index="0" ref="${elasticsearch.clusterName}"/>
-        <constructor-arg index="1" ref="${elasticsearch.masterHost}"/>
+    <bean id="elasticsearch-clientprovider-0" class="org.apache.james.mailbox.elasticsearch.ClientProviderImpl">
+        <constructor-arg index="0" value="${elasticsearch.masterHost}"/>
+        <constructor-arg index="1" value="${elasticsearch.port}"/>
     </bean>
 
-    <bean id="elasticsearch-node-index" class="org.apache.james.mailbox.elasticsearch" factory-method="createNodeForClusterName">
-        <constructor-arg index="0" ref="elasticsearch-node-no-index"/>
-        <constructor-arg index="1" value="${elasticsearch.shards}"/>
-        <constructor-arg index="2" value="${elasticsearch.replicas}"/>
+    <bean id="elasticsearch-clientprovider-2" class="org.apache.james.mailbox.elasticsearch.NodeMappingFactory" factory-method="applyMapping">
+        <constructor-arg index="0" ref="elasticsearch-clientprovider-1"/>
     </bean>
 
-    <bean id="elasticsearch-node" class="org.apache.james.mailbox.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
-        <constructor-arg index="0" ref="elasticsearch-node-index"/>
+    <bean id="elasticsearch-clientprovider-1" class="org.apache.james.mailbox.elasticsearch.IndexCreationFactory" factory-method="createIndex">
+        <constructor-arg index="0" ref="elasticsearch-clientprovider-0"/>
     </bean>
 
     <bean id="query-converter" class="org.apache.james.mailbox.elasticsearch.query.QueryConverter">

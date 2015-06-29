@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import org.apache.james.mailbox.elasticsearch.ClientProvider;
 import org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer;
 import org.apache.james.mailbox.elasticsearch.json.JsonMessageConstants;
 import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
@@ -35,7 +36,6 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,18 +44,19 @@ public class ElasticSearchSearcher<Id extends MailboxId> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchSearcher.class);
 
-    private final Node node;
+    private final ClientProvider clientProvider;
     private final QueryConverter queryConverter;
 
-    public ElasticSearchSearcher(Node node, QueryConverter queryConverter) {
-        this.node = node;
+    public ElasticSearchSearcher(ClientProvider clientProvider, QueryConverter queryConverter) {
+        this.clientProvider = clientProvider;
         this.queryConverter = queryConverter;
     }
 
     public Iterator<Long> search(Mailbox<Id> mailbox, SearchQuery searchQuery) throws MailboxException {
-        try (Client client = node.client()) {
-            return transformResponseToUidIterator(
-                getSearchRequestBuilder(client, mailbox, searchQuery).get());
+        try (Client client = clientProvider.get()) {
+            return transformResponseToUidIterator(getSearchRequestBuilder(client, mailbox, searchQuery)
+                .get()
+            );
         }
     }
 

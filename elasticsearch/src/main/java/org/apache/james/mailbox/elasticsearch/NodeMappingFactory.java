@@ -26,7 +26,6 @@ import java.io.IOException;
 import org.apache.james.mailbox.elasticsearch.json.JsonMessageConstants;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.node.Node;
 
 import com.google.common.base.Throwables;
 
@@ -43,8 +42,8 @@ public class NodeMappingFactory {
     public static final String FORMAT = "format";
     public static final String NESTED = "nested";
 
-    public static Node applyMapping(Node node) {
-        try (Client client = node.client()) {
+    public static ClientProvider applyMapping(ClientProvider clientProvider) {
+        try (Client client = clientProvider.get()) {
             client.admin()
                 .indices()
                 .preparePutMapping(ElasticSearchIndexer.MAILBOX_INDEX)
@@ -53,7 +52,7 @@ public class NodeMappingFactory {
                 .execute()
                 .actionGet();
         }
-        return node;
+        return clientProvider;
     }
 
     private static XContentBuilder getMappingContent() {
