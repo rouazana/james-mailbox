@@ -21,10 +21,11 @@ package org.apache.james.mailbox.elasticsearch;
 
 
 
+import static com.jayway.awaitility.Awaitility.await;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+
 import java.io.IOException;
 
-import com.jayway.awaitility.Duration;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -34,8 +35,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.jayway.awaitility.Awaitility.await;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import com.jayway.awaitility.Duration;
 
 public class EmbeddedElasticSearch {
 
@@ -45,7 +45,6 @@ public class EmbeddedElasticSearch {
         Node node = nodeBuilder().local(true)
             .settings(ImmutableSettings.builder()
                 .put("path.data", temporaryFolder.newFolder().getAbsolutePath())
-                .put("script.disable_dynamic",true)
                 .build())
             .node();
         node.start();
@@ -56,11 +55,9 @@ public class EmbeddedElasticSearch {
     public static void shutDown(Node node) {
         EmbeddedElasticSearch.awaitForElasticSearch(node);
         try (Client client = node.client()) {
-            node.client()
-                .admin()
-                .indices()
-                .delete(new DeleteIndexRequest(ElasticSearchIndexer.MAILBOX_INDEX))
-                .actionGet();
+            client.prepareDeleteByQuery(ElasticSearchIndexer.MAILBOX_INDEX)
+                .setQuery(QueryBuilders.matchAllQuery())
+                .get();
         } catch (Exception e) {
             LOGGER.warn("Error while closing ES connection", e);
         }
