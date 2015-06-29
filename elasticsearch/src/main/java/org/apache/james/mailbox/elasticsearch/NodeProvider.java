@@ -26,14 +26,12 @@ import org.elasticsearch.node.Node;
 public class NodeProvider {
 
     private static final String GLOBAL_NETWORK_HOST_SETTING = "network.host";
-    private static final String SCRIPT_DISABLE_DYNAMIC = "script.disable_dynamic";
     
     public static Node createNodeForClusterName(String clusterName, String masterHost) {
         return nodeBuilder()
                 .clusterName(clusterName)
                 .settings(ImmutableSettings.builder()
-                        .put(GLOBAL_NETWORK_HOST_SETTING, masterHost)
-                        .put(SCRIPT_DISABLE_DYNAMIC, true))
+                        .put(GLOBAL_NETWORK_HOST_SETTING, masterHost))
                 .client(true)
                 .node()
                 .start();
