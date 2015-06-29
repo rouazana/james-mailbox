@@ -45,11 +45,11 @@ import org.apache.james.mailbox.store.StoreMailboxManager;
 import org.apache.james.mailbox.store.StoreMessageManager;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.elasticsearch.node.Node;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,14 +60,17 @@ public class ElasticSearchIntegrationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchIntegrationTest.class);
 
-    private static Node node;
-    private static StoreMailboxManager<InMemoryId> storeMailboxManager;
-    private static ElasticSearchListeningMessageSearchIndex elasticSearchListeningMessageSearchIndex;
-    private static Mailbox mailbox;
-    private static SimpleDateFormat format;
-    private static MailboxSession session;
+    private TemporaryFolder temporaryFolder = new TemporaryFolder();
+    private EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder);
 
-    @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule
+    public RuleChain chain = RuleChain.outerRule(temporaryFolder).around(embeddedElasticSearch);
+    
+    private StoreMailboxManager<InMemoryId> storeMailboxManager;
+    private ElasticSearchListeningMessageSearchIndex<InMemoryId> elasticSearchListeningMessageSearchIndex;
+    private Mailbox<InMemoryId> mailbox;
+    private SimpleDateFormat format;
+    private MailboxSession session;
 
     @Before
     @SuppressWarnings("unchecked")
@@ -146,17 +149,17 @@ public class ElasticSearchIntegrationTest {
             true,
             new Flags("Hello you"));
 
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
     }
 
     private void initializeMailboxManager() throws Exception {
-        node = NodeMappingFactory.applyMapping(
+        Node node = NodeMappingFactory.applyMapping(
             IndexCreationFactory.createIndex(
-                EmbeddedElasticSearch.provideNode(temporaryFolder)
+                embeddedElasticSearch.getNode()
             )
         );
         MailboxSessionMapperFactory<InMemoryId> mapperFactory = new InMemoryMailboxSessionMapperFactory();
-        elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex(mapperFactory,
+        elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex<InMemoryId>(mapperFactory,
             new ElasticSearchIndexer(node),
             new ElasticSearchSearcher<InMemoryId>(node, new QueryConverter(new CriterionConverter())),
             new MessageToElasticSearchJson());
@@ -168,11 +171,6 @@ public class ElasticSearchIntegrationTest {
             new SimpleGroupMembershipResolver());
         storeMailboxManager.setMessageSearchIndex(elasticSearchListeningMessageSearchIndex);
         storeMailboxManager.init();
-    }
-
-    @After
-    public void cleanUp() {
-        EmbeddedElasticSearch.shutDown(node);
     }
 
     @Test

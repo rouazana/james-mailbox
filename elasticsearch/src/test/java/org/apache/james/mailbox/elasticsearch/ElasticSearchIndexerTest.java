@@ -27,28 +27,27 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 
 public class ElasticSearchIndexerTest {
 
-    @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    private TemporaryFolder temporaryFolder = new TemporaryFolder();
+    private EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder);
+    
+    @Rule
+    public RuleChain chain = RuleChain.outerRule(temporaryFolder).around(embeddedElasticSearch);
     
     private Node node;
     private ElasticSearchIndexer testee;
 
     @Before
     public void setup() throws IOException {
-        node = EmbeddedElasticSearch.provideNode(temporaryFolder);
+        node = embeddedElasticSearch.getNode();
         testee = new ElasticSearchIndexer(node);
-    }
-    
-    @After
-    public void tearDown() {
-        EmbeddedElasticSearch.shutDown(node);
     }
     
     @Test
@@ -57,7 +56,7 @@ public class ElasticSearchIndexerTest {
         String content = "{\"message\": \"trying out Elasticsearch\"}";
         
         testee.indexMessage(messageId, content);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         try (Client client = node.client()) {
             SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
@@ -79,10 +78,10 @@ public class ElasticSearchIndexerTest {
         String content = "{\"message\": \"trying out Elasticsearch\",\"field\":\"Should be unchanged\"}";
 
         testee.indexMessage(messageId, content);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
 
         testee.updateMessage(messageId, "{\"message\": \"mastering out Elasticsearch\"}");
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
 
         try (Client client = node.client()) {
             SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
@@ -107,7 +106,7 @@ public class ElasticSearchIndexerTest {
         String content = "{\"message\": \"trying out Elasticsearch\"}";
 
         testee.indexMessage(messageId, content);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
 
         testee.updateMessage("1", null);
     }
@@ -118,10 +117,10 @@ public class ElasticSearchIndexerTest {
         String content = "{\"message\": \"trying out Elasticsearch\"}";
 
         testee.indexMessage(messageId, content);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         testee.deleteAllWithIdStarting("1:");
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         try (Client client = node.client()) {
             SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
@@ -138,22 +137,22 @@ public class ElasticSearchIndexerTest {
         String content = "{\"message\": \"trying out Elasticsearch\"}";
         
         testee.indexMessage(messageId, content);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         String messageId2 = "1:2";
         String content2 = "{\"message\": \"trying out Elasticsearch 2\"}";
         
         testee.indexMessage(messageId2, content2);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         String messageId3 = "2:3";
         String content3 = "{\"message\": \"trying out Elasticsearch 3\"}";
         
         testee.indexMessage(messageId3, content3);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         testee.deleteAllWithIdStarting("1:");
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         try (Client client = node.client()) {
             SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
@@ -170,10 +169,10 @@ public class ElasticSearchIndexerTest {
         String content = "{\"message\": \"trying out Elasticsearch\"}";
 
         testee.indexMessage(messageId, content);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
 
         testee.deleteMessage(messageId);
-        EmbeddedElasticSearch.awaitForElasticSearch(node);
+        embeddedElasticSearch.awaitForElasticSearch();
         
         try (Client client = node.client()) {
             SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
