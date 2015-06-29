@@ -56,5 +56,6 @@
 
     <beans profile="cassandra">
         <import resource="classpath:META-INF/spring/mailbox-cassandra.xml"/>
+        <import resource="classpath:META-INF/spring/mailbox-elasticsearch.xml"/>
     </beans>
 </beans>
