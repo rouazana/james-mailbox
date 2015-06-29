@@ -21,15 +21,18 @@ package org.apache.james.mailbox.elasticsearch.json;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
+import org.apache.james.mailbox.elasticsearch.json.extractor.DefaultTextExtractor;
+import org.apache.james.mailbox.elasticsearch.json.extractor.ParsedContent;
+import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
 import org.apache.james.mime4j.stream.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +50,7 @@ public class MimePart {
         private Optional<String> fileName;
         private Optional<String> fileExtension;
         private Optional<String> contentDisposition;
-
+        private TextExtractor textExtractor;
 
         private Builder() {
             children = Lists.newArrayList();
@@ -58,6 +61,7 @@ public class MimePart {
             this.fileName = Optional.empty();
             this.fileExtension = Optional.empty();
             this.contentDisposition = Optional.empty();
+            this.textExtractor = new DefaultTextExtractor();
         }
 
         @Override
@@ -104,33 +108,48 @@ public class MimePart {
         }
 
         @Override
+        public MimePartContainerBuilder using(TextExtractor textExtractor) {
+            Preconditions.checkArgument(textExtractor != null, "Provided text extractor should not be null");
+            this.textExtractor = textExtractor;
+            return this;
+        }
+
+        @Override
         public MimePart build() {
+            Optional<ParsedContent> parsedContent = parseContent(textExtractor);
             return new MimePart(
-                    headerCollectionBuilder.build(),
-                    decodeContent(),
-                    mediaType,
-                    subType,
-                    fileName,
-                    fileExtension,
-                    contentDisposition,
-                    children
+                headerCollectionBuilder.build(),
+                parsedContent.map(ParsedContent::getTextualContent)
+                    .orElse(Optional.empty())
+                ,
+                mediaType,
+                subType,
+                fileName,
+                fileExtension,
+                contentDisposition,
+                children,
+                parsedContent.map(ParsedContent::getMetadata)
+                    .orElse(ImmutableMultimap.<String, String>builder().build())
             );
         }
 
-        private boolean isTextualMimePart() {
-            return mediaType.isPresent()
-                && mediaType.get().equalsIgnoreCase("text");
-        }
-
-        private Optional<String> decodeContent() {
-            if (bodyContent.isPresent() && isTextualMimePart()) {
+        private Optional<ParsedContent> parseContent(TextExtractor textExtractor) {
+            if (bodyContent.isPresent()) {
                 try {
-                    return Optional.of(IOUtils.toString(bodyContent.get()));
-                } catch (IOException e) {
-                    LOGGER.warn("Can not decode body content", e);
+                    return Optional.of(textExtractor.extractContent(bodyContent.get(), computeContentType(), fileName));
+                } catch (Exception e) {
+                    LOGGER.warn("Failed parsing attachment", e);
                 }
             }
             return Optional.empty();
+        }
+
+        private Optional<String> computeContentType() {
+            if (mediaType.isPresent() && subType.isPresent()) {
+                return Optional.of(mediaType.get() + "/" + subType.get());
+            } else {
+                return Optional.empty();
+            }
         }
 
     }
@@ -149,10 +168,11 @@ public class MimePart {
     private final Optional<String> fileExtension;
     private final Optional<String> contentDisposition;
     private final List<MimePart> attachments;
+    private final ImmutableMultimap<String, String> metadata;
 
     private MimePart(HeaderCollection headerCollection, Optional<String> bodyTextContent, Optional<String> mediaType,
                     Optional<String> subType, Optional<String> fileName, Optional<String> fileExtension,
-                    Optional<String> contentDisposition, List<MimePart> attachments) {
+                    Optional<String> contentDisposition, List<MimePart> attachments, Multimap<String, String> metadata) {
         this.headerCollection = headerCollection;
         this.mediaType = mediaType;
         this.subType = subType;
@@ -161,6 +181,7 @@ public class MimePart {
         this.contentDisposition = contentDisposition;
         this.attachments = attachments;
         this.bodyTextContent = bodyTextContent;
+        this.metadata = ImmutableMultimap.copyOf(metadata);
     }
 
     @JsonIgnore
@@ -206,6 +227,11 @@ public class MimePart {
     @JsonProperty(JsonMessageConstants.Attachment.TEXT_CONTENT)
     public Optional<String> getTextualBody() {
         return bodyTextContent;
+    }
+
+    @JsonProperty(JsonMessageConstants.Attachment.FILE_METADATA)
+    public ImmutableMultimap<String, String> getMetadata() {
+        return metadata;
     }
 
     @JsonIgnore

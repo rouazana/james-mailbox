@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;
+import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
 import org.apache.james.mailbox.elasticsearch.query.DateResolutionFormater;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Message;
@@ -41,11 +42,11 @@ import java.util.stream.Collectors;
 
 public class IndexableMessage {
 
-    public static IndexableMessage from(Message<? extends MailboxId> message) {
+    public static IndexableMessage from(Message<? extends MailboxId> message, TextExtractor textExtractor) {
         Preconditions.checkNotNull(message.getMailboxId());
         IndexableMessage indexableMessage = new IndexableMessage();
         try {
-            MimePart parsingResult = new MimePartParser(message).parse();
+            MimePart parsingResult = new MimePartParser(message, textExtractor).parse();
             indexableMessage.bodyText = parsingResult.locateFirstTextualBody();
             indexableMessage.setFlattenedAttachments(parsingResult);
             indexableMessage.copyHeaderFields(parsingResult.getHeaderCollection(), getSanitizedInternalDate(message));

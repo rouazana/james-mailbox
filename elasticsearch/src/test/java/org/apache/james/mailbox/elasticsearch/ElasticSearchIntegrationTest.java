@@ -30,6 +30,7 @@ import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.elasticsearch.events.ElasticSearchListeningMessageSearchIndex;
 import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
+import org.apache.james.mailbox.elasticsearch.json.extractor.DefaultTextExtractor;
 import org.apache.james.mailbox.elasticsearch.query.CriterionConverter;
 import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
 import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
@@ -158,10 +159,10 @@ public class ElasticSearchIntegrationTest {
             IndexCreationFactory.createIndex(new TestingClientProvider(embeddedElasticSearch.getNode()))
         );
         MailboxSessionMapperFactory<InMemoryId> mapperFactory = new InMemoryMailboxSessionMapperFactory();
-        elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex<InMemoryId>(mapperFactory,
+        elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex<>(mapperFactory,
             new ElasticSearchIndexer(clientProvider),
-            new ElasticSearchSearcher<InMemoryId>(clientProvider, new QueryConverter(new CriterionConverter())),
-            new MessageToElasticSearchJson());
+            new ElasticSearchSearcher<>(clientProvider, new QueryConverter(new CriterionConverter())),
+            new MessageToElasticSearchJson(new DefaultTextExtractor()));
         storeMailboxManager = new StoreMailboxManager<>(
             mapperFactory,
             new MockAuthenticator(),

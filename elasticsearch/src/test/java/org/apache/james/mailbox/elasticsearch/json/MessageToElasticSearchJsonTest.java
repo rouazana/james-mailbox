@@ -22,6 +22,8 @@ package org.apache.james.mailbox.elasticsearch.json;
 import com.google.common.base.Throwables;
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.FlagsBuilder;
+import org.apache.james.mailbox.elasticsearch.json.extractor.DefaultTextExtractor;
+import org.apache.james.mailbox.elasticsearch.json.extractor.TikaTextExtractor;
 import org.apache.james.mailbox.store.TestId;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
@@ -53,11 +55,9 @@ public class MessageToElasticSearchJsonTest {
 
     private Date date;
     private PropertyBuilder propertyBuilder;
-    private MessageToElasticSearchJson messageToElasticSearchJson;
 
     @Before
     public void setUp() throws Exception {
-        messageToElasticSearchJson = new MessageToElasticSearchJson();
         date = formatter.parse("07-06-2015");
         propertyBuilder = new PropertyBuilder();
         propertyBuilder.setMediaType("plain");
@@ -68,6 +68,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void spamEmailShouldBeWellConvertedToJson() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> spamMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -83,6 +84,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void htmlEmailShouldBeWellConvertedToJson() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> htmlMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -99,6 +101,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void pgpSignedEmailShouldBeWellConvertedToJson() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> pgpSignedMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -115,6 +118,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void simpleEmailShouldBeWellConvertedToJson() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> mail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -131,6 +135,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void recursiveEmailShouldBeWellConvertedToJson() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> recursiveMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -147,6 +152,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void emailWithNoInternalDateShouldUseNowDate() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> mailWithNoInternalDate = new SimpleMessage<>(null,
             SIZE,
             BODY_START_OCTET,
@@ -164,6 +170,7 @@ public class MessageToElasticSearchJsonTest {
 
     @Test(expected = NullPointerException.class)
     public void emailWithNoMailboxIdShouldThrow() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         Message<TestId> mailWithNoMailboxId;
         try {
             mailWithNoMailboxId = new SimpleMessage<>(date,
@@ -183,19 +190,38 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void getUpdatedJsonMessagePartShouldBehaveWellOnEmptyFlags() throws Exception {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         assertThatJson(messageToElasticSearchJson.getUpdatedJsonMessagePart(new Flags(), MOD_SEQ))
             .isEqualTo("{\"modSeq\":42,\"isAnswered\":false,\"isDeleted\":false,\"isDraft\":false,\"isFlagged\":false,\"isRecent\":false,\"userFlags\":[],\"isUnread\":true}");
     }
 
     @Test
     public void getUpdatedJsonMessagePartShouldBehaveWellOnNonEmptyFlags() throws Exception {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         assertThatJson(messageToElasticSearchJson.getUpdatedJsonMessagePart(new FlagsBuilder().add(Flags.Flag.DELETED, Flags.Flag.FLAGGED).add("user").build(), MOD_SEQ))
             .isEqualTo("{\"modSeq\":42,\"isAnswered\":false,\"isDeleted\":true,\"isDraft\":false,\"isFlagged\":true,\"isRecent\":false,\"userFlags\":[\"user\"],\"isUnread\":true}");
     }
 
     @Test(expected = NullPointerException.class)
     public void getUpdatedJsonMessagePartShouldThrowIfFlagsIsNull() throws Exception {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
         messageToElasticSearchJson.getUpdatedJsonMessagePart(null, MOD_SEQ);
+    }
+
+    @Test
+    public void spamEmailShouldBeWellConvertedToJsonWithApacheTika() throws IOException {
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new TikaTextExtractor());
+        Message<TestId> spamMail = new SimpleMessage<>(date,
+            SIZE,
+            BODY_START_OCTET,
+            new SharedByteArrayInputStream(IOUtils.toByteArray(ClassLoader.getSystemResourceAsStream("documents/nonTextual.eml"))),
+            new Flags(),
+            propertyBuilder,
+            MAILBOX_ID);
+        spamMail.setModSeq(MOD_SEQ);
+        assertThatJson(messageToElasticSearchJson.convertToJson(spamMail))
+            .when(IGNORING_ARRAY_ORDER)
+            .isEqualTo(IOUtils.toString(ClassLoader.getSystemResource("documents/nonTextual.json")));
     }
 
 }

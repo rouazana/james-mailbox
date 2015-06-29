@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.elasticsearch.json;
 
 import com.google.common.base.Preconditions;
+import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mime4j.MimeException;
@@ -36,13 +37,15 @@ import java.util.LinkedList;
 public class MimePartParser {
 
     private final Message<? extends MailboxId> message;
+    private final TextExtractor textExtractor;
     private final MimeTokenStream stream;
     private final Deque<MimePartContainerBuilder> builderStack;
     private MimePart result;
     private MimePartContainerBuilder currentlyBuildMimePart;
 
-    public MimePartParser(Message<? extends MailboxId> message) {
+    public MimePartParser(Message<? extends MailboxId> message, TextExtractor textExtractor) {
         this.message = message;
+        this.textExtractor = textExtractor;
         this.builderStack = new LinkedList<>();
         this.currentlyBuildMimePart = new RootMimePartContainerBuilder();
         this.stream = new MimeTokenStream(
@@ -94,7 +97,7 @@ public class MimePartParser {
     }
     
     private void closeMimePart() {
-        MimePart bodyMimePart = currentlyBuildMimePart.build();
+        MimePart bodyMimePart = currentlyBuildMimePart.using(textExtractor).build();
         if (!builderStack.isEmpty()) {
             builderStack.peek().addChild(bodyMimePart);
         } else {

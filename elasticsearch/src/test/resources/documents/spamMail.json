@@ -127,6 +127,7 @@
 	  "mediaType": "text",
 	  "subtype": "plain",
 	  "fileName": null,
+	  "fileMetadata":{},
 	  "fileExtension": null,
 	  "contentDisposition": "inline",
 	  "headers": {
@@ -147,6 +148,7 @@
 	  "subtype": "rfc822-headers",
 	  "fileName": "header",
 	  "fileExtension": "",
+	  "fileMetadata":{},
 	  "contentDisposition": "inline",
 	  "headers": {
 		"content-disposition": [
@@ -168,6 +170,7 @@
 	  "mediaType": "text",
 	  "subtype": "plain",
 	  "fileName": null,
+	  "fileMetadata":{},
 	  "fileExtension": null,
 	  "contentDisposition": "inline",
 	  "headers": {
