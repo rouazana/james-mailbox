@@ -168,6 +168,11 @@ public class MimePart {
         return attachments;
     }
 
+    @JsonIgnore
+    public HeaderCollection getHeaderCollection() {
+        return headerCollection;
+    }
+
     @JsonProperty(JsonMessageConstants.HEADERS)
     public Multimap<String, String> getHeaders() {
         return headerCollection.getHeaders();

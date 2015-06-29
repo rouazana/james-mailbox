@@ -40,6 +40,7 @@ public interface JsonMessageConstants {
     String SIZE = "size";
     String TEXT_BODY = "textBody";
     String SENT_DATE = "sentDate";
+    String ATTACHMENTS = "attachments";
 
     /*
     James properties we can easily get
