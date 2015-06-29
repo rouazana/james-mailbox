@@ -26,10 +26,10 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.IOException;
 
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -55,9 +55,11 @@ public class EmbeddedElasticSearch {
     public static void shutDown(Node node) {
         EmbeddedElasticSearch.awaitForElasticSearch(node);
         try (Client client = node.client()) {
-            client.prepareDeleteByQuery(ElasticSearchIndexer.MAILBOX_INDEX)
-                .setQuery(QueryBuilders.matchAllQuery())
-                .get();
+            node.client()
+                .admin()
+                .indices()
+                .delete(new DeleteIndexRequest(ElasticSearchIndexer.MAILBOX_INDEX))
+                .actionGet();
         } catch (Exception e) {
             LOGGER.warn("Error while closing ES connection", e);
         }
