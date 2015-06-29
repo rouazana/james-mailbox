@@ -22,10 +22,10 @@ import java.util.Iterator;
 
 import javax.mail.Flags;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer;
 import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
+import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageRange.Type;
@@ -42,22 +42,23 @@ import org.slf4j.LoggerFactory;
 public class ElasticSearchListeningMessageSearchIndex<Id extends MailboxId> extends ListeningMessageSearchIndex<Id> {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ElasticSearchListeningMessageSearchIndex.class);
-    private final static int NO_LIMIT = -1;
     private final static String ID_SEPARATOR = ":";
     
     private final ElasticSearchIndexer indexer;
+    private final ElasticSearchSearcher<Id> searcher;
     private final MessageToElasticSearchJson messageToElasticSearchJson;
 
-    public ElasticSearchListeningMessageSearchIndex(MessageMapperFactory<Id> factory, 
-                ElasticSearchIndexer indexer, MessageToElasticSearchJson messageToElasticSearchJson) {
+    public ElasticSearchListeningMessageSearchIndex(MessageMapperFactory<Id> factory, ElasticSearchIndexer indexer,
+        ElasticSearchSearcher<Id> searcher, MessageToElasticSearchJson messageToElasticSearchJson) {
         super(factory);
         this.indexer = indexer;
         this.messageToElasticSearchJson = messageToElasticSearchJson;
+        this.searcher = searcher;
     }
 
     @Override
     public Iterator<Long> search(MailboxSession session, Mailbox<Id> mailbox, SearchQuery searchQuery) throws MailboxException {
-        throw new NotImplementedException();
+        return searcher.search(mailbox, searchQuery);
     }
 
     @Override

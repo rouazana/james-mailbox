@@ -32,10 +32,10 @@ import java.util.stream.LongStream;
 
 import javax.mail.Flags;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer;
 import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
+import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.store.TestId;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
@@ -60,6 +60,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
     private MessageMapperFactory<TestId> mapperFactory;
     private ElasticSearchIndexer indexer;
     private MessageToElasticSearchJson messageToElasticSearchJson;
+    private ElasticSearchSearcher<TestId> elasticSearchSearcher;
     
     private ElasticSearchListeningMessageSearchIndex<TestId> testee;
     
@@ -73,15 +74,10 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         messageToElasticSearchJson = control.createMock(MessageToElasticSearchJson.class);
         expect(messageToElasticSearchJson.convertToJson(anyObject(Message.class))).andReturn("json content").anyTimes();
         expect(messageToElasticSearchJson.getUpdatedJsonMessagePart(anyObject(Flags.class), anyLong())).andReturn("json updated content").anyTimes();
+        
+        elasticSearchSearcher = control.createMock(ElasticSearchSearcher.class);
 
-        testee = new ElasticSearchListeningMessageSearchIndex<>(mapperFactory, indexer, messageToElasticSearchJson);
-    }
-    
-    @Test(expected=NotImplementedException.class)
-    public void searchShouldThrow() throws Exception {
-        control.replay();
-        testee.search(null, null, null);
-        control.verify();
+        testee = new ElasticSearchListeningMessageSearchIndex<>(mapperFactory, indexer, elasticSearchSearcher, messageToElasticSearchJson);
     }
     
     @Test

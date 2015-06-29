@@ -31,7 +31,8 @@
     <bean id="elasticsearch-listener" class="org.apache.james.mailbox.elasticsearch.events.ElasticSearchListeningMessageSearchIndex">
         <constructor-arg index="0" ref="elasticsearch-node"/>
         <constructor-arg index="1" ref="elasticsearch-indexer"/>
-        <constructor-arg index="2" ref="elasticsearch-json"/>
+        <constructor-arg index="2" ref="elasticsearch-searcher"/>
+        <constructor-arg index="3" ref="elasticsearch-json"/>
     </bean>
 
     <bean id="elasticsearch-indexer" class="org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer">
@@ -42,6 +43,7 @@
 
     <bean id="elasticsearch-searcher" class="org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher">
         <constructor-arg index="0" ref="elasticsearch-node"/>
+        <constructor-arg index="1" ref="query-converter"/>
     </bean>
 
     <bean id="elasticsearch-node-no-index" class="org.apache.james.mailbox.cassandra.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
@@ -58,5 +60,11 @@
     <bean id="elasticsearch-node" class="org.apache.james.mailbox.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
         <constructor-arg index="0" ref="elasticsearch-node-index"/>
     </bean>
+
+    <bean id="query-converter" class="org.apache.james.mailbox.elasticsearch.query.QueryConverter">
+        <constructor-arg index="0" ref="criterion-converter"/>
+    </bean>
+
+    <bean id="criterion-converter" class="org.apache.james.mailbox.elasticsearch.query.CriterionConverter"/>
 
 </beans>
