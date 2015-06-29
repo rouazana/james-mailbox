@@ -165,7 +165,6 @@ public class MessageRange implements Iterable<Long>{
         return "TYPE: " + type + " UID: " + uidFrom + ":" + uidTo;
     }
 
-    
     /**
      * Converts the given {@link Collection} of uids to a {@link List} of {@link MessageRange} instances
      * 
@@ -297,5 +296,33 @@ public class MessageRange implements Iterable<Long>{
             ranges.add(this);
         }
         return ranges;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((type == null) ? 0 : type.hashCode());
+        result = prime * result + (int) (uidFrom ^ (uidFrom >>> 32));
+        result = prime * result + (int) (uidTo ^ (uidTo >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MessageRange other = (MessageRange) obj;
+        if (type != other.type)
+            return false;
+        if (uidFrom != other.uidFrom)
+            return false;
+        if (uidTo != other.uidTo)
+            return false;
+        return true;
     }
 }
