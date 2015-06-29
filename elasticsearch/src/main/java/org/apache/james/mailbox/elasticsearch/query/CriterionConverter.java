@@ -140,7 +140,7 @@ public class CriterionConverter {
     private FilteredQueryRepresentation convertConjunction(SearchQuery.ConjunctionCriterion criterion) {
         return criterion.getCriteria().stream()
             .map(this::convertCriterion)
-            .collect(new FilteredQueryCollector(criterion.getType()));
+            .collect(FilteredQueryCollector.collector(criterion.getType()));
     }
 
     private FilteredQueryRepresentation convertFlag(SearchQuery.FlagCriterion flagCriterion) {
@@ -192,7 +192,7 @@ public class CriterionConverter {
         }
         return Arrays.stream(uidCriterion.getOperator().getRange())
             .map(this::uidRangeFilter)
-            .collect(new FilteredQueryCollector(SearchQuery.Conjunction.OR));
+            .collect(FilteredQueryCollector.collector(SearchQuery.Conjunction.OR));
     }
 
     private FilteredQueryRepresentation uidRangeFilter(SearchQuery.NumericRange numericRange) {

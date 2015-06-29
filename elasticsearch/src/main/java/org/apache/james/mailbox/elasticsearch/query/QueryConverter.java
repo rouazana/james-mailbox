@@ -67,7 +67,7 @@ public class QueryConverter implements Function<Pair<SearchQuery, String>, Query
     private FilteredQueryRepresentation addMailboxFilters(FilteredQueryRepresentation elasticsearchQueryRepresentation, String mailboxUUID) {
         return Stream.of(elasticsearchQueryRepresentation,
             FilteredQueryRepresentation.fromFilter(termFilter(JsonMessageConstants.MAILBOX_ID, mailboxUUID)))
-            .collect(new FilteredQueryCollector(SearchQuery.Conjunction.AND));
+            .collect(FilteredQueryCollector.collector(SearchQuery.Conjunction.AND));
     }
 
     private QueryBuilder getFinalQuery(FilteredQueryRepresentation filteredQueryRepresentation) {

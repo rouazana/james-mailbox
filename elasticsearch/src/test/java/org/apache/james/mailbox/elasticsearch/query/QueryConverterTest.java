@@ -48,27 +48,19 @@ public class QueryConverterTest {
         SearchQuery searchQuery = new SearchQuery();
         searchQuery.andCriteria(SearchQuery.all());
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID).toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "    \"filtered\": {" +
                 "        \"query\": {" +
-                "            \"bool\": {" +
-                "                \"must\": {" +
                 "                    \"match_all\": {}" +
-                "                }" +
-                "            }" +
                 "        }," +
                 "        \"filter\": {" +
-                "            \"bool\": {" +
-                "                \"must\": {" +
                 "                    \"term\": {" +
                 "                        \"mailboxId\": \"12345\"" +
                 "                    }" +
-                "                }" +
-                "            }" +
                 "        }" +
                 "    }" +
-                "}")
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
     }
 
     @Test
@@ -76,32 +68,24 @@ public class QueryConverterTest {
         SearchQuery searchQuery = new SearchQuery();
         searchQuery.andCriteria(SearchQuery.bodyContains("awesome Linagora team"));
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID).toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "    \"filtered\": {" +
                 "        \"query\": {" +
-                "            \"bool\": {" +
-                "                \"must\": {" +
                 "                    \"match\": {" +
                 "                        \"textBody\": {" +
                 "                            \"query\": \"awesome Linagora team\"," +
                 "                            \"type\": \"boolean\"" +
                 "                        }" +
-                "                    }" +
-                "                }" +
                 "            }" +
                 "        }," +
                 "        \"filter\": {" +
-                "            \"bool\": {" +
-                "                \"must\": {" +
                 "                    \"term\": {" +
                 "                        \"mailboxId\": \"12345\"" +
                 "                    }" +
-                "                }" +
-                "            }" +
                 "        }" +
                 "    }" +
-                "}")
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
     }
 
     @Test
@@ -109,6 +93,7 @@ public class QueryConverterTest {
         SearchQuery searchQuery = new SearchQuery();
         searchQuery.andCriteria(SearchQuery.modSeqGreaterThan(42L));
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID).toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "  \"filtered\" : {" +
                 "    \"query\" : {" +
@@ -133,8 +118,7 @@ public class QueryConverterTest {
                 "      }" +
                 "    }" +
                 "  }" +
-                "}")
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
     }
 
     @Test
@@ -143,11 +127,10 @@ public class QueryConverterTest {
         searchQuery.andCriteria(SearchQuery.bodyContains("awesome Linagora team"));
         searchQuery.andCriteria(SearchQuery.bodyContains("Gold fish"));
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID).toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "    \"filtered\": {" +
                 "        \"query\": {" +
-                "            \"bool\": {" +
-                "                \"must\": {" +
                 "                    \"bool\": {" +
                 "                        \"must\": [" +
                 "                            {" +
@@ -167,22 +150,15 @@ public class QueryConverterTest {
                 "                                }" +
                 "                            }" +
                 "                        ]" +
-                "                    }" +
-                "                }" +
                 "            }" +
                 "        }," +
                 "        \"filter\": {" +
-                "            \"bool\": {" +
-                "                \"must\": {" +
                 "                    \"term\": {" +
                 "                        \"mailboxId\": \"12345\"" +
                 "                    }" +
-                "                }" +
-                "            }" +
                 "        }" +
                 "    }" +
-                "}")
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
     }
 
     @Test
@@ -190,6 +166,7 @@ public class QueryConverterTest {
         SearchQuery searchQuery = new SearchQuery();
         searchQuery.andCriteria(SearchQuery.modSeqGreaterThan(42L));
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID + "\"},{\"exist\":\"id\"},{\"match\":\"well done").toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "  \"filtered\" : {" +
                 "    \"query\" : {" +
@@ -214,8 +191,7 @@ public class QueryConverterTest {
                 "      }" +
                 "    }" +
                 "  }" +
-                "}")
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
     }
 
     @Test
@@ -223,48 +199,40 @@ public class QueryConverterTest {
         SearchQuery searchQuery = new SearchQuery();
         searchQuery.andCriteria(SearchQuery.address(SearchQuery.AddressType.Bcc, "Benoit Tellier<btellier@free.fr>"));
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID).toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "  \"filtered\" : {" +
                 "    \"query\" : {" +
-                "      \"bool\" : {" +
-                "        \"must\" : {" +
-                "          \"nested\" : {" +
-                "            \"query\" : {" +
-                "              \"bool\" : {" +
-                "                \"should\" : [ {" +
-                "                  \"match\" : {" +
-                "                    \"bcc.name\" : {" +
-                "                      \"query\" : \"Benoit Tellier<btellier@free.fr>\"," +
-                "                      \"type\" : \"boolean\"" +
-                "                    }" +
-                "                  }" +
-                "                }, {" +
-                "                  \"match\" : {" +
-                "                    \"bcc.address\" : {" +
-                "                      \"query\" : \"Benoit Tellier<btellier@free.fr>\"," +
-                "                      \"type\" : \"boolean\"" +
-                "                    }" +
-                "                  }" +
-                "                } ]" +
+                "      \"nested\" : {" +
+                "        \"query\" : {" +
+                "          \"bool\" : {" +
+                "            \"should\" : [ {" +
+                "              \"match\" : {" +
+                "                \"bcc.name\" : {" +
+                "                  \"query\" : \"Benoit Tellier<btellier@free.fr>\"," +
+                "                  \"type\" : \"boolean\"" +
+                "                }" +
                 "              }" +
-                "            }," +
-                "            \"path\" : \"bcc\"" +
+                "            }, {" +
+                "              \"match\" : {" +
+                "                \"bcc.address\" : {" +
+                "                  \"query\" : \"Benoit Tellier<btellier@free.fr>\"," +
+                "                  \"type\" : \"boolean\"" +
+                "                }" +
+                "              }" +
+                "            } ]" +
                 "          }" +
-                "        }" +
+                "        }," +
+                "        \"path\" : \"bcc\"" +
                 "      }" +
                 "    }," +
                 "    \"filter\" : {" +
-                "      \"bool\" : {" +
-                "        \"must\" : {" +
-                "          \"term\" : {" +
-                "            \"mailboxId\" : \"12345\"" +
-                "          }" +
-                "        }" +
+                "      \"term\" : {" +
+                "        \"mailboxId\" : \"12345\"" +
                 "      }" +
                 "    }" +
                 "  }" +
-                "}")
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
     }
 
     @Test
@@ -275,6 +243,8 @@ public class QueryConverterTest {
             new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2015-02-25 21:54:38"),
             SearchQuery.DateResolution.Hour));
         assertThatJson(queryConverter.from(searchQuery, MAILBOX_UUID).toXContent(jsonBuilder(), QueryBuilder.EMPTY_PARAMS).string())
+            .when(IGNORING_VALUES)
+            .when(IGNORING_ARRAY_ORDER)
             .isEqualTo("{" +
                 "    \"filtered\": {" +
                 "        \"query\": {" +
@@ -302,9 +272,7 @@ public class QueryConverterTest {
                 "            }" +
                 "        }" +
                 "    }" +
-                "}")
-            .when(IGNORING_VALUES)
-            .when(IGNORING_ARRAY_ORDER);
+                "}");
         // We just test structure as time Zone used by Date is different, depending on computer configuration
     }
 
