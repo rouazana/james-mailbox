@@ -12,7 +12,7 @@
 	  "1.0"
 	],
 	"date": [
-	  "Wed, 3 Jun 2015 09:05:46 +0000"
+	  "Wed, 3 Jun 2015 09:05:46 +0000 (UTC)"
 	],
 	"x-beenthere": [
 	  "root@listes.minet.net"
@@ -103,7 +103,7 @@
   "subject": [
 	"[root] UNCHECKED contents in mail FROM <quentin.h@riseup.net>"
   ],
-  "sentDate": "2015-06-07T00:00:00+0200",
+  "sentDate": "2015-06-03T09:05:46+0000",
   "properties": [
 	{
 	  "namespace": "http://james.apache.org/rfc2045/Content-Type",

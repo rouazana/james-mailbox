@@ -32,7 +32,7 @@ Delivered-To: mailing list server-dev@james.apache.org
 Received: (qmail 43130 invoked by uid 99); 4 Jun 2015 09:27:38 -0000
 Received: from arcas.apache.org (HELO arcas.apache.org) (140.211.11.28)
     by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 04 Jun 2015 09:27:38 +0000
-Date: Thu, 4 Jun 2015 09:27:37 +0000
+Date: Thu, 4 Jun 2015 09:27:37 +0000 (UTC)
 From: "Tellier Benoit (JIRA)" <jira@apache.org>
 To: server-dev@james.apache.org
 Message-ID: <JIRA.12781874.1426269127000.9353.1433410057953@Atlassian.JIRA>

@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox.elasticsearch.json;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMultimap;
@@ -39,12 +40,22 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HeaderCollection {
 
     public static class Builder {
+
+        // Some sent e-mail have this form : Wed,  3 Jun 2015 09:05:46 +0000 (UTC)
+        // Java 8 Time library RFC_1123_DATE_TIME corresponds to Wed,  3 Jun 2015 09:05:46 +0000 only
+        // This REGEXP is here to match ( in order to remove ) the possible invalid end of a header date
+        // Example of matching patterns :
+        //  (UTC)
+        //  (CEST)
+        private static final Pattern DATE_SANITIZING_PATTERN = Pattern.compile(" *\\(.*\\) *");
 
         private final Set<EMailer> toAddressSet;
         private final Set<EMailer> fromAddressSet;
@@ -135,11 +146,24 @@ public class HeaderCollection {
 
         private Optional<ZonedDateTime> toISODate(String value) {
             try {
-                return Optional.of(ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME));
+                return Optional.of(ZonedDateTime.parse(
+                    sanitizeDateStringHeaderValue(value),
+                    DateTimeFormatter.RFC_1123_DATE_TIME));
             } catch (Exception e) {
                 LOGGER.info("Can not parse receive date " + value);
                 return Optional.empty();
             }
+        }
+
+        @VisibleForTesting String sanitizeDateStringHeaderValue(String value) {
+            // Some sent e-mail have this form : Wed,  3 Jun 2015 09:05:46 +0000 (UTC)
+            // Java 8 Time library RFC_1123_DATE_TIME corresponds to Wed,  3 Jun 2015 09:05:46 +0000 only
+            // This method is here to convert the first date into something parsable by RFC_1123_DATE_TIME DateTimeFormatter
+            Matcher sanitizerMatcher = DATE_SANITIZING_PATTERN.matcher(value);
+            if (sanitizerMatcher.find()) {
+                return value.substring(0 , sanitizerMatcher.start());
+            }
+            return value;
         }
 
     }
