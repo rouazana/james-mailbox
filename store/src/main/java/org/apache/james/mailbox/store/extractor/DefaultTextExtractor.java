@@ -17,13 +17,12 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.elasticsearch.json.extractor;
+package org.apache.james.mailbox.store.extractor;
 
 import java.io.InputStream;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.List;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableMultimap;
 import org.apache.commons.io.IOUtils;
 
 /**
@@ -34,11 +33,11 @@ import org.apache.commons.io.IOUtils;
 public class DefaultTextExtractor implements TextExtractor {
 
     @Override
-    public ParsedContent extractContent(InputStream inputStream, Optional<String> contentType, Optional<String> fileName) throws Exception {
-        if(contentType.isPresent() && contentType.get().startsWith("text/") ) {
-            return new ParsedContent(Optional.of(IOUtils.toString(inputStream)), ImmutableMultimap.copyOf(ArrayListMultimap.create()));
+    public ParsedContent extractContent(InputStream inputStream, String contentType, String fileName) throws Exception {
+        if(contentType != null && contentType.startsWith("text/") ) {
+            return new ParsedContent(IOUtils.toString(inputStream), new HashMap<String, List<String>>());
         } else {
-            return new ParsedContent(Optional.empty(), ImmutableMultimap.of());
+            return new ParsedContent(null, new HashMap<String, List<String>>());
         }
     }
 }

@@ -30,7 +30,7 @@ import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
 import org.apache.james.mailbox.acl.UnionMailboxACLResolver;
 import org.apache.james.mailbox.elasticsearch.events.ElasticSearchListeningMessageSearchIndex;
 import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
-import org.apache.james.mailbox.elasticsearch.json.extractor.DefaultTextExtractor;
+import org.apache.james.mailbox.store.extractor.DefaultTextExtractor;
 import org.apache.james.mailbox.elasticsearch.query.CriterionConverter;
 import org.apache.james.mailbox.elasticsearch.query.QueryConverter;
 import org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher;

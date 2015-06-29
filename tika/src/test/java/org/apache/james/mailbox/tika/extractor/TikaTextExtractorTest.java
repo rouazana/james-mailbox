@@ -17,13 +17,13 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.elasticsearch.json.extractor;
+package org.apache.james.mailbox.tika.extractor;
 
 import java.io.InputStream;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.james.mailbox.store.extractor.TextExtractor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,13 +40,7 @@ public class TikaTextExtractorTest {
     public void textTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/Text.txt");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("text/plain"),
-                Optional.of("Text.txt"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "text/plain", "Text.txt").getTextualContent())
             .isEqualTo("This is some awesome text text.\n\n\n");
     }
 
@@ -54,13 +48,7 @@ public class TikaTextExtractorTest {
     public void textMicrosoftWorldTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/writter.docx");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-                Optional.of("writter.docx"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "writter.docx").getTextualContent())
             .isEqualTo("This is an awesome document on libroffice writter !\n");
     }
 
@@ -68,13 +56,7 @@ public class TikaTextExtractorTest {
     public void textOdtTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/writter.odt");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.oasis.opendocument.text"),
-                Optional.of("writter.odt"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.oasis.opendocument.text", "writter.odt").getTextualContent())
             .isEqualTo("This is an awesome document on libroffice writter !\n");
     }
 
@@ -82,13 +64,7 @@ public class TikaTextExtractorTest {
     public void documentWithBadDeclaredMetadataShouldBeWellHandled() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/fake.txt");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.oasis.opendocument.text"),
-                Optional.of("writter.odt"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.oasis.opendocument.text", "writter.odt").getTextualContent())
             .isEqualTo("This is an awesome document on libroffice writter !\n");
     }
     
@@ -96,13 +72,7 @@ public class TikaTextExtractorTest {
     public void slidePowerPointTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/slides.pptx");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.openxmlformats-officedocument.presentationml.presentation"),
-                Optional.of("slides.pptx"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.openxmlformats-officedocument.presentationml.presentation", "slides.pptx").getTextualContent())
             .isEqualTo("James is awesome\nIt manages attachments so well !\n");
     }
 
@@ -110,13 +80,7 @@ public class TikaTextExtractorTest {
     public void slideOdpTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/slides.odp");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.oasis.opendocument.presentation"),
-                Optional.of("slides.odp"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.oasis.opendocument.presentation", "slides.odp").getTextualContent())
             .isEqualTo("James is awesome\n\nIt manages attachments so well !\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     }
     
@@ -124,13 +88,7 @@ public class TikaTextExtractorTest {
     public void pdfTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/PDF.pdf");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/pdf"),
-                Optional.of("PDF.pdf"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/pdf", "PDF.pdf").getTextualContent())
             .isEqualTo("\nThis is an awesome document on libroffice writter !\n\n\n");
     }
     
@@ -138,13 +96,7 @@ public class TikaTextExtractorTest {
     public void odsTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/calc.ods");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.oasis.opendocument.spreadsheet"),
-                Optional.of("calc.ods"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.oasis.opendocument.spreadsheet", "calc.ods").getTextualContent())
             .isEqualTo("\tThis is an aesome LibreOffice document !\n" +
                 "\n" +
                 "\n" +
@@ -159,13 +111,7 @@ public class TikaTextExtractorTest {
     public void excelTest() throws Exception {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream("documents/calc.xlsx");
         assertThat(inputStream).isNotNull();
-        assertThat(
-            textExtractor.extractContent(
-                inputStream,
-                Optional.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-                Optional.of("calc.xlsx"))
-                .getTextualContent()
-                .get())
+        assertThat(textExtractor.extractContent(inputStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "calc.xlsx").getTextualContent())
             .isEqualTo("Feuille1\n" +
                 "\tThis is an aesome LibreOffice document !\n" +
                 "\n" +

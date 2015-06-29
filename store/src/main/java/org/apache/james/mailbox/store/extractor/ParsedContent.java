@@ -17,13 +17,27 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.elasticsearch.json.extractor;
+package org.apache.james.mailbox.store.extractor;
 
-import java.io.InputStream;
-import java.util.Optional;
+import java.util.List;
+import java.util.Map;
 
-public interface TextExtractor {
+public class ParsedContent {
 
-    ParsedContent extractContent(InputStream inputStream, Optional<String> contentType, Optional<String> fileName) throws Exception;
+    private final String textualContent;
+    private final Map<String, List<String>> metadata;
 
+    public ParsedContent(String textualContent, Map<String, List<String>> metadata) {
+        this.textualContent = textualContent;
+        this.metadata = metadata;
+    }
+
+    public String getTextualContent() {
+        return textualContent;
+    }
+
+    public  Map<String, List<String>> getMetadata() {
+        return metadata;
+    }
+    
 }

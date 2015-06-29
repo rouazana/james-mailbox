@@ -39,7 +39,9 @@
         <constructor-arg index="0" ref="elasticsearch-clientprovider-2"/>
     </bean>
 
-    <bean id="elasticsearch-json" class="org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson"/>
+    <bean id="elasticsearch-json" class="org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson">
+        <constructor-arg index="0" ref="text-extractor"/>
+    </bean>
 
     <bean id="elasticsearch-searcher" class="org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher">
         <constructor-arg index="0" ref="elasticsearch-clientprovider-2"/>
@@ -64,5 +66,7 @@
     </bean>
 
     <bean id="criterion-converter" class="org.apache.james.mailbox.elasticsearch.query.CriterionConverter"/>
+
+    <bean id="text-extractor" class="org.apache.james.mailbox.tika.extractor.TikaTextExtractor"/>
 
 </beans>

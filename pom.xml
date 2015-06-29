@@ -60,6 +60,7 @@
         <module>memory</module>
         <module>store</module>
         <module>spring</module>
+        <module>tika</module>
         <module>tool</module>
         <module>zoo-seq-provider</module>
     </modules>
@@ -201,9 +202,14 @@
                 <artifactId>apache-james-mailbox-cassandra</artifactId>
                 <version>${project.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>org.apache.james</groupId>
                 <artifactId>apache-james-mailbox-elasticsearch</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.james</groupId>
+                <artifactId>apache-james-mailbox-tika</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -600,6 +606,30 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>exclude-tika</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.james</groupId>
+                    <artifactId>apache-james-mailbox-elasticsearch</artifactId>
+                    <type>pom</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.apache.tika</groupId>
+                            <artifactId>tika-core</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>org.apache.tika</groupId>
+                            <artifactId>tika-parsers</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
         <profile>
             <id>geronimo</id>
             <properties>

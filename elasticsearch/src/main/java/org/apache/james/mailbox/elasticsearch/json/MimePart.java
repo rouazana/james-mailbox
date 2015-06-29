@@ -26,9 +26,9 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.james.mailbox.elasticsearch.json.extractor.DefaultTextExtractor;
-import org.apache.james.mailbox.elasticsearch.json.extractor.ParsedContent;
-import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
+import org.apache.james.mailbox.store.extractor.DefaultTextExtractor;
+import org.apache.james.mailbox.store.extractor.ParsedContent;
+import org.apache.james.mailbox.store.extractor.TextExtractor;
 import org.apache.james.mime4j.stream.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +119,7 @@ public class MimePart {
             Optional<ParsedContent> parsedContent = parseContent(textExtractor);
             return new MimePart(
                 headerCollectionBuilder.build(),
-                parsedContent.map(ParsedContent::getTextualContent)
+                parsedContent.map( x -> Optional.ofNullable(x.getTextualContent()))
                     .orElse(Optional.empty())
                 ,
                 mediaType,
@@ -128,15 +128,24 @@ public class MimePart {
                 fileExtension,
                 contentDisposition,
                 children,
-                parsedContent.map(ParsedContent::getMetadata)
-                    .orElse(ImmutableMultimap.<String, String>builder().build())
+                parsedContent
+                    .map(x -> x.getMetadata()
+                        .entrySet()
+                        .stream()
+                        .reduce(ImmutableMultimap.<String, String>builder(),
+                            (builder, entry) -> builder.putAll(entry.getKey(), entry.getValue()),
+                            (builder1, builder2) -> builder1.putAll(builder2.build())).build())
+                    .orElse(ImmutableMultimap.of())
             );
         }
 
         private Optional<ParsedContent> parseContent(TextExtractor textExtractor) {
             if (bodyContent.isPresent()) {
                 try {
-                    return Optional.of(textExtractor.extractContent(bodyContent.get(), computeContentType(), fileName));
+                    return Optional.of(textExtractor.extractContent(
+                        bodyContent.get(),
+                        computeContentType().orElse(null),
+                        fileName.orElse(null)));
                 } catch (Exception e) {
                     LOGGER.warn("Failed parsing attachment", e);
                 }

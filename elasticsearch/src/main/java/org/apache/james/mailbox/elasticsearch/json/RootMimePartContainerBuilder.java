@@ -19,7 +19,7 @@
 
 package org.apache.james.mailbox.elasticsearch.json;
 
-import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
+import org.apache.james.mailbox.store.extractor.TextExtractor;
 import org.apache.james.mime4j.stream.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

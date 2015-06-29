@@ -17,17 +17,18 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.elasticsearch.json.extractor;
+package org.apache.james.mailbox.tika.extractor;
 
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
+import org.apache.james.mailbox.store.extractor.ParsedContent;
+import org.apache.james.mailbox.store.extractor.TextExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -61,23 +62,32 @@ public class TikaTextExtractor implements TextExtractor {
         parser = new AutoDetectParser();
     }
 
-    public ParsedContent extractContent(InputStream inputStream, Optional<String> contentType, Optional<String> fileName) throws Exception {
-        Metadata metadata = new Metadata();
-        fileName.ifPresent(x -> metadata.set(Metadata.RESOURCE_NAME_KEY, x));
-        contentType.ifPresent(x -> metadata.set(Metadata.CONTENT_TYPE, x));
+    public ParsedContent extractContent(InputStream inputStream, String contentType, String fileName) throws Exception {
+        Metadata metadata = createInitializedMetadata(contentType, fileName);
 
         StringWriter stringWriter = new StringWriter();
         BodyContentHandler bodyContentHandler = new BodyContentHandler(stringWriter);
         parser.parse(inputStream, bodyContentHandler, metadata, new ParseContext());
 
-        return new ParsedContent(Optional.of(stringWriter.toString()), convertMetadataToMultimap(metadata));
+        return new ParsedContent(stringWriter.toString(), convertMetadataToMultimap(metadata));
     }
 
-    private Multimap<String, String> convertMetadataToMultimap(Metadata metadata) {
+    private Metadata createInitializedMetadata(String contentType, String fileName) {
+        Metadata metadata = new Metadata();
+        if (contentType != null) {
+            metadata.set(Metadata.CONTENT_TYPE, contentType);
+        }
+        if (fileName != null) {
+            metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+        }
+        return metadata;
+    }
+
+    private Map<String, List<String>> convertMetadataToMultimap(Metadata metadata) {
         return Arrays.stream(metadata.names())
             .map(name -> new MetadataEntry(name, Arrays.asList(metadata.getValues(name))))
-            .reduce(ArrayListMultimap.create(), (metadataMultiMap, metadataEntry) -> {
-                    metadataMultiMap.putAll(metadataEntry.getName(), metadataEntry.getEntries());
+            .reduce(new HashMap<>(), (metadataMultiMap, metadataEntry) -> {
+                    metadataMultiMap.put(metadataEntry.getName(), metadataEntry.getEntries());
                     return metadataMultiMap;
                 }, (metadataMultimap1, metadataMultimap2) -> {
                     metadataMultimap1.putAll(metadataMultimap2);

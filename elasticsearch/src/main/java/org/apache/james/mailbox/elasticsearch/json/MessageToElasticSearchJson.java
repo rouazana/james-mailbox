@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.base.Preconditions;
-import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
+import org.apache.james.mailbox.store.extractor.TextExtractor;
 import org.apache.james.mailbox.store.mail.model.Message;
 
 public class MessageToElasticSearchJson {
@@ -39,6 +39,10 @@ public class MessageToElasticSearchJson {
         this.mapper = new ObjectMapper();
         this.mapper.registerModule(new GuavaModule());
         this.mapper.registerModule(new Jdk8Module());
+    }
+
+    public MessageToElasticSearchJson(TextExtractor textExtractor) {
+        this(textExtractor, ZoneId.systemDefault());
     }
 
     public String convertToJson(Message<?> message) throws JsonProcessingException {

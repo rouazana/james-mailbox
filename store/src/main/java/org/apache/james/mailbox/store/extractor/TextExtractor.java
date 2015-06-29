@@ -17,42 +17,12 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailbox.elasticsearch.json.extractor;
+package org.apache.james.mailbox.store.extractor;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.io.InputStream;
 
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
+public interface TextExtractor {
 
-public class ParsedContent {
+    ParsedContent extractContent(InputStream inputStream, String contentType, String fileName) throws Exception;
 
-    private final Optional<String> textualContent;
-    private final ImmutableMultimap<String, String> metadata;
-
-    public ParsedContent(Optional<String> textualContent, Multimap<String, String> metadata) {
-        this.textualContent = textualContent;
-        this.metadata = ImmutableMultimap.copyOf(metadata);
-    }
-
-    public Optional<String> getTextualContent() {
-        return textualContent;
-    }
-
-    public  Multimap<String, String> getMetadata() {
-        return metadata;
-    }
-
-    @Override public boolean equals(Object o) {
-        if (o instanceof ParsedContent) {
-            ParsedContent other = (ParsedContent) o;
-            return Objects.equals(textualContent, other.textualContent)
-                && Objects.equals(metadata, other.metadata);
-        }
-        return false;
-    }
-
-    @Override public int hashCode() {
-        return Objects.hash(textualContent, metadata);
-    }
 }

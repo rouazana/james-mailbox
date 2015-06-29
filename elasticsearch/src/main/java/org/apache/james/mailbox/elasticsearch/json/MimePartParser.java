@@ -20,7 +20,7 @@
 package org.apache.james.mailbox.elasticsearch.json;
 
 import com.google.common.base.Preconditions;
-import org.apache.james.mailbox.elasticsearch.json.extractor.TextExtractor;
+import org.apache.james.mailbox.store.extractor.TextExtractor;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mime4j.MimeException;
