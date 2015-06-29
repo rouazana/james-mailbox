@@ -50,9 +50,9 @@
     <modules>
         <module>api</module>
         <module>caching</module>
-        <module>hbase</module>
         <module>cassandra</module>
         <module>elasticsearch</module>
+        <module>hbase</module>
         <module>jcr</module>
         <module>jpa</module>
         <module>lucene</module>
@@ -156,11 +156,6 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.james</groupId>
-                <artifactId>apache-james-mailbox-elasticsearch</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.james</groupId>
                 <artifactId>apache-james-mailbox-lucene</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -204,6 +199,11 @@
            <dependency>
                 <groupId>org.apache.james</groupId>
                 <artifactId>apache-james-mailbox-cassandra</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>org.apache.james</groupId>
+                <artifactId>apache-james-mailbox-elasticsearch</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
