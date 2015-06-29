@@ -1845,12 +1845,6 @@ public class SearchQuery implements Serializable {
     public static final class NumericOperator implements Operator {
         private static final long serialVersionUID = 1L;
 
-        public static final int EQUALS = 1;
-
-        public static final int LESS_THAN = 2;
-
-        public static final int GREATER_THAN = 3;
-
         private final long value;
 
         private final NumericComparator type;
