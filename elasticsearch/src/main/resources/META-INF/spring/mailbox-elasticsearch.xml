@@ -23,6 +23,10 @@
        xsi:schemaLocation="
           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
+    <bean id="elasticsearch-indexer" class="org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer">
+        <constructor-arg index="0" ref="elasticsearch-node"/>
+    </bean>
+
     <bean id="elasticsearch-node" class="org.apache.james.mailbox.cassandra.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
         <constructor-arg index="0" ref="${elasticsearch.clusterName}"/>
         <constructor-arg index="1" ref="${elasticsearch.masterHost}"/>
