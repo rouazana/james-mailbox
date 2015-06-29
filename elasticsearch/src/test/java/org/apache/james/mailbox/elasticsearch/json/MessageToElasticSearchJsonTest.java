@@ -181,4 +181,21 @@ public class MessageToElasticSearchJsonTest {
         messageToElasticSearchJson.convertToJson(mailWithNoMailboxId);
     }
 
+    @Test
+    public void getUpdatedJsonMessagePartShouldBehaveWellOnEmptyFlags() throws Exception {
+        assertThatJson(messageToElasticSearchJson.getUpdatedJsonMessagePart(new Flags(), MOD_SEQ))
+            .isEqualTo("{\"modSeq\":42,\"isAnswered\":false,\"isDeleted\":false,\"isDraft\":false,\"isFlagged\":false,\"isRecent\":false,\"userFlags\":[],\"isUnread\":true}");
+    }
+
+    @Test
+    public void getUpdatedJsonMessagePartShouldBehaveWellOnNonEmptyFlags() throws Exception {
+        assertThatJson(messageToElasticSearchJson.getUpdatedJsonMessagePart(new FlagsBuilder().add(Flags.Flag.DELETED, Flags.Flag.FLAGGED).add("user").build(), MOD_SEQ))
+            .isEqualTo("{\"modSeq\":42,\"isAnswered\":false,\"isDeleted\":true,\"isDraft\":false,\"isFlagged\":true,\"isRecent\":false,\"userFlags\":[\"user\"],\"isUnread\":true}");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void getUpdatedJsonMessagePartShouldThrowIfFlagsIsNull() throws Exception {
+        messageToElasticSearchJson.getUpdatedJsonMessagePart(null, MOD_SEQ);
+    }
+
 }

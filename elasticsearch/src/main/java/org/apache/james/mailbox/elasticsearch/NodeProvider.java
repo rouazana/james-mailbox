@@ -33,7 +33,7 @@ public class NodeProvider {
                 .clusterName(clusterName)
                 .settings(ImmutableSettings.builder()
                         .put(GLOBAL_NETWORK_HOST_SETTING, masterHost)
-                        .put(SCRIPT_DISABLE_DYNAMIC, false))
+                        .put(SCRIPT_DISABLE_DYNAMIC, true))
                 .client(true)
                 .node()
                 .start();

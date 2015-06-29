@@ -30,7 +30,6 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageRange.Type;
 import org.apache.james.mailbox.model.SearchQuery;
-import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
@@ -86,17 +85,17 @@ public class ElasticSearchListeningMessageSearchIndex<Id extends MailboxId> exte
     }
 
     @Override
-    public void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags flags) throws MailboxException {
-        getFactory().getMessageMapper(session)
-            .findInMailbox(mailbox, range, FetchType.Full, NO_LIMIT)
-            .forEachRemaining(message -> {
-                try {
-                    message.setFlags(flags);
-                    indexer.updateMessage(indexIdFor(mailbox, message.getUid()), messageToElasticSearchJson.convertToJson(message));
-                } catch (Exception e) {
-                    LOGGER.error("Error when updating index for message " + message.getUid(), e);
-                }
-            });
+    public void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags flags, long modseq) throws MailboxException {
+        range.forEach(messageId -> {
+            try {
+                indexer.updateMessage(
+                    indexIdFor(mailbox, messageId),
+                    messageToElasticSearchJson.getUpdatedJsonMessagePart(flags, modseq));
+            } catch (Exception e) {
+                LOGGER.error("Error when updating index for message " + messageId, e);
+            }
+        });
+
     }
     
     private String indexIdFor(Mailbox<Id> mailbox, long messageId) {

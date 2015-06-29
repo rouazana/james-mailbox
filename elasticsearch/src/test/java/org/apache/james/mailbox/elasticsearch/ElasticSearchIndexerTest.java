@@ -49,6 +49,7 @@ public class ElasticSearchIndexerTest {
         node = nodeBuilder().local(true)
                 .settings(ImmutableSettings.builder()
                         .put("path.data", temporaryFolder.newFolder().getAbsolutePath())
+                        .put("script.disable_dynamic",false)
                         .build())
                 .node();
         node.start();
@@ -87,20 +88,27 @@ public class ElasticSearchIndexerTest {
     @Test
     public void updateMessage() throws Exception {
         String messageId = "1";
-        String content = "{\"message\": \"trying out Elasticsearch\"}";
-        
+        String content = "{\"message\": \"trying out Elasticsearch\",\"field\":\"Should be unchanged\"}";
+
         testee.indexMessage(messageId, content);
         awaitForElasticSearch();
-        
-        String updatedContent = "{\"message\": \"mastering out Elasticsearch\"}";
-        testee.updateMessage(messageId, updatedContent);
-        awaitForElasticSearch();
-        
+
+        testee.updateMessage(messageId, "{\"message\": \"mastering out Elasticsearch\"}");
+        EmbeddedElasticSearch.awaitForElasticSearch(node);
+
         try (Client client = node.client()) {
             SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
-                    .setTypes(ElasticSearchIndexer.MESSAGE_TYPE)
-                    .setQuery(QueryBuilders.matchQuery("message", "mastering"))
-                    .get();
+                .setTypes(ElasticSearchIndexer.MESSAGE_TYPE)
+                .setQuery(QueryBuilders.matchQuery("message", "mastering"))
+                .get();
+            assertThat(searchResponse.getHits().getTotalHits()).isEqualTo(1);
+        }
+
+        try (Client client = node.client()) {
+            SearchResponse searchResponse = client.prepareSearch(ElasticSearchIndexer.MAILBOX_INDEX)
+                .setTypes(ElasticSearchIndexer.MESSAGE_TYPE)
+                .setQuery(QueryBuilders.matchQuery("field", "unchanged"))
+                .get();
             assertThat(searchResponse.getHits().getTotalHits()).isEqualTo(1);
         }
     }

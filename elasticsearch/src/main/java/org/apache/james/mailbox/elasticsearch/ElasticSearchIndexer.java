@@ -47,12 +47,12 @@ public class ElasticSearchIndexer {
                 .get();
         }
     }
-    
-    public UpdateResponse updateMessage(String id, String content) {
-        checkArgument(content);
+
+    public UpdateResponse updateMessage(String id, String docUpdated) {
+        checkArgument(docUpdated);
         try (Client client = node.client()) {
             return client.prepareUpdate(MAILBOX_INDEX, MESSAGE_TYPE, id)
-                .setDoc(content)
+                .setDoc(docUpdated)
                 .get();
         }
     }

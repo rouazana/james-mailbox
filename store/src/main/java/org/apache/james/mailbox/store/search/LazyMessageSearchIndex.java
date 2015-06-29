@@ -101,8 +101,8 @@ public class LazyMessageSearchIndex<Id extends MailboxId> extends ListeningMessa
 
 
     @Override
-    public void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags flags) throws MailboxException {
-        index.update(session, mailbox, range, flags);
+    public void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags flags, long modSeq) throws MailboxException {
+        index.update(session, mailbox, range, flags, modSeq);
     }
 
 }

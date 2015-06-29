@@ -114,7 +114,7 @@ public abstract class ListeningMessageSearchIndex<Id extends MailboxId> implemen
                     while(flags.hasNext()) {
                         UpdatedFlags uFlags = flags.next();
                         try {
-                            update(session, mailbox, MessageRange.one(uFlags.getUid()), uFlags.getNewFlags());
+                            update(session, mailbox, MessageRange.one(uFlags.getUid()), uFlags.getNewFlags(), uFlags.getModSeq());
                         } catch (MailboxException e) {
                             session.getLog().debug("Unable to update flags for message " + uFlags.getUid() + " in index for mailbox " + mailbox, e);
                         }
@@ -167,5 +167,5 @@ public abstract class ListeningMessageSearchIndex<Id extends MailboxId> implemen
      * @param flags
      * @throws MailboxException
      */
-    public abstract void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags flags) throws MailboxException;
+    public abstract void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags flags, long modseq) throws MailboxException;
 }

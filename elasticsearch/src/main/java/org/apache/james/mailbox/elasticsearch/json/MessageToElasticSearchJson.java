@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.elasticsearch.json;
 
+import javax.mail.Flags;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -39,6 +41,11 @@ public class MessageToElasticSearchJson {
     public String convertToJson(Message<?> message) throws JsonProcessingException {
         Preconditions.checkNotNull(message);
         return mapper.writeValueAsString(IndexableMessage.from(message));
+    }
+
+    public String getUpdatedJsonMessagePart(Flags flags, long modSeq) throws JsonProcessingException {
+        Preconditions.checkNotNull(flags);
+        return mapper.writeValueAsString(new MessageUpdateJson(flags, modSeq));
     }
 
 }

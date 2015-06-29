@@ -1202,7 +1202,7 @@ public class LuceneMessageSearchIndex<Id extends MailboxId> extends ListeningMes
     /**
      * @see org.apache.james.mailbox.store.search.ListeningMessageSearchIndex#update(org.apache.james.mailbox.MailboxSession, org.apache.james.mailbox.store.mail.model.Mailbox, org.apache.james.mailbox.model.MessageRange, javax.mail.Flags)
      */
-    public void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags f) throws MailboxException {
+    public void update(MailboxSession session, Mailbox<Id> mailbox, MessageRange range, Flags f, long modSeq) throws MailboxException {
         try {
             IndexSearcher searcher = new IndexSearcher(IndexReader.open(writer, true));
             BooleanQuery query = new BooleanQuery();

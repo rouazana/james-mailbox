@@ -18,6 +18,7 @@
  ****************************************************************/
 package org.apache.james.mailbox.elasticsearch.events;
 
+import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.createControl;
@@ -26,8 +27,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import javax.mail.Flags;
@@ -38,8 +38,6 @@ import org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer;
 import org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.store.TestId;
-import org.apache.james.mailbox.store.mail.MessageMapper;
-import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
@@ -53,10 +51,10 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
 
 public class ElasticSearchListeningMessageSearchIndexTest {
 
+    public static final long MODSEQ = 18L;
     private IMocksControl control;
     
     private MessageMapperFactory<TestId> mapperFactory;
@@ -74,8 +72,9 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         indexer = control.createMock(ElasticSearchIndexer.class);
         messageToElasticSearchJson = control.createMock(MessageToElasticSearchJson.class);
         expect(messageToElasticSearchJson.convertToJson(anyObject(Message.class))).andReturn("json content").anyTimes();
-        
-        testee = new ElasticSearchListeningMessageSearchIndex<TestId>(mapperFactory, indexer, messageToElasticSearchJson);
+        expect(messageToElasticSearchJson.getUpdatedJsonMessagePart(anyObject(Flags.class), anyLong())).andReturn("json updated content").anyTimes();
+
+        testee = new ElasticSearchListeningMessageSearchIndex<>(mapperFactory, indexer, messageToElasticSearchJson);
     }
     
     @Test(expected=NotImplementedException.class)
@@ -190,25 +189,19 @@ public class ElasticSearchListeningMessageSearchIndexTest {
         testee.delete(session, mailbox, messageRange);
         control.verify();
     }
-    
+
     @Test
     @SuppressWarnings("unchecked")
     public void updateShouldWork() throws Exception {
         MailboxSession session = control.createMock(MailboxSession.class);
+
         Mailbox<TestId> mailbox = control.createMock(Mailbox.class);
-        Flags flags = control.createMock(Flags.class);
+        Flags flags = new Flags();
+
         long messageId = 1;
         TestId mailboxId = TestId.of(12);
         MessageRange messageRange = MessageRange.one(messageId);
-        Message<TestId> message = mockedMessage(messageId, mailboxId);
-        
-        MessageMapper<TestId> messageMapper = control.createMock(MessageMapper.class);
-        expect(mapperFactory.getMessageMapper(session))
-            .andReturn(messageMapper);
-        expect(messageMapper.findInMailbox(mailbox, messageRange, FetchType.Full, -1))
-            .andReturn(ImmutableList.of(message).iterator());
-        
-        message.setFlags(flags);
+
         expectLastCall();
         expect(mailbox.getMailboxId()).andReturn(mailboxId);
         
@@ -217,83 +210,60 @@ public class ElasticSearchListeningMessageSearchIndexTest {
             .andReturn(expectedUpdateResponse);
         
         control.replay();
-        testee.update(session, mailbox, messageRange, flags);
+        testee.update(session, mailbox, messageRange, flags, MODSEQ);
         control.verify();
     }
-    
+
     @Test
     @SuppressWarnings("unchecked")
     public void updateShouldWorkWhenMultipleMessageIds() throws Exception {
         MailboxSession session = control.createMock(MailboxSession.class);
+
         Mailbox<TestId> mailbox = control.createMock(Mailbox.class);
-        Flags flags = control.createMock(Flags.class);
+        Flags flags = new Flags();
+
         long firstMessageId = 1;
         long lastMessageId = 10;
         MessageRange messageRange = MessageRange.range(firstMessageId, lastMessageId);
         
-        MessageMapper<TestId> messageMapper = control.createMock(MessageMapper.class);
-        expect(mapperFactory.getMessageMapper(session))
-            .andReturn(messageMapper);
-        
         TestId mailboxId = TestId.of(12);
-        Message<TestId> message1 = mockedMessage(1, mailboxId);
-        Message<TestId> message2 = mockedMessage(2, mailboxId);
-        Message<TestId> message3 = mockedMessage(3, mailboxId);
-        Message<TestId> message4 = mockedMessage(4, mailboxId);
-        Message<TestId> message5 = mockedMessage(5, mailboxId);
-        Message<TestId> message6 = mockedMessage(6, mailboxId);
-        Message<TestId> message7 = mockedMessage(7, mailboxId);
-        Message<TestId> message8 = mockedMessage(8, mailboxId);
-        Message<TestId> message9 = mockedMessage(9, mailboxId);
-        Message<TestId> message10 = mockedMessage(10, mailboxId);
-        
-        List<Message<TestId>> messages = ImmutableList.of(message1, message2, message3, message4, message5, message6, message7, message8, message9, message10);
-        expect(messageMapper.findInMailbox(mailbox, messageRange, FetchType.Full, -1))
-            .andReturn(messages.iterator());
-        
-        AtomicLong messageId = new AtomicLong(0);
-        messages
-            .forEach(message -> {
+
+        IntStream.range(1, 11).forEach(
+            (uid) -> {
                 try {
-                    message.setFlags(flags);
+
                     expectLastCall();
-                    
-                    long messageIdAsLong = messageId.incrementAndGet();
+
                     expect(mailbox.getMailboxId()).andReturn(mailboxId);
-                    
+
                     UpdateResponse expectedUpdateResponse = control.createMock(UpdateResponse.class);
-                    expect(indexer.updateMessage(eq(mailboxId.serialize() + ":" + messageIdAsLong), anyString()))
+                    expect(indexer.updateMessage(eq(mailboxId.serialize() + ":" + uid), anyString()))
+
                         .andReturn(expectedUpdateResponse);
                 } catch (Exception e) {
                     Throwables.propagate(e);
-                } finally {
                 }
-            });
+            }
+        );
         
         
         control.replay();
-        testee.update(session, mailbox, messageRange, flags);
+        testee.update(session, mailbox, messageRange, flags, MODSEQ);
         control.verify();
     }
-    
+
     @Test
     @SuppressWarnings("unchecked")
     public void updateShouldNotPropagateExceptionWhenExceptionOccurs() throws Exception {
         MailboxSession session = control.createMock(MailboxSession.class);
+
         Mailbox<TestId> mailbox = control.createMock(Mailbox.class);
-        Flags flags = control.createMock(Flags.class);
+        Flags flags = new Flags();
+
         long messageId = 1;
         TestId mailboxId = TestId.of(12);
         MessageRange messageRange = MessageRange.one(messageId);
-        Message<TestId> message = mockedMessage(messageId, mailboxId);
-        
-        MessageMapper<TestId> messageMapper = control.createMock(MessageMapper.class);
-        expect(mapperFactory.getMessageMapper(session))
-            .andReturn(messageMapper);
-        expect(messageMapper.findInMailbox(mailbox, messageRange, FetchType.Full, -1))
-            .andReturn(ImmutableList.of(message).iterator());
-        
-        message.setFlags(flags);
+
         expectLastCall();
         expect(mailbox.getMailboxId()).andReturn(mailboxId);
 
@@ -301,7 +271,7 @@ public class ElasticSearchListeningMessageSearchIndexTest {
             .andThrow(new ElasticsearchException(""));
         
         control.replay();
-        testee.update(session, mailbox, messageRange, flags);
+        testee.update(session, mailbox, messageRange, flags, MODSEQ);
         control.verify();
     }
 }
