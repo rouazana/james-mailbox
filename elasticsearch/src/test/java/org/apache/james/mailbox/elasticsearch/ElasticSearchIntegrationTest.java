@@ -21,7 +21,8 @@ package org.apache.james.mailbox.elasticsearch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.util.Date;
 
 import javax.mail.Flags;
 
@@ -71,14 +72,11 @@ public class ElasticSearchIntegrationTest {
     private StoreMailboxManager<InMemoryId> storeMailboxManager;
     private ElasticSearchListeningMessageSearchIndex<InMemoryId> elasticSearchListeningMessageSearchIndex;
     private Mailbox<InMemoryId> mailbox;
-    private SimpleDateFormat format;
     private MailboxSession session;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
-        format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-
         initializeMailboxManager();
 
         session = storeMailboxManager.createSystemSession("benwa", LOGGER);
@@ -88,65 +86,74 @@ public class ElasticSearchIntegrationTest {
         mailbox = messageManager.getMailboxEntity();
 
         // sentDate: Wed, 3 Jun 2015 09:05:46 +0000
+        // Internal date : 2014/01/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/spamMail.eml"),
-            format.parse("2014/01/02 00:00:00.000"),
+            new Date(1388617200000L),
             session,
             true,
             new Flags(Flags.Flag.DELETED));
-        //sentDate: Thu, 4 Jun 2015 09:23:37 +0000
+        // sentDate: Thu, 4 Jun 2015 09:23:37 +0000
+        // Internal date : 2014/02/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/mail1.eml"),
-            format.parse("2014/02/02 00:00:00.000"),
+            new Date(1391295600000L),
             session,
             true,
             new Flags(Flags.Flag.ANSWERED));
-        //sentDate: Thu, 4 Jun 2015 09:27:37 +0000
+        // sentDate: Thu, 4 Jun 2015 09:27:37 +0000
+        // Internal date : 2014/03/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/mail2.eml"),
-            format.parse("2014/03/02 00:00:00.000"),
+            new Date(1393714800000L),
             session,
             true,
             new Flags(Flags.Flag.DRAFT));
-        //sentDate: Tue, 2 Jun 2015 08:16:19 +0000
+        // sentDate: Tue, 2 Jun 2015 08:16:19 +0000
+        // Internal date : 2014/05/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/mail3.eml"),
-            format.parse("2014/05/02 00:00:00.000"),
+            new Date(1398981600000L),
             session,
             true,
             new Flags(Flags.Flag.RECENT));
-        //sentDate: Fri, 15 May 2015 06:35:59 +0000
+        // sentDate: Fri, 15 May 2015 06:35:59 +0000
+        // Internal date : 2014/04/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/mail4.eml"),
-            format.parse("2014/04/02 00:00:00.000"),
+            new Date(1396389600000L),
             session,
             true,
             new Flags(Flags.Flag.FLAGGED));
-        //sentDate: Wed, 03 Jun 2015 19:14:32 +0000
+        // sentDate: Wed, 03 Jun 2015 19:14:32 +0000
+        // Internal date : 2014/06/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/pgpSignedMail.eml"),
-            format.parse("2014/06/02 00:00:00.000"),
+            new Date(1401660000000L),
             session,
             true,
             new Flags(Flags.Flag.SEEN));
-        //sentDate: Thu, 04 Jun 2015 07:36:08 +0000
+        // sentDate: Thu, 04 Jun 2015 07:36:08 +0000
+        // Internal date : 2014/07/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/htmlMail.eml"),
-            format.parse("2014/07/02 00:00:00.000"),
+            new Date(1404252000000L),
             session,
             false,
             new Flags());
-        //sentDate: Thu, 4 Jun 2015 06:08:41 +0200
+        // sentDate: Thu, 4 Jun 2015 06:08:41 +0200
+        // Internal date : 2014/08/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/mail.eml"),
-            format.parse("2014/08/02 00:00:00.000"),
+            new Date(1406930400000L),
             session,
             true,
             new Flags("Hello"));
-        //sentDate: Tue, 2 Jun 2015 12:00:55 +0200
+        // sentDate: Tue, 2 Jun 2015 12:00:55 +0200
+        // Internal date : 2014/09/02 00:00:00.000
         messageManager.appendMessage(
             ClassLoader.getSystemResourceAsStream("documents/frnog.eml"),
-            format.parse("2014/09/02 00:00:00.000"),
+            new Date(1409608800000L),
             session,
             true,
             new Flags("Hello you"));
@@ -162,7 +169,7 @@ public class ElasticSearchIntegrationTest {
         elasticSearchListeningMessageSearchIndex = new ElasticSearchListeningMessageSearchIndex<>(mapperFactory,
             new ElasticSearchIndexer(clientProvider),
             new ElasticSearchSearcher<>(clientProvider, new QueryConverter(new CriterionConverter())),
-            new MessageToElasticSearchJson(new DefaultTextExtractor()));
+            new MessageToElasticSearchJson(new DefaultTextExtractor(), ZoneId.of("Europe/Paris")));
         storeMailboxManager = new StoreMailboxManager<>(
             mapperFactory,
             new MockAuthenticator(),
@@ -334,7 +341,8 @@ public class ElasticSearchIntegrationTest {
     @Test
     public void internalDateAfterShouldReturnMessagesAfterAGivenDate() throws Exception {
         SearchQuery searchQuery = new SearchQuery();
-        searchQuery.andCriteria(SearchQuery.internalDateAfter(format.parse("2014/07/02 00:00:00.000"), SearchQuery.DateResolution.Day));
+        // Date : 2014/07/02 00:00:00.000 ( Paris time zone )
+        searchQuery.andCriteria(SearchQuery.internalDateAfter(new Date(1404252000000L), SearchQuery.DateResolution.Day));
         assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(7L, 8L, 9L);
     }
@@ -342,7 +350,8 @@ public class ElasticSearchIntegrationTest {
     @Test
     public void internalDateBeforeShouldReturnMessagesBeforeAGivenDate() throws Exception {
         SearchQuery searchQuery = new SearchQuery();
-        searchQuery.andCriteria(SearchQuery.internalDateBefore(format.parse("2014/02/02 00:00:00.000"), SearchQuery.DateResolution.Day));
+        // Date : 2014/02/02 00:00:00.000 ( Paris time zone )
+        searchQuery.andCriteria(SearchQuery.internalDateBefore(new Date(1391295600000L), SearchQuery.DateResolution.Day));
         assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(1L, 2L);
     }
@@ -350,7 +359,8 @@ public class ElasticSearchIntegrationTest {
     @Test
     public void internalDateOnShouldReturnMessagesOfTheGivenDate() throws Exception {
         SearchQuery searchQuery = new SearchQuery();
-        searchQuery.andCriteria(SearchQuery.internalDateOn(format.parse("2014/03/02 00:00:00.000"), SearchQuery.DateResolution.Day));
+        // Date : 2014/03/02 00:00:00.000 ( Paris time zone )
+        searchQuery.andCriteria(SearchQuery.internalDateOn(new Date(1393714800000L), SearchQuery.DateResolution.Day));
         assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(3L);
     }
@@ -488,7 +498,8 @@ public class ElasticSearchIntegrationTest {
     @Test
     public void headerDateAfterShouldWork() throws Exception {
         SearchQuery searchQuery = new SearchQuery();
-        searchQuery.andCriteria(SearchQuery.headerDateAfter("sentDate", format.parse("2015/06/04 11:00:00.000"), SearchQuery.DateResolution.Second));
+        // Date : 2015/06/04 11:00:00.000 ( Paris time zone )
+        searchQuery.andCriteria(SearchQuery.headerDateAfter("sentDate", new Date(1433408400000L), SearchQuery.DateResolution.Second));
         searchQuery.setSorts(Lists.newArrayList(new SearchQuery.Sort(SearchQuery.Sort.SortClause.Arrival, true)));
         assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(3L, 2L);
@@ -497,7 +508,8 @@ public class ElasticSearchIntegrationTest {
     @Test
     public void headerDateBeforeShouldWork() throws Exception {
         SearchQuery searchQuery = new SearchQuery();
-        searchQuery.andCriteria(SearchQuery.headerDateBefore("sentDate", format.parse("2015/06/01 00:00:00.000"), SearchQuery.DateResolution.Day));
+        // Date : 2015/06/01 00:00:00.000 ( Paris time zone )
+        searchQuery.andCriteria(SearchQuery.headerDateBefore("sentDate", new Date(1433109600000L), SearchQuery.DateResolution.Day));
         searchQuery.setSorts(Lists.newArrayList(new SearchQuery.Sort(SearchQuery.Sort.SortClause.Arrival, true)));
         assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(5L);
@@ -506,7 +518,8 @@ public class ElasticSearchIntegrationTest {
     @Test
     public void headerDateOnShouldWork() throws Exception {
         SearchQuery searchQuery = new SearchQuery();
-        searchQuery.andCriteria(SearchQuery.headerDateOn("sentDate", format.parse("2015/06/02 08:00:00.000"), SearchQuery.DateResolution.Day));
+        // Date : 2015/06/02 08:00:00.000 ( Paris time zone )
+        searchQuery.andCriteria(SearchQuery.headerDateOn("sentDate", new Date(1433224800000L), SearchQuery.DateResolution.Day));
         searchQuery.setSorts(Lists.newArrayList(new SearchQuery.Sort(SearchQuery.Sort.SortClause.Arrival, true)));
         assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
             .containsOnly(4L, 9L);

@@ -35,13 +35,12 @@ import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.Date;
 
 import static net.javacrumbs.jsonunit.core.Option.IGNORING_ARRAY_ORDER;
 import static net.javacrumbs.jsonunit.core.Option.IGNORING_VALUES;
 import static net.javacrumbs.jsonunit.fluent.JsonFluentAssert.assertThatJson;
-
 
 public class MessageToElasticSearchJsonTest {
 
@@ -51,14 +50,13 @@ public class MessageToElasticSearchJsonTest {
     public static final long MOD_SEQ = 42L;
     public static final long UID = 25L;
 
-    private SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
-
     private Date date;
     private PropertyBuilder propertyBuilder;
 
     @Before
     public void setUp() throws Exception {
-        date = formatter.parse("07-06-2015");
+        // 2015/06/07 00:00:00 0200 (Paris time zone)
+        date = new Date(1433628000000L);
         propertyBuilder = new PropertyBuilder();
         propertyBuilder.setMediaType("plain");
         propertyBuilder.setSubType("text");
@@ -68,7 +66,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void spamEmailShouldBeWellConvertedToJson() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> spamMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -84,7 +84,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void htmlEmailShouldBeWellConvertedToJson() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> htmlMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -101,7 +103,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void pgpSignedEmailShouldBeWellConvertedToJson() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> pgpSignedMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -118,7 +122,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void simpleEmailShouldBeWellConvertedToJson() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> mail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -135,7 +141,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void recursiveEmailShouldBeWellConvertedToJson() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> recursiveMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,
@@ -152,7 +160,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void emailWithNoInternalDateShouldUseNowDate() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> mailWithNoInternalDate = new SimpleMessage<>(null,
             SIZE,
             BODY_START_OCTET,
@@ -170,7 +180,9 @@ public class MessageToElasticSearchJsonTest {
 
     @Test(expected = NullPointerException.class)
     public void emailWithNoMailboxIdShouldThrow() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> mailWithNoMailboxId;
         try {
             mailWithNoMailboxId = new SimpleMessage<>(date,
@@ -190,27 +202,35 @@ public class MessageToElasticSearchJsonTest {
 
     @Test
     public void getUpdatedJsonMessagePartShouldBehaveWellOnEmptyFlags() throws Exception {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         assertThatJson(messageToElasticSearchJson.getUpdatedJsonMessagePart(new Flags(), MOD_SEQ))
             .isEqualTo("{\"modSeq\":42,\"isAnswered\":false,\"isDeleted\":false,\"isDraft\":false,\"isFlagged\":false,\"isRecent\":false,\"userFlags\":[],\"isUnread\":true}");
     }
 
     @Test
     public void getUpdatedJsonMessagePartShouldBehaveWellOnNonEmptyFlags() throws Exception {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         assertThatJson(messageToElasticSearchJson.getUpdatedJsonMessagePart(new FlagsBuilder().add(Flags.Flag.DELETED, Flags.Flag.FLAGGED).add("user").build(), MOD_SEQ))
             .isEqualTo("{\"modSeq\":42,\"isAnswered\":false,\"isDeleted\":true,\"isDraft\":false,\"isFlagged\":true,\"isRecent\":false,\"userFlags\":[\"user\"],\"isUnread\":true}");
     }
 
     @Test(expected = NullPointerException.class)
     public void getUpdatedJsonMessagePartShouldThrowIfFlagsIsNull() throws Exception {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new DefaultTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new DefaultTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         messageToElasticSearchJson.getUpdatedJsonMessagePart(null, MOD_SEQ);
     }
 
     @Test
     public void spamEmailShouldBeWellConvertedToJsonWithApacheTika() throws IOException {
-        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(new TikaTextExtractor());
+        MessageToElasticSearchJson messageToElasticSearchJson = new MessageToElasticSearchJson(
+            new TikaTextExtractor(),
+            ZoneId.of("Europe/Paris"));
         Message<TestId> spamMail = new SimpleMessage<>(date,
             SIZE,
             BODY_START_OCTET,

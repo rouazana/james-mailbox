@@ -21,6 +21,8 @@ package org.apache.james.mailbox.elasticsearch.json;
 
 import javax.mail.Flags;
 
+import java.time.ZoneId;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -33,9 +35,11 @@ public class MessageToElasticSearchJson {
 
     private final ObjectMapper mapper;
     private final TextExtractor textExtractor;
+    private final ZoneId zoneId;
 
-    public MessageToElasticSearchJson(TextExtractor textExtractor) {
+    public MessageToElasticSearchJson(TextExtractor textExtractor, ZoneId zoneId) {
         this.textExtractor = textExtractor;
+        this.zoneId = zoneId;
         this.mapper = new ObjectMapper();
         this.mapper.registerModule(new GuavaModule());
         this.mapper.registerModule(new Jdk8Module());
@@ -47,7 +51,7 @@ public class MessageToElasticSearchJson {
 
     public String convertToJson(Message<?> message) throws JsonProcessingException {
         Preconditions.checkNotNull(message);
-        return mapper.writeValueAsString(IndexableMessage.from(message, textExtractor));
+        return mapper.writeValueAsString(IndexableMessage.from(message, textExtractor, zoneId));
     }
 
     public String getUpdatedJsonMessagePart(Flags flags, long modSeq) throws JsonProcessingException {

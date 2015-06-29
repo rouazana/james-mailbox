@@ -42,18 +42,18 @@ import java.util.stream.Collectors;
 
 public class IndexableMessage {
 
-    public static IndexableMessage from(Message<? extends MailboxId> message, TextExtractor textExtractor) {
+    public static IndexableMessage from(Message<? extends MailboxId> message, TextExtractor textExtractor, ZoneId zoneId) {
         Preconditions.checkNotNull(message.getMailboxId());
         IndexableMessage indexableMessage = new IndexableMessage();
         try {
             MimePart parsingResult = new MimePartParser(message, textExtractor).parse();
             indexableMessage.bodyText = parsingResult.locateFirstTextualBody();
             indexableMessage.setFlattenedAttachments(parsingResult);
-            indexableMessage.copyHeaderFields(parsingResult.getHeaderCollection(), getSanitizedInternalDate(message));
+            indexableMessage.copyHeaderFields(parsingResult.getHeaderCollection(), getSanitizedInternalDate(message, zoneId));
         } catch (IOException | MimeException e) {
             throw Throwables.propagate(e);
         }
-        indexableMessage.copyMessageFields(message);
+        indexableMessage.copyMessageFields(message, zoneId);
         return indexableMessage;
     }
 
@@ -72,12 +72,12 @@ public class IndexableMessage {
         this.sentDate = DateResolutionFormater.DATE_TIME_FOMATTER.format(headerCollection.getSentDate().orElse(internalDate));
     }
 
-    private void copyMessageFields(Message<? extends MailboxId> message) {
+    private void copyMessageFields(Message<? extends MailboxId> message, ZoneId zoneId) {
         this.id = message.getUid();
         this.mailboxId = message.getMailboxId().serialize();
         this.modSeq = message.getModSeq();
         this.size = message.getFullContentOctets();
-        this.date = DateResolutionFormater.DATE_TIME_FOMATTER.format(getSanitizedInternalDate(message));
+        this.date = DateResolutionFormater.DATE_TIME_FOMATTER.format(getSanitizedInternalDate(message, zoneId));
         this.mediaType = message.getMediaType();
         this.subType = message.getSubType();
         this.isAnswered = message.isAnswered();
@@ -90,13 +90,13 @@ public class IndexableMessage {
         this.properties = message.getProperties();
     }
 
-    private static ZonedDateTime getSanitizedInternalDate(Message<? extends MailboxId> message) {
+    private static ZonedDateTime getSanitizedInternalDate(Message<? extends MailboxId> message, ZoneId zoneId) {
         if (message.getInternalDate() == null) {
             return ZonedDateTime.now();
         }
         return ZonedDateTime.ofInstant(
             Instant.ofEpochMilli(message.getInternalDate().getTime()),
-            ZoneId.systemDefault());
+            zoneId);
     }
 
     private Long id;
