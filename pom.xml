@@ -52,6 +52,7 @@
         <module>caching</module>
         <module>hbase</module>
         <module>cassandra</module>
+        <module>elasticsearch</module>
         <module>jcr</module>
         <module>jpa</module>
         <module>lucene</module>
@@ -155,6 +156,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.james</groupId>
+                <artifactId>apache-james-mailbox-elasticsearch</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.james</groupId>
                 <artifactId>apache-james-mailbox-lucene</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -209,21 +215,6 @@
             <!--
                 END Modules
             -->
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-core</artifactId>
-                <version>${lucene.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-analyzers</artifactId>
-                <version>${lucene.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-smartcn</artifactId>
-                <version>${lucene.version}</version>
-            </dependency>
 
             <!--
                 START Mail
