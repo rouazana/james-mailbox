@@ -22,14 +22,28 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="
           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+          
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name ="location" value="classpath:elasticsearch.properties"/>
+    </bean>
+
+    <bean id="elasticsearch-listener" class="org.apache.james.mailbox.elasticsearch.events.ElasticSearchListeningMessageSearchIndex">
+        <constructor-arg index="0" ref="elasticsearch-node"/>
+        <constructor-arg index="1" ref="elasticsearch-indexer"/>
+        <constructor-arg index="2" ref="elasticsearch-json"/>
+    </bean>
 
     <bean id="elasticsearch-indexer" class="org.apache.james.mailbox.elasticsearch.ElasticSearchIndexer">
         <constructor-arg index="0" ref="elasticsearch-node"/>
     </bean>
 
-    <bean id="elasticsearch-node" class="org.apache.james.mailbox.cassandra.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
-        <constructor-arg index="0" ref="${elasticsearch.clusterName}"/>
-        <constructor-arg index="1" ref="${elasticsearch.masterHost}"/>
+    <bean id="elasticsearch-node" class="org.apache.james.mailbox.elasticsearch.NodeProvider" factory-method="createNodeForClusterName">
+        <constructor-arg index="0" value="${elasticsearch.clusterName}"/>
+        <constructor-arg index="1" value="${elasticsearch.masterHost}"/>
+    </bean>
+
+    <bean id="elasticsearch-json" class="org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson">
     </bean>
 
 </beans>
