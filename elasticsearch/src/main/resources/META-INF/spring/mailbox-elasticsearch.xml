@@ -39,7 +39,7 @@
         <constructor-arg index="0" ref="elasticsearch-node"/>
     </bean>
 
-    <bean id="elasticsearch-json" class="org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson">
+    <bean id="elasticsearch-json" class="org.apache.james.mailbox.elasticsearch.json.MessageToElasticSearchJson"/>
 
     <bean id="elasticsearch-searcher" class="org.apache.james.mailbox.elasticsearch.search.ElasticSearchSearcher">
         <constructor-arg index="0" ref="elasticsearch-node"/>
