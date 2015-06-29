@@ -512,4 +512,12 @@ public class ElasticSearchIntegrationTest {
             .containsOnly(4L, 9L);
     }
 
+    @Test
+    public void mailsContainsShouldIncludeMailHavingAttachmentsMatchingTheRequest() throws Exception {
+        SearchQuery searchQuery = new SearchQuery();
+        searchQuery.andCriteria(SearchQuery.mailContains("root mailing list"));
+        assertThat(elasticSearchListeningMessageSearchIndex.search(session, mailbox, searchQuery))
+            .containsOnly(1L, 6L);
+    }
+
 }

@@ -60,15 +60,11 @@ public class CriterionConverter {
         registerCriterionConverter(SearchQuery.ConjunctionCriterion.class, this::convertConjunction);
         registerCriterionConverter(SearchQuery.InternalDateCriterion.class, this::convertInternalDate);
         registerCriterionConverter(SearchQuery.HeaderCriterion.class, this::convertHeader);
+        registerCriterionConverter(SearchQuery.TextCriterion.class, this::convertTextCriterion);
         
         registerCriterionConverter(
             SearchQuery.AllCriterion.class, 
             criterion -> FilteredQueryRepresentation.fromQuery(matchAllQuery()));
-        
-        registerCriterionConverter(
-            SearchQuery.TextCriterion.class,
-            criterion -> FilteredQueryRepresentation.fromQuery(
-                    matchQuery(JsonMessageConstants.TEXT_BODY, criterion.getOperator().getValue())));
         
         registerCriterionConverter(
             SearchQuery.ModSeqCriterion.class,
@@ -119,6 +115,22 @@ public class CriterionConverter {
 
     public FilteredQueryRepresentation convertCriterion(SearchQuery.Criterion criterion) {
         return criterionConverterMap.get(criterion.getClass()).apply(criterion);
+    }
+
+
+    private FilteredQueryRepresentation convertTextCriterion(SearchQuery.TextCriterion textCriterion) {
+        switch (textCriterion.getType()) {
+        case BODY:
+            return FilteredQueryRepresentation.fromQuery(
+                matchQuery(JsonMessageConstants.TEXT_BODY, textCriterion.getOperator().getValue()));
+        case FULL:
+            return FilteredQueryRepresentation.fromQuery(
+                boolQuery()
+                    .should(matchQuery(JsonMessageConstants.TEXT_BODY, textCriterion.getOperator().getValue()))
+                    .should(matchQuery(JsonMessageConstants.ATTACHMENTS + "." + JsonMessageConstants.Attachment.TEXT_CONTENT,
+                        textCriterion.getOperator().getValue())));
+        }
+        throw new RuntimeException("Unknown SCOPE for text criterion");
     }
 
     private FilteredQueryRepresentation convertInternalDate(SearchQuery.InternalDateCriterion dateCriterion) {
