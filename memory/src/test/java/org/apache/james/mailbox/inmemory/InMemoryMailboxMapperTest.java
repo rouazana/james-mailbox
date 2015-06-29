@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.inmemory;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -27,8 +29,6 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class InMemoryMailboxMapperTest {
 
@@ -40,11 +40,11 @@ public class InMemoryMailboxMapperTest {
     private MailboxPath user2OtherBoxPath;
     private MailboxPath user1OtherNamespacePath;
 
-    private Mailbox<Long> user1Inbox;
-    private Mailbox<Long> user1SubMailbox1;
-    private Mailbox<Long> user1SubMailbox2;
+    private Mailbox<InMemoryId> user1Inbox;
+    private Mailbox<InMemoryId> user1SubMailbox1;
+    private Mailbox<InMemoryId> user1SubMailbox2;
 
-    private MailboxMapper<Long> mapper;
+    private MailboxMapper<InMemoryId> mapper;
 
     @Before
     public void setUp() throws MailboxException {
@@ -53,15 +53,15 @@ public class InMemoryMailboxMapperTest {
         user1SubMailbox2Path = new MailboxPath("#private", "user1", "INBOX.sub2");
         user2OtherBoxPath = new MailboxPath("#private", "user2", "other.user");
         user1OtherNamespacePath = new MailboxPath("#namspace", "user1", "other.namespace");
-        user1Inbox = new SimpleMailbox<Long>(user1InboxPath, UID_VALIDITY);
-        user1SubMailbox1 = new SimpleMailbox<Long>(user1SubMailbox1Path, UID_VALIDITY);
-        user1SubMailbox2 = new SimpleMailbox<Long>(user1SubMailbox2Path, UID_VALIDITY);
+        user1Inbox = new SimpleMailbox<InMemoryId>(user1InboxPath, UID_VALIDITY);
+        user1SubMailbox1 = new SimpleMailbox<InMemoryId>(user1SubMailbox1Path, UID_VALIDITY);
+        user1SubMailbox2 = new SimpleMailbox<InMemoryId>(user1SubMailbox2Path, UID_VALIDITY);
         mapper = new InMemoryMailboxSessionMapperFactory().createMailboxMapper(new MockMailboxSession("user"));
         mapper.save(user1Inbox);
         mapper.save(user1SubMailbox1);
         mapper.save(user1SubMailbox2);
-        mapper.save(new SimpleMailbox<Long>(user2OtherBoxPath, UID_VALIDITY));
-        mapper.save(new SimpleMailbox<Long>(user1OtherNamespacePath, UID_VALIDITY));
+        mapper.save(new SimpleMailbox<InMemoryId>(user2OtherBoxPath, UID_VALIDITY));
+        mapper.save(new SimpleMailbox<InMemoryId>(user1OtherNamespacePath, UID_VALIDITY));
     }
 
     @Test

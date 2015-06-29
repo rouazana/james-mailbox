@@ -42,20 +42,20 @@ import org.slf4j.Logger;
  * JCR implementation of a {@link org.apache.james.mailbox.MessageManager}
  *
  */
-public class JCRMessageManager extends StoreMessageManager<String> {
+public class JCRMessageManager extends StoreMessageManager<JCRId> {
 
     private final Logger log;
 
-    public JCRMessageManager(MailboxSessionMapperFactory<String> mapperFactory, MessageSearchIndex<String> index, 
-            final MailboxEventDispatcher<String> dispatcher, final MailboxPathLocker locker, final JCRMailbox mailbox, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver, final Logger log, final char delimiter) throws MailboxException {
+    public JCRMessageManager(MailboxSessionMapperFactory<JCRId> mapperFactory, MessageSearchIndex<JCRId> index, 
+            final MailboxEventDispatcher<JCRId> dispatcher, final MailboxPathLocker locker, final JCRMailbox mailbox, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver, final Logger log, final char delimiter) throws MailboxException {
         super(mapperFactory, index, dispatcher, locker, mailbox, aclResolver, groupMembershipResolver);
         this.log = log;
     }
 
 
     @Override
-    protected Message<String> createMessage(Date internalDate, int size, int bodyStartOctet, SharedInputStream content, Flags flags, PropertyBuilder propertyBuilder) throws MailboxException{
-        final Message<String> message = new JCRMessage(getMailboxEntity().getMailboxId(), internalDate, 
+    protected Message<JCRId> createMessage(Date internalDate, int size, int bodyStartOctet, SharedInputStream content, Flags flags, PropertyBuilder propertyBuilder) throws MailboxException{
+        final Message<JCRId> message = new JCRMessage(getMailboxEntity().getMailboxId(), internalDate, 
                 size, flags, content, bodyStartOctet, propertyBuilder, log);
         return message;
     }

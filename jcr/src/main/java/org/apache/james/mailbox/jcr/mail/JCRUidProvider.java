@@ -25,12 +25,13 @@ import javax.jcr.Session;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jcr.JCRId;
 import org.apache.james.mailbox.jcr.MailboxSessionJCRRepository;
 import org.apache.james.mailbox.jcr.mail.model.JCRMailbox;
 import org.apache.james.mailbox.store.mail.AbstractLockingUidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
-public class JCRUidProvider extends AbstractLockingUidProvider<String>{
+public class JCRUidProvider extends AbstractLockingUidProvider<JCRId> {
 
     private MailboxSessionJCRRepository repository;
 
@@ -40,10 +41,10 @@ public class JCRUidProvider extends AbstractLockingUidProvider<String>{
     }
 
     @Override
-    public long lastUid(MailboxSession mailboxSession, Mailbox<String> mailbox) throws MailboxException {
+    public long lastUid(MailboxSession mailboxSession, Mailbox<JCRId> mailbox) throws MailboxException {
         try {
             Session s = repository.login(mailboxSession);
-            Node node = s.getNodeByIdentifier(mailbox.getMailboxId());
+            Node node = s.getNodeByIdentifier(mailbox.getMailboxId().serialize());
             return node.getProperty(JCRMailbox.LASTUID_PROPERTY).getLong();
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to get last uid for mailbox " + mailbox, e);
@@ -52,10 +53,10 @@ public class JCRUidProvider extends AbstractLockingUidProvider<String>{
     }
 
     @Override
-    protected long lockedNextUid(MailboxSession session, Mailbox<String> mailbox) throws MailboxException {
+    protected long lockedNextUid(MailboxSession session, Mailbox<JCRId> mailbox) throws MailboxException {
         try {
             Session s = repository.login(session);
-            Node node = s.getNodeByIdentifier(mailbox.getMailboxId());
+            Node node = s.getNodeByIdentifier(mailbox.getMailboxId().serialize());
             long uid = node.getProperty(JCRMailbox.LASTUID_PROPERTY).getLong();
             uid++;
             node.setProperty(JCRMailbox.LASTUID_PROPERTY, uid);

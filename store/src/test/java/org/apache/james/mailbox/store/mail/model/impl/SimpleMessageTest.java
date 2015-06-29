@@ -30,14 +30,15 @@ import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.james.mailbox.store.TestId;
 import org.junit.Test;
 
 public class SimpleMessageTest {
     private static final Charset MESSAGE_CHARSET = Charset.forName("UTF-8");
     private static final String MESSAGE_CONTENT = "Simple message content without special characters";
     private static final String MESSAGE_CONTENT_SPECIAL_CHAR = "Simple message content with special characters: \"'(§è!çà$*`";
-    private static final SimpleMessage<Long> MESSAGE = buildMessage(MESSAGE_CONTENT);
-    private static final SimpleMessage<Long> MESSAGE_SPECIAL_CHAR = buildMessage(MESSAGE_CONTENT_SPECIAL_CHAR);
+    private static final SimpleMessage<TestId> MESSAGE = buildMessage(MESSAGE_CONTENT);
+    private static final SimpleMessage<TestId> MESSAGE_SPECIAL_CHAR = buildMessage(MESSAGE_CONTENT_SPECIAL_CHAR);
 
     @Test
     public void testSize() {
@@ -74,11 +75,11 @@ public class SimpleMessageTest {
                 new String(IOUtils.toByteArray(MESSAGE_SPECIAL_CHAR.getFullContent()),MESSAGE_CHARSET));
     }
 
-    private static SimpleMessage<Long> buildMessage(String content) {
-        return new SimpleMessage<Long>(Calendar.getInstance().getTime(),
+    private static SimpleMessage<TestId> buildMessage(String content) {
+        return new SimpleMessage<TestId>(Calendar.getInstance().getTime(),
                 content.length(), 0, new SharedByteArrayInputStream(
                         content.getBytes(MESSAGE_CHARSET)), new Flags(),
-                new PropertyBuilder(), 1L);
+                new PropertyBuilder(), TestId.of(1L));
     }
 
 }

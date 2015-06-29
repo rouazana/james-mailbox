@@ -28,6 +28,7 @@ import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.acl.GroupMembershipResolver;
 import org.apache.james.mailbox.acl.MailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.JPAMessageManager;
 import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.jpa.mail.model.openjpa.JPAEncryptedMessage;
@@ -52,19 +53,24 @@ public class OpenJPAMessageManager extends JPAMessageManager {
         Encryption
     }
     
-    public OpenJPAMessageManager(MailboxSessionMapperFactory<Long> mapperFactory, MessageSearchIndex<Long> index,
-            MailboxEventDispatcher<Long> dispatcher, MailboxPathLocker locker, Mailbox<Long> mailbox, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) throws MailboxException {
+    public OpenJPAMessageManager(MailboxSessionMapperFactory<JPAId> mapperFactory, 
+    		MessageSearchIndex<JPAId> index,MailboxEventDispatcher<JPAId> dispatcher, 
+    		MailboxPathLocker locker, Mailbox<JPAId> mailbox, MailboxACLResolver aclResolver, 
+    		GroupMembershipResolver groupMembershipResolver) throws MailboxException {
         this(mapperFactory, index, dispatcher, locker,  mailbox, AdvancedFeature.None, aclResolver, groupMembershipResolver);
     }
 
-    public OpenJPAMessageManager(MailboxSessionMapperFactory<Long> mapperFactory, MessageSearchIndex<Long> index, 
-            MailboxEventDispatcher<Long> dispatcher, MailboxPathLocker locker, Mailbox<Long> mailbox, final AdvancedFeature f, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) throws MailboxException {
+    public OpenJPAMessageManager(MailboxSessionMapperFactory<JPAId> mapperFactory, 
+    		MessageSearchIndex<JPAId> index, MailboxEventDispatcher<JPAId> dispatcher, 
+    		MailboxPathLocker locker, Mailbox<JPAId> mailbox, final AdvancedFeature f, 
+    		MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) throws MailboxException {
+    	
         super(mapperFactory,  index, dispatcher, locker, mailbox, aclResolver, groupMembershipResolver);
         this.feature = f;
     }
 
     @Override
-    protected Message<Long> createMessage(Date internalDate, int size, int bodyStartOctet, SharedInputStream content, Flags flags, PropertyBuilder propertyBuilder) throws MailboxException {
+    protected Message<JPAId> createMessage(Date internalDate, int size, int bodyStartOctet, SharedInputStream content, Flags flags, PropertyBuilder propertyBuilder) throws MailboxException {
         int headerEnd = bodyStartOctet -2;
         if (headerEnd < 0) {
             headerEnd = 0;

@@ -28,17 +28,18 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Content;
 import org.apache.james.mailbox.model.Headers;
 import org.apache.james.mailbox.model.MessageRange;
+import org.apache.james.mailbox.model.MessageRange.Type;
 import org.apache.james.mailbox.model.MessageResult;
+import org.apache.james.mailbox.model.MessageResult.FetchGroup;
 import org.apache.james.mailbox.model.MessageResultIterator;
 import org.apache.james.mailbox.model.MimeDescriptor;
-import org.apache.james.mailbox.model.MessageRange.Type;
-import org.apache.james.mailbox.model.MessageResult.FetchGroup;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
-public class StoreMessageResultIterator<Id> implements MessageResultIterator {
+public class StoreMessageResultIterator<Id extends MailboxId> implements MessageResultIterator {
 
     private Iterator<Message<Id>> next = null;
     private MailboxException exception;
@@ -175,7 +176,7 @@ public class StoreMessageResultIterator<Id> implements MessageResultIterator {
         return exception;
     }
 
-    private static final class UnloadedMessageResult<Id> implements MessageResult {
+    private static final class UnloadedMessageResult<Id extends MailboxId> implements MessageResult {
         private final MailboxException exception;
 
         private final Date internalDate;

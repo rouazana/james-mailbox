@@ -15,13 +15,31 @@
  */
 package org.apache.james.mailbox.hbase.mail;
 
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_META_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_BODY_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_HEADERS_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
+import static org.apache.james.mailbox.hbase.HBaseUtils.mailboxFromResult;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -30,15 +48,12 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.hbase.HBaseClusterSingleton;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
-import static org.apache.james.mailbox.hbase.HBaseUtils.mailboxFromResult;
-import static org.apache.james.mailbox.hbase.HBaseUtils.mailboxRowKey;
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.hbase.io.ChunkInputStream;
 import org.apache.james.mailbox.hbase.io.ChunkOutputStream;
 import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -125,7 +140,7 @@ public class HBaseMailboxMapperTest {
         LOG.info("findMailboxWithPathLike");
         MailboxPath path = pathsList.get(pathsList.size() / 2);
 
-        List<Mailbox<UUID>> result = mapper.findMailboxWithPathLike(path);
+        List<Mailbox<HBaseId>> result = mapper.findMailboxWithPathLike(path);
         assertEquals(1, result.size());
 
         int start = 3;
@@ -150,7 +165,7 @@ public class HBaseMailboxMapperTest {
      */
     private void testList() throws Exception {
         LOG.info("list");
-        List<Mailbox<UUID>> result = mapper.list();
+        List<Mailbox<HBaseId>> result = mapper.list();
         assertEquals(mailboxList.size(), result.size());
 
     }
@@ -164,7 +179,7 @@ public class HBaseMailboxMapperTest {
 
         final HBaseMailbox mlbx = mailboxList.get(mailboxList.size() / 2);
 
-        final Get get = new Get(mailboxRowKey(mlbx.getMailboxId()));
+        final Get get = new Get(mlbx.getMailboxId().toBytes());
         // get all columns for the DATA column family
         get.addFamily(MAILBOX_CF);
 
@@ -178,7 +193,7 @@ public class HBaseMailboxMapperTest {
         assertEquals(mlbx.getLastUid(), newValue.getLastUid());
         assertEquals(mlbx.getUidValidity(), newValue.getUidValidity());
         assertEquals(mlbx.getHighestModSeq(), newValue.getHighestModSeq());
-        assertArrayEquals(mailboxRowKey(mlbx.getMailboxId()), mailboxRowKey(newValue.getMailboxId()));
+        assertArrayEquals(mlbx.getMailboxId().toBytes(), newValue.getMailboxId().toBytes());
     }
 
     /**

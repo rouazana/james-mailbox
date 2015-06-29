@@ -107,7 +107,7 @@ public class SearchUtilsMultipartMixedTest {
             + "  Than both your poets can in praise devise.\r\n"
             + "\r\n--2.50290787509--\r\n" + "\r\n--1729--\r\n";
 
-    Message<Long> row;
+    Message<TestId> row;
 
 
     Collection<Long> recent;

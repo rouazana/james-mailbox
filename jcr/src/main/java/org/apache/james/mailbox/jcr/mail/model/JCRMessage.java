@@ -38,6 +38,7 @@ import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jcr.JCRId;
 import org.apache.james.mailbox.jcr.JCRImapConstants;
 import org.apache.james.mailbox.jcr.Persistent;
 import org.apache.james.mailbox.store.mail.model.AbstractMessage;
@@ -50,7 +51,7 @@ import org.slf4j.Logger;
  * JCR implementation of {@link Message}
  *
  */
-public class JCRMessage extends AbstractMessage<String> implements JCRImapConstants, Persistent{
+public class JCRMessage extends AbstractMessage<JCRId> implements JCRImapConstants, Persistent{
 
     private Node node;
     private final Logger logger;
@@ -61,7 +62,7 @@ public class JCRMessage extends AbstractMessage<String> implements JCRImapConsta
     private List<JCRProperty> properties;
     private int bodyStartOctet;
     
-    private String mailboxUUID;
+    private JCRId mailboxUUID;
     private long uid;
     private Date internalDate;
     private long size;
@@ -102,7 +103,7 @@ public class JCRMessage extends AbstractMessage<String> implements JCRImapConsta
         this.node = node;
     }
     
-    public JCRMessage(String mailboxUUID, Date internalDate, int size, Flags flags, SharedInputStream content,
+    public JCRMessage(JCRId mailboxUUID, Date internalDate, int size, Flags flags, SharedInputStream content,
             int bodyStartOctet,  final PropertyBuilder propertyBuilder, Logger logger) {
         super();
         this.mailboxUUID = mailboxUUID;
@@ -131,7 +132,7 @@ public class JCRMessage extends AbstractMessage<String> implements JCRImapConsta
      * @param message
      * @throws IOException 
      */
-    public JCRMessage(String mailboxUUID, long uid,  long modSeq, JCRMessage message, Logger logger) throws MailboxException {
+    public JCRMessage(JCRId mailboxUUID, long uid,  long modSeq, JCRMessage message, Logger logger) throws MailboxException {
         this.mailboxUUID = mailboxUUID;
         this.internalDate = message.getInternalDate();
         this.size = message.getFullContentOctets();
@@ -293,7 +294,7 @@ public class JCRMessage extends AbstractMessage<String> implements JCRImapConsta
         // This also fix https://issues.apache.org/jira/browse/IMAP-159
         if (isPersistent() == false) {
             node.setProperty(SIZE_PROPERTY, getFullContentOctets());
-            node.setProperty(MAILBOX_UUID_PROPERTY, getMailboxId());
+            node.setProperty(MAILBOX_UUID_PROPERTY, getMailboxId().serialize());
             node.setProperty(UID_PROPERTY, getUid());
             node.setProperty(MODSEQ_PROPERTY, getModSeq());
 
@@ -428,10 +429,10 @@ public class JCRMessage extends AbstractMessage<String> implements JCRImapConsta
      * @see
      * org.apache.james.mailbox.store.mail.model.MailboxMembership#getMailboxId()
      */
-    public String getMailboxId() {
+    public JCRId getMailboxId() {
         if (isPersistent()) {
             try {
-                return node.getProperty(MAILBOX_UUID_PROPERTY).getString();
+                return JCRId.of(node.getProperty(MAILBOX_UUID_PROPERTY).getString());
             } catch (RepositoryException e) {
                 logger.error("Unable to access property "
                         + MAILBOX_UUID_PROPERTY, e);

@@ -19,8 +19,6 @@
 
 package org.apache.james.mailbox.cassandra;
 
-import java.util.UUID;
-
 import javax.mail.Flags;
 
 import org.apache.james.mailbox.MailboxPathLocker;
@@ -38,9 +36,9 @@ import org.apache.james.mailbox.store.search.MessageSearchIndex;
  * Cassandra implementation of {@link StoreMessageManager}
  * 
  */
-public class CassandraMessageManager extends StoreMessageManager<UUID> {
+public class CassandraMessageManager extends StoreMessageManager<CassandraId> {
 
-    public CassandraMessageManager(MailboxSessionMapperFactory<UUID> mapperFactory, MessageSearchIndex<UUID> index, MailboxEventDispatcher<UUID> dispatcher, MailboxPathLocker locker, Mailbox<UUID> mailbox) throws MailboxException {
+    public CassandraMessageManager(MailboxSessionMapperFactory<CassandraId> mapperFactory, MessageSearchIndex<CassandraId> index, MailboxEventDispatcher<CassandraId> dispatcher, MailboxPathLocker locker, Mailbox<CassandraId> mailbox) throws MailboxException {
         super(mapperFactory, index, dispatcher, locker, mailbox, new UnionMailboxACLResolver(), new SimpleGroupMembershipResolver());
 
     }

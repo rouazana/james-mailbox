@@ -31,6 +31,7 @@ import javax.persistence.Query;
 
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.jpa.mail.model.openjpa.AbstractJPAMessage;
 import org.apache.james.mailbox.jpa.mail.model.openjpa.JPAEncryptedMessage;
@@ -51,12 +52,12 @@ import org.apache.openjpa.persistence.ArgumentException;
 /**
  * JPA implementation of a {@link MessageMapper}. This class is not thread-safe!
  */
-public class JPAMessageMapper extends AbstractMessageMapper<Long> implements MessageMapper<Long> {
+public class JPAMessageMapper extends AbstractMessageMapper<JPAId> implements MessageMapper<JPAId> {
     protected EntityManagerFactory entityManagerFactory;
     protected EntityManager entityManager;
 
-    public JPAMessageMapper(final MailboxSession session, final UidProvider<Long> uidProvider,
-            ModSeqProvider<Long> modSeqProvider, final EntityManagerFactory entityManagerFactory) {
+    public JPAMessageMapper(final MailboxSession session, final UidProvider<JPAId> uidProvider,
+            ModSeqProvider<JPAId> modSeqProvider, final EntityManagerFactory entityManagerFactory) {
         super(session, uidProvider, modSeqProvider);
         this.entityManagerFactory = entityManagerFactory;
     }
@@ -123,10 +124,10 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      *      org.apache.james.mailbox.model.MessageRange,
      *      org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
      */
-    public Iterator<Message<Long>> findInMailbox(Mailbox<Long> mailbox, MessageRange set, FetchType fType, int max)
+    public Iterator<Message<JPAId>> findInMailbox(Mailbox<JPAId> mailbox, MessageRange set, FetchType fType, int max)
             throws MailboxException {
         try {
-            List<Message<Long>> results;
+            List<Message<JPAId>> results;
             long from = set.getUidFrom();
             final long to = set.getUidTo();
             final Type type = set.getType();
@@ -157,10 +158,10 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox(Mailbox)
      */
-    public long countMessagesInMailbox(Mailbox<Long> mailbox) throws MailboxException {
+    public long countMessagesInMailbox(Mailbox<JPAId> mailbox) throws MailboxException {
         try {
             return (Long) getEntityManager().createNamedQuery("countMessagesInMailbox")
-                    .setParameter("idParam", mailbox.getMailboxId()).getSingleResult();
+                    .setParameter("idParam", mailbox.getMailboxId().getRawId()).getSingleResult();
         } catch (PersistenceException e) {
             throw new MailboxException("Count of messages failed in mailbox " + mailbox, e);
         }
@@ -169,10 +170,10 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
     /**
      * @see org.apache.james.mailbox.store.mail.MessageMapper#countUnseenMessagesInMailbox(Mailbox)
      */
-    public long countUnseenMessagesInMailbox(Mailbox<Long> mailbox) throws MailboxException {
+    public long countUnseenMessagesInMailbox(Mailbox<JPAId> mailbox) throws MailboxException {
         try {
             return (Long) getEntityManager().createNamedQuery("countUnseenMessagesInMailbox")
-                    .setParameter("idParam", mailbox.getMailboxId()).getSingleResult();
+                    .setParameter("idParam", mailbox.getMailboxId().getRawId()).getSingleResult();
         } catch (PersistenceException e) {
             throw new MailboxException("Count of useen messages failed in mailbox " + mailbox, e);
         }
@@ -182,7 +183,7 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      * @see org.apache.james.mailbox.store.mail.MessageMapper#delete(org.apache.james.mailbox.store.mail.model.Mailbox,
      *      org.apache.james.mailbox.store.mail.model.Message)
      */
-    public void delete(Mailbox<Long> mailbox, Message<Long> message) throws MailboxException {
+    public void delete(Mailbox<JPAId> mailbox, Message<JPAId> message) throws MailboxException {
         try {
             getEntityManager().remove(message);
         } catch (PersistenceException e) {
@@ -194,12 +195,12 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      * @see org.apache.james.mailbox.store.mail.MessageMapper#findFirstUnseenMessageUid(Mailbox)
      */
     @SuppressWarnings("unchecked")
-    public Long findFirstUnseenMessageUid(Mailbox<Long> mailbox) throws MailboxException {
+    public Long findFirstUnseenMessageUid(Mailbox<JPAId> mailbox) throws MailboxException {
         try {
             Query query = getEntityManager().createNamedQuery("findUnseenMessagesInMailboxOrderByUid").setParameter(
-                    "idParam", mailbox.getMailboxId());
+                    "idParam", mailbox.getMailboxId().getRawId());
             query.setMaxResults(1);
-            List<Message<Long>> result = query.getResultList();
+            List<Message<JPAId>> result = query.getResultList();
             if (result.isEmpty()) {
                 return null;
             } else {
@@ -214,10 +215,10 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      * @see org.apache.james.mailbox.store.mail.MessageMapper#findRecentMessageUidsInMailbox(Mailbox)
      */
     @SuppressWarnings("unchecked")
-    public List<Long> findRecentMessageUidsInMailbox(Mailbox<Long> mailbox) throws MailboxException {
+    public List<Long> findRecentMessageUidsInMailbox(Mailbox<JPAId> mailbox) throws MailboxException {
         try {
             Query query = getEntityManager().createNamedQuery("findRecentMessageUidsInMailbox").setParameter("idParam",
-                    mailbox.getMailboxId());
+                    mailbox.getMailboxId().getRawId());
             return query.getResultList();
         } catch (PersistenceException e) {
             throw new MailboxException("Search of recent messages failed in mailbox " + mailbox, e);
@@ -225,11 +226,11 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
     }
 
     @Override
-    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(Mailbox<Long> mailbox, MessageRange set)
+    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(Mailbox<JPAId> mailbox, MessageRange set)
             throws MailboxException {
         try {
             final Map<Long, MessageMetaData> data;
-            final List<Message<Long>> results;
+            final List<Message<JPAId>> results;
             final long from = set.getUidFrom();
             final long to = set.getUidTo();
 
@@ -270,7 +271,7 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      *      org.apache.james.mailbox.store.mail.model.Message)
      */
     @Override
-    public MessageMetaData move(Mailbox<Long> mailbox, Message<Long> original) throws MailboxException {
+    public MessageMetaData move(Mailbox<JPAId> mailbox, Message<JPAId> original) throws MailboxException {
         throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
     }
 
@@ -278,9 +279,9 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#copy(Mailbox,
      *      long, long, Message)
      */
-    protected MessageMetaData copy(Mailbox<Long> mailbox, long uid, long modSeq, Message<Long> original)
+    protected MessageMetaData copy(Mailbox<JPAId> mailbox, long uid, long modSeq, Message<JPAId> original)
             throws MailboxException {
-        Message<Long> copy;
+        Message<JPAId> copy;
         if (original instanceof JPAStreamingMessage) {
             copy = new JPAStreamingMessage((JPAMailbox) mailbox, uid, modSeq, original);
         } else if (original instanceof JPAEncryptedMessage) {
@@ -295,7 +296,7 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
      * @see org.apache.james.mailbox.store.mail.AbstractMessageMapper#save(Mailbox,
      *      Message)
      */
-    protected MessageMetaData save(Mailbox<Long> mailbox, Message<Long> message) throws MailboxException {
+    protected MessageMetaData save(Mailbox<JPAId> mailbox, Message<JPAId> message) throws MailboxException {
 
         try {
 
@@ -304,7 +305,7 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
             // If we don't this, we will get an
             // org.apache.openjpa.persistence.ArgumentException.
             ((AbstractJPAMessage) message)
-                    .setMailbox(getEntityManager().find(JPAMailbox.class, mailbox.getMailboxId()));
+                    .setMailbox(getEntityManager().find(JPAMailbox.class, mailbox.getMailboxId().getRawId()));
 
             getEntityManager().persist(message);
             return new SimpleMessageMetaData(message);
@@ -316,9 +317,9 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findMessagesInMailboxAfterUID(Mailbox<Long> mailbox, long uid, int batchSize) {
+    private List<Message<JPAId>> findMessagesInMailboxAfterUID(Mailbox<JPAId> mailbox, long uid, int batchSize) {
         Query query = getEntityManager().createNamedQuery("findMessagesInMailboxAfterUID")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("uidParam", uid);
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("uidParam", uid);
 
         if (batchSize > 0)
             query.setMaxResults(batchSize);
@@ -327,17 +328,17 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findMessagesInMailboxWithUID(Mailbox<Long> mailbox, long uid) {
+    private List<Message<JPAId>> findMessagesInMailboxWithUID(Mailbox<JPAId> mailbox, long uid) {
         return getEntityManager().createNamedQuery("findMessagesInMailboxWithUID")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("uidParam", uid).setMaxResults(1)
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("uidParam", uid).setMaxResults(1)
                 .getResultList();
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findMessagesInMailboxBetweenUIDs(Mailbox<Long> mailbox, long from, long to,
+    private List<Message<JPAId>> findMessagesInMailboxBetweenUIDs(Mailbox<JPAId> mailbox, long from, long to,
             int batchSize) {
         Query query = getEntityManager().createNamedQuery("findMessagesInMailboxBetweenUIDs")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("fromParam", from)
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("fromParam", from)
                 .setParameter("toParam", to);
 
         if (batchSize > 0)
@@ -347,67 +348,67 @@ public class JPAMessageMapper extends AbstractMessageMapper<Long> implements Mes
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findMessagesInMailbox(Mailbox<Long> mailbox, int batchSize) {
+    private List<Message<JPAId>> findMessagesInMailbox(Mailbox<JPAId> mailbox, int batchSize) {
         Query query = getEntityManager().createNamedQuery("findMessagesInMailbox").setParameter("idParam",
-                mailbox.getMailboxId());
+                mailbox.getMailboxId().getRawId());
         if (batchSize > 0)
             query.setMaxResults(batchSize);
         return query.getResultList();
     }
 
-    private Map<Long, MessageMetaData> createMetaData(List<Message<Long>> uids) {
+    private Map<Long, MessageMetaData> createMetaData(List<Message<JPAId>> uids) {
         final Map<Long, MessageMetaData> data = new HashMap<Long, MessageMetaData>();
         for (int i = 0; i < uids.size(); i++) {
-            Message<Long> m = uids.get(i);
+            Message<JPAId> m = uids.get(i);
             data.put(m.getUid(), new SimpleMessageMetaData(m));
         }
         return data;
     }
 
-    private int deleteDeletedMessagesInMailbox(Mailbox<Long> mailbox) {
+    private int deleteDeletedMessagesInMailbox(Mailbox<JPAId> mailbox) {
         return getEntityManager().createNamedQuery("deleteDeletedMessagesInMailbox")
-                .setParameter("idParam", mailbox.getMailboxId()).executeUpdate();
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).executeUpdate();
     }
 
-    private int deleteDeletedMessagesInMailboxAfterUID(Mailbox<Long> mailbox, long uid) {
+    private int deleteDeletedMessagesInMailboxAfterUID(Mailbox<JPAId> mailbox, long uid) {
         return getEntityManager().createNamedQuery("deleteDeletedMessagesInMailboxAfterUID")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("uidParam", uid).executeUpdate();
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("uidParam", uid).executeUpdate();
     }
 
-    private int deleteDeletedMessagesInMailboxWithUID(Mailbox<Long> mailbox, long uid) {
+    private int deleteDeletedMessagesInMailboxWithUID(Mailbox<JPAId> mailbox, long uid) {
         return getEntityManager().createNamedQuery("deleteDeletedMessagesInMailboxWithUID")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("uidParam", uid).executeUpdate();
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("uidParam", uid).executeUpdate();
     }
 
-    private int deleteDeletedMessagesInMailboxBetweenUIDs(Mailbox<Long> mailbox, long from, long to) {
+    private int deleteDeletedMessagesInMailboxBetweenUIDs(Mailbox<JPAId> mailbox, long from, long to) {
         return getEntityManager().createNamedQuery("deleteDeletedMessagesInMailboxBetweenUIDs")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("fromParam", from)
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("fromParam", from)
                 .setParameter("toParam", to).executeUpdate();
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findDeletedMessagesInMailbox(Mailbox<Long> mailbox) {
+    private List<Message<JPAId>> findDeletedMessagesInMailbox(Mailbox<JPAId> mailbox) {
         return getEntityManager().createNamedQuery("findDeletedMessagesInMailbox")
-                .setParameter("idParam", mailbox.getMailboxId()).getResultList();
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).getResultList();
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findDeletedMessagesInMailboxAfterUID(Mailbox<Long> mailbox, long uid) {
+    private List<Message<JPAId>> findDeletedMessagesInMailboxAfterUID(Mailbox<JPAId> mailbox, long uid) {
         return getEntityManager().createNamedQuery("findDeletedMessagesInMailboxAfterUID")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("uidParam", uid).getResultList();
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("uidParam", uid).getResultList();
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findDeletedMessagesInMailboxWithUID(Mailbox<Long> mailbox, long uid) {
+    private List<Message<JPAId>> findDeletedMessagesInMailboxWithUID(Mailbox<JPAId> mailbox, long uid) {
         return getEntityManager().createNamedQuery("findDeletedMessagesInMailboxWithUID")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("uidParam", uid).setMaxResults(1)
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("uidParam", uid).setMaxResults(1)
                 .getResultList();
     }
 
     @SuppressWarnings("unchecked")
-    private List<Message<Long>> findDeletedMessagesInMailboxBetweenUIDs(Mailbox<Long> mailbox, long from, long to) {
+    private List<Message<JPAId>> findDeletedMessagesInMailboxBetweenUIDs(Mailbox<JPAId> mailbox, long from, long to) {
         return getEntityManager().createNamedQuery("findDeletedMessagesInMailboxBetweenUIDs")
-                .setParameter("idParam", mailbox.getMailboxId()).setParameter("fromParam", from)
+                .setParameter("idParam", mailbox.getMailboxId().getRawId()).setParameter("fromParam", from)
                 .setParameter("toParam", to).getResultList();
     }
 }

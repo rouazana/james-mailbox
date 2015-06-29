@@ -6,6 +6,7 @@ import org.apache.james.mailbox.exception.SubscriptionException;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.user.SubscriptionMapper;
 
 /**
@@ -15,7 +16,7 @@ import org.apache.james.mailbox.store.user.SubscriptionMapper;
  * 
  * @param <Id>
  */
-public class CachingMailboxSessionMapperFactory<Id> extends
+public class CachingMailboxSessionMapperFactory<Id extends MailboxId> extends
 		MailboxSessionMapperFactory<Id> {
 
 	private MailboxSessionMapperFactory<Id> underlying;

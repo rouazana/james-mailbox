@@ -38,11 +38,11 @@ import javax.mail.Flags;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.Property;
 
-public class SimpleMailboxMembership implements Message<Long> {
+public class SimpleMailboxMembership implements Message<TestId> {
     
     private static final String TOSTRING_SEPARATOR = " ";
     
-    public long mailboxId;
+    public TestId mailboxId;
     public long uid;
     public Date internalDate;
     public boolean recent = false;
@@ -52,7 +52,7 @@ public class SimpleMailboxMembership implements Message<Long> {
     public boolean flagged = false;
     public boolean seen = false;
 
-    public SimpleMailboxMembership(long mailboxId, long uid, long modSeq, Date internalDate, int size, 
+    public SimpleMailboxMembership(TestId mailboxId, long uid, long modSeq, Date internalDate, int size, 
             Flags flags, byte[] body, final Map<String, String> headers) throws Exception {
         super();
         this.mailboxId = mailboxId;
@@ -81,7 +81,7 @@ public class SimpleMailboxMembership implements Message<Long> {
     /**
      * @see org.apache.james.imap.Message.mail.model.Document#getMailboxId()
      */
-    public Long getMailboxId() {
+    public TestId getMailboxId() {
         return mailboxId;
     }
     
@@ -184,7 +184,7 @@ public class SimpleMailboxMembership implements Message<Long> {
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
-        result = PRIME * result + (int) (mailboxId ^ (mailboxId >>> 32));
+        result = PRIME * result + (int) (mailboxId.id ^ (mailboxId.id >>> 32));
         result = PRIME * result + (int) (uid ^ (uid >>> 32));
         return result;
     }
@@ -198,8 +198,8 @@ public class SimpleMailboxMembership implements Message<Long> {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        final Message<Long> other = (Message<Long>) obj;
-        if (mailboxId != other.getMailboxId())
+        final Message<TestId> other = (Message<TestId>) obj;
+        if (mailboxId.id != other.getMailboxId().id)
             return false;
         if (uid != other.getUid())
             return false;
@@ -296,7 +296,7 @@ public class SimpleMailboxMembership implements Message<Long> {
     /**
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
-    public int compareTo(Message<Long> other) {
+    public int compareTo(Message<TestId> other) {
         return (int) (getUid() - other.getUid());
     }
 

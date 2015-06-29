@@ -18,39 +18,41 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.mail;
 
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_BODY_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_HEADERS_CF;
+import static org.apache.james.mailbox.hbase.HBaseUtils.messageRowKey;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import javax.mail.Flags;
-import org.apache.hadoop.conf.Configuration;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.hbase.io.ChunkInputStream;
 import org.apache.james.mailbox.store.mail.model.AbstractMessage;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.Property;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 
-import static org.apache.james.mailbox.hbase.HBaseUtils.*;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
-
 /**
  * Concrete HBaseMessage implementation. This implementation does not store any
  * message content. The message content is retrieved using a ChunkedInputStream
  * directly from HBase.
  */
-public class HBaseMessage extends AbstractMessage<UUID> {
+public class HBaseMessage extends AbstractMessage<HBaseId> {
 
     private static final String TOSTRING_SEPARATOR = " ";
     /** Configuration for the HBase cluster */
     private final Configuration conf;
     /** The value for the mailboxId field */
-    private UUID mailboxId;
+    private HBaseId mailboxId;
     /** The value for the uid field */
     private long uid;
     /** The value for the modSeq field */
@@ -92,7 +94,7 @@ public class HBaseMessage extends AbstractMessage<UUID> {
      * @param original
      * @throws MailboxException
      */
-    public HBaseMessage(Configuration conf, UUID mailboxId, long uid, long modSeq, Message<?> original) throws MailboxException {
+    public HBaseMessage(Configuration conf, HBaseId mailboxId, long uid, long modSeq, Message<?> original) throws MailboxException {
         super();
         this.conf = conf;
         this.mailboxId = mailboxId;
@@ -124,7 +126,7 @@ public class HBaseMessage extends AbstractMessage<UUID> {
      * @param bodyStartOctet
      * @param propertyBuilder
      */
-    public HBaseMessage(Configuration conf, UUID mailboxId, Date internalDate, Flags flags, long contentOctets, int bodyStartOctet, PropertyBuilder propertyBuilder) {
+    public HBaseMessage(Configuration conf, HBaseId mailboxId, Date internalDate, Flags flags, long contentOctets, int bodyStartOctet, PropertyBuilder propertyBuilder) {
         super();
         this.conf = conf;
         this.mailboxId = mailboxId;
@@ -162,7 +164,7 @@ public class HBaseMessage extends AbstractMessage<UUID> {
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
-        result = PRIME * result + (int) (getMailboxId().getMostSignificantBits() ^ (getMailboxId().getMostSignificantBits() >>> 32));
+        result = PRIME * result + mailboxId.hashCode();
         result = PRIME * result + (int) (uid ^ (uid >>> 32));
         return result;
     }
@@ -283,7 +285,7 @@ public class HBaseMessage extends AbstractMessage<UUID> {
      * @see org.apache.james.mailbox.store.mail.model.Message#getMailboxId()
      */
     @Override
-    public UUID getMailboxId() {
+    public HBaseId getMailboxId() {
         return mailboxId;
     }
 

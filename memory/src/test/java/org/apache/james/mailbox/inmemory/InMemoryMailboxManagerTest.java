@@ -83,7 +83,7 @@ public class InMemoryMailboxManagerTest extends AbstractMailboxManagerTest {
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-        StoreMailboxManager<Long> mailboxManager = new StoreMailboxManager<Long>(factory, new MockAuthenticator(), aclResolver, groupMembershipResolver);
+        StoreMailboxManager<InMemoryId> mailboxManager = new StoreMailboxManager<InMemoryId>(factory, new MockAuthenticator(), aclResolver, groupMembershipResolver);
         mailboxManager.init();
         
         setMailboxManager(mailboxManager);

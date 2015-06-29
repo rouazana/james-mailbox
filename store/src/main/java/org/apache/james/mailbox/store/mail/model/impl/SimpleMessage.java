@@ -32,11 +32,12 @@ import javax.mail.util.SharedByteArrayInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.model.AbstractMessage;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.Property;
 
-public class SimpleMessage<Id> extends AbstractMessage<Id> {
+public class SimpleMessage<Id extends MailboxId> extends AbstractMessage<Id> {
 
     private long uid;
     private final Id mailboxId;

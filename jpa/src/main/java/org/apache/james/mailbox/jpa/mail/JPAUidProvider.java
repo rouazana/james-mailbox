@@ -25,11 +25,12 @@ import javax.persistence.PersistenceException;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.store.mail.AbstractLockingUidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
-public class JPAUidProvider extends AbstractLockingUidProvider<Long>{
+public class JPAUidProvider extends AbstractLockingUidProvider<JPAId> {
 
     private EntityManagerFactory factory;
 
@@ -40,12 +41,12 @@ public class JPAUidProvider extends AbstractLockingUidProvider<Long>{
     
     
     @Override
-    public long lastUid(MailboxSession session, Mailbox<Long> mailbox) throws MailboxException {
+    public long lastUid(MailboxSession session, Mailbox<JPAId> mailbox) throws MailboxException {
         EntityManager manager = null;
         try {
             manager = factory.createEntityManager();
             manager.getTransaction().begin();
-            long uid = (Long) manager.createNamedQuery("findLastUid").setParameter("idParam", mailbox.getMailboxId()).getSingleResult();
+            long uid = (Long) manager.createNamedQuery("findLastUid").setParameter("idParam", mailbox.getMailboxId().getRawId()).getSingleResult();
             manager.getTransaction().commit();
             return uid;
         } catch (PersistenceException e) {
@@ -61,12 +62,12 @@ public class JPAUidProvider extends AbstractLockingUidProvider<Long>{
     }
 
     @Override
-    protected long lockedNextUid(MailboxSession session, Mailbox<Long> mailbox) throws MailboxException {
+    protected long lockedNextUid(MailboxSession session, Mailbox<JPAId> mailbox) throws MailboxException {
         EntityManager manager = null;
         try {
             manager = factory.createEntityManager();
             manager.getTransaction().begin();
-            JPAMailbox m = manager.find(JPAMailbox.class, mailbox.getMailboxId());
+            JPAMailbox m = manager.find(JPAMailbox.class, mailbox.getMailboxId().getRawId());
             long uid = m.consumeUid();
             manager.persist(m);
             manager.getTransaction().commit();

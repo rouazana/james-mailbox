@@ -30,7 +30,6 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Properties;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_CONTENT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_OCTECTS;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.BODY_START_OCTET;
@@ -60,21 +59,21 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.util.SharedByteArrayInputStream;
 
-import com.datastax.driver.core.UDTValue;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.CassandraConstants;
+import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider.TYPE;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
+import org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Properties;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
@@ -94,7 +93,7 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.TupleValue;
+import com.datastax.driver.core.UDTValue;
 import com.datastax.driver.core.querybuilder.Assignment;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -109,27 +108,27 @@ import com.google.common.primitives.Bytes;
 /**
  * Cassandra implementation of a {@link MessageMapper}.
  */
-public class CassandraMessageMapper implements MessageMapper<UUID> {
+public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     private final Session session;
-    private final ModSeqProvider<UUID> modSeqProvider;
+    private final ModSeqProvider<CassandraId> modSeqProvider;
     private final MailboxSession mailboxSession;
-    private final UidProvider<UUID> uidProvider;
+    private final UidProvider<CassandraId> uidProvider;
     private final CassandraTypesProvider typesProvider;
 
     private int maxRetries;
 
     private final static int DEFAULT_MAX_RETRIES = 10000;
 
-    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, CassandraTypesProvider typesProvider) {
+    public CassandraMessageMapper(Session session, UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, CassandraTypesProvider typesProvider) {
         this(session, uidProvider, modSeqProvider, null, DEFAULT_MAX_RETRIES, typesProvider);
     }
 
-    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, CassandraTypesProvider typesProvider) {
+    public CassandraMessageMapper(Session session, UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, MailboxSession mailboxSession, CassandraTypesProvider typesProvider) {
         this(session, uidProvider, modSeqProvider, mailboxSession, DEFAULT_MAX_RETRIES, typesProvider);
     }
 
-    public CassandraMessageMapper(Session session, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, MailboxSession mailboxSession, int maxRetries, CassandraTypesProvider typesProvider) {
+    public CassandraMessageMapper(Session session, UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, MailboxSession mailboxSession, int maxRetries, CassandraTypesProvider typesProvider) {
         this.session = session;
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
@@ -139,14 +138,20 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public long countMessagesInMailbox(Mailbox<UUID> mailbox) throws MailboxException {
-        ResultSet results = session.execute(select(CassandraMailboxCountersTable.COUNT).from(CassandraMailboxCountersTable.TABLE_NAME).where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId())));
+    public long countMessagesInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
+        ResultSet results = session.execute(
+                select(CassandraMailboxCountersTable.COUNT)
+                .from(CassandraMailboxCountersTable.TABLE_NAME)
+                .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
         return results.isExhausted() ? 0 : results.one().getLong(CassandraMailboxCountersTable.COUNT);
     }
 
     @Override
-    public long countUnseenMessagesInMailbox(Mailbox<UUID> mailbox) throws MailboxException {
-        ResultSet results = session.execute(select(CassandraMailboxCountersTable.UNSEEN).from(CassandraMailboxCountersTable.TABLE_NAME).where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId())));
+    public long countUnseenMessagesInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
+        ResultSet results = session.execute(
+                select(CassandraMailboxCountersTable.UNSEEN)
+                .from(CassandraMailboxCountersTable.TABLE_NAME)
+                .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
         if (!results.isExhausted()) {
             Row row = results.one();
             if (row.getColumnDefinitions().contains(CassandraMailboxCountersTable.UNSEEN)) {
@@ -157,37 +162,44 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public void delete(Mailbox<UUID> mailbox, Message<UUID> message) throws MailboxException {
-        session.execute(QueryBuilder.delete().from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(eq(IMAP_UID, message.getUid())));
+    public void delete(Mailbox<CassandraId> mailbox, Message<CassandraId> message) throws MailboxException {
+        session.execute(
+                QueryBuilder.delete()
+                    .from(TABLE_NAME)
+                    .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                    .and(eq(IMAP_UID, message.getUid())));
         decrementCount(mailbox);
         if (!message.isSeen()) {
             decrementUnseen(mailbox);
         }
     }
 
-    private void decrementCount(Mailbox<UUID> mailbox) {
+    private void decrementCount(Mailbox<CassandraId> mailbox) {
         updateMailbox(mailbox, decr(CassandraMailboxCountersTable.COUNT));
     }
 
-    private void incrementCount(Mailbox<UUID> mailbox) {
+    private void incrementCount(Mailbox<CassandraId> mailbox) {
         updateMailbox(mailbox, incr(CassandraMailboxCountersTable.COUNT));
     }
 
-    private void decrementUnseen(Mailbox<UUID> mailbox) {
+    private void decrementUnseen(Mailbox<CassandraId> mailbox) {
         updateMailbox(mailbox, decr(CassandraMailboxCountersTable.UNSEEN));
     }
 
-    private void incrementUnseen(Mailbox<UUID> mailbox) {
+    private void incrementUnseen(Mailbox<CassandraId> mailbox) {
         updateMailbox(mailbox, incr(CassandraMailboxCountersTable.UNSEEN));
     }
 
-    private void updateMailbox(Mailbox<UUID> mailbox, Assignment operation) {
-        session.execute(update(CassandraMailboxCountersTable.TABLE_NAME).with(operation).where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId())));
+    private void updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
+        session.execute(
+                update(CassandraMailboxCountersTable.TABLE_NAME)
+                .with(operation)
+                .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
     }
 
     @Override
-    public Iterator<Message<UUID>> findInMailbox(Mailbox<UUID> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
-        Builder<Message<UUID>> result = ImmutableSortedSet.<Message<UUID>> naturalOrder();
+    public Iterator<Message<CassandraId>> findInMailbox(Mailbox<CassandraId> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
+        Builder<Message<CassandraId>> result = ImmutableSortedSet.<Message<CassandraId>> naturalOrder();
         ResultSet rows = session.execute(buildQuery(mailbox, set));
         for (Row row : rows) {
             result.add(message(row));
@@ -222,13 +234,21 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         return property;
     }
 
-    private Message<UUID> message(Row row) {
-        SimpleMessage<UUID> message = new SimpleMessage<UUID>(row.getDate(INTERNAL_DATE), row.getInt(FULL_CONTENT_OCTETS), row.getInt(BODY_START_OCTET), new SharedByteArrayInputStream(getFullContent(row)), getFlags(row), getPropertyBuilder(row), row.getUUID(MAILBOX_ID));
+    private Message<CassandraId> message(Row row) {
+        SimpleMessage<CassandraId> message = 
+                new SimpleMessage<CassandraId>(
+                        row.getDate(INTERNAL_DATE), 
+                        row.getInt(FULL_CONTENT_OCTETS), 
+                        row.getInt(BODY_START_OCTET), 
+                        new SharedByteArrayInputStream(getFullContent(row)), 
+                        getFlags(row), 
+                        getPropertyBuilder(row), 
+                        CassandraId.of(row.getUUID(MAILBOX_ID)));
         message.setUid(row.getLong(IMAP_UID));
         return message;
     }
 
-    private Where buildQuery(Mailbox<UUID> mailbox, MessageRange set) {
+    private Where buildQuery(Mailbox<CassandraId> mailbox, MessageRange set) {
         final MessageRange.Type type = set.getType();
         switch (type) {
         case ALL:
@@ -243,24 +263,36 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         throw new UnsupportedOperationException();
     }
 
-    private Where selectAll(Mailbox<UUID> mailbox) {
-        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId()));
+    private Where selectAll(Mailbox<CassandraId> mailbox) {
+        return select(FIELDS)
+                .from(TABLE_NAME)
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()));
     }
 
-    private Where selectFrom(Mailbox<UUID> mailbox, long uid) {
-        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(gte(IMAP_UID, uid));
+    private Where selectFrom(Mailbox<CassandraId> mailbox, long uid) {
+        return select(FIELDS)
+                .from(TABLE_NAME)
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                .and(gte(IMAP_UID, uid));
     }
 
-    private Where selectRange(Mailbox<UUID> mailbox, long from, long to) {
-        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(gte(IMAP_UID, from)).and(lte(IMAP_UID, to));
+    private Where selectRange(Mailbox<CassandraId> mailbox, long from, long to) {
+        return select(FIELDS)
+                .from(TABLE_NAME)
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                .and(gte(IMAP_UID, from))
+                .and(lte(IMAP_UID, to));
     }
 
-    private Where selectMessage(Mailbox<UUID> mailbox, long uid) {
-        return select(FIELDS).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())).and(eq(IMAP_UID, uid));
+    private Where selectMessage(Mailbox<CassandraId> mailbox, long uid) {
+        return select(FIELDS)
+                .from(TABLE_NAME)
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid()))
+                .and(eq(IMAP_UID, uid));
     }
 
     @Override
-    public List<Long> findRecentMessageUidsInMailbox(Mailbox<UUID> mailbox) throws MailboxException {
+    public List<Long> findRecentMessageUidsInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
         ImmutableList.Builder<Long> result = ImmutableList.<Long> builder();
         ResultSet rows = session.execute(selectAll(mailbox).orderBy(asc(IMAP_UID)));
         for (Row row : rows) {
@@ -272,7 +304,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public Long findFirstUnseenMessageUid(Mailbox<UUID> mailbox) throws MailboxException {
+    public Long findFirstUnseenMessageUid(Mailbox<CassandraId> mailbox) throws MailboxException {
         ResultSet rows = session.execute(selectAll(mailbox).orderBy(asc(IMAP_UID)));
         for (Row row : rows) {
             if (!row.getBool(SEEN)) {
@@ -283,12 +315,12 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<UUID> mailbox, MessageRange set) throws MailboxException {
+    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<CassandraId> mailbox, MessageRange set) throws MailboxException {
         ImmutableMap.Builder<Long, MessageMetaData> deletedMessages = ImmutableMap.builder();
         ResultSet messages = session.execute(buildQuery(mailbox, set));
         for (Row row : messages) {
             if (row.getBool(DELETED)) {
-                Message<UUID> message = message(row);
+                Message<CassandraId> message = message(row);
                 delete(mailbox, message);
                 deletedMessages.put(message.getUid(), new SimpleMessageMetaData(message));
             }
@@ -297,7 +329,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public MessageMetaData move(Mailbox<UUID> mailbox, Message<UUID> original) throws MailboxException {
+    public MessageMetaData move(Mailbox<CassandraId> mailbox, Message<CassandraId> original) throws MailboxException {
         throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
     }
 
@@ -307,7 +339,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public long getHighestModSeq(Mailbox<UUID> mailbox) throws MailboxException {
+    public long getHighestModSeq(Mailbox<CassandraId> mailbox) throws MailboxException {
         return modSeqProvider.highestModSeq(mailboxSession, mailbox);
     }
 
@@ -317,7 +349,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public MessageMetaData add(Mailbox<UUID> mailbox, Message<UUID> message) throws MailboxException {
+    public MessageMetaData add(Mailbox<CassandraId> mailbox, Message<CassandraId> message) throws MailboxException {
         message.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         message.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
         MessageMetaData messageMetaData = save(mailbox, message);
@@ -328,10 +360,10 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         return messageMetaData;
     }
 
-    private MessageMetaData save(Mailbox<UUID> mailbox, Message<UUID> message) throws MailboxException {
+    private MessageMetaData save(Mailbox<CassandraId> mailbox, Message<CassandraId> message) throws MailboxException {
         try {
             Insert query = insertInto(TABLE_NAME)
-                    .value(MAILBOX_ID, mailbox.getMailboxId())
+                    .value(MAILBOX_ID, mailbox.getMailboxId().asUuid())
                     .value(IMAP_UID, message.getUid())
                     .value(MOD_SEQ, message.getModSeq())
                     .value(INTERNAL_DATE, message.getInternalDate())
@@ -367,7 +399,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         }
     }
 
-    private boolean conditionalSave(Mailbox<UUID> mailbox, Message<UUID> message, long flagVersion) throws MailboxException {
+    private boolean conditionalSave(Mailbox<CassandraId> mailbox, Message<CassandraId> message, long flagVersion) throws MailboxException {
         ResultSet resultSet = session.execute(
                 update(TABLE_NAME)
                         .with(set(ANSWERED, message.isAnswered()))
@@ -379,7 +411,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
                         .and(set(USER, message.createFlags().contains(Flag.USER)))
                         .and(set(FLAG_VERSION, flagVersion + 1))
                         .where(eq(IMAP_UID, message.getUid()))
-                        .and(eq(MAILBOX_ID, message.getMailboxId()))
+                        .and(eq(MAILBOX_ID, message.getMailboxId().asUuid()))
                         .onlyIf(eq(FLAG_VERSION, flagVersion))
         );
         return resultSet.one().getBool(CassandraConstants.LIGHTWEIGHT_TRANSACTION_APPLIED);
@@ -400,7 +432,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
      * @throws MailboxException
      */
     @Override
-    public Iterator<UpdatedFlags> updateFlags(Mailbox<UUID> mailbox, Flags flags, boolean value, boolean replace, MessageRange set) throws MailboxException {
+    public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, Flags flags, boolean value, boolean replace, MessageRange set) throws MailboxException {
         ImmutableList.Builder<UpdatedFlags> result = ImmutableList.builder();
         for (Row row : session.execute(buildQuery(mailbox, set))) {
             updateMessage(mailbox, flags, value, replace, result, row);
@@ -408,9 +440,9 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         return result.build().iterator();
     }
 
-    private void updateMessage(Mailbox<UUID> mailbox, Flags flags, boolean value, boolean replace, ImmutableList.Builder<UpdatedFlags> result, Row row) throws MailboxException {
+    private void updateMessage(Mailbox<CassandraId> mailbox, Flags flags, boolean value, boolean replace, ImmutableList.Builder<UpdatedFlags> result, Row row) throws MailboxException {
         // Get the message and basic information about it
-        Message<UUID> message = message(row);
+        Message<CassandraId> message = message(row);
         long flagVersion = row.getLong(FLAG_VERSION);
         long uid = message.getUid();
         // update flags
@@ -457,7 +489,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         result.add(new UpdatedFlags(message.getUid(), message.getModSeq(), originFlags, updatedFlags));
     }
 
-    private void manageUnseenMessageCounts(Mailbox<UUID> mailbox, Flags oldFlags, Flags newFlags) {
+    private void manageUnseenMessageCounts(Mailbox<CassandraId> mailbox, Flags oldFlags, Flags newFlags) {
         if (oldFlags.contains(Flag.SEEN) && !newFlags.contains(Flag.SEEN)) {
             incrementUnseen(mailbox);
         }
@@ -466,7 +498,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         }
     }
 
-    private Row findMessageByUid(Mailbox<UUID> mailbox, long uid) {
+    private Row findMessageByUid(Mailbox<CassandraId> mailbox, long uid) {
         ResultSet resultSet = session.execute(selectMessage(mailbox, uid));
         if ( resultSet.isExhausted() ) {
             return null;
@@ -474,7 +506,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
         return resultSet.one();
     }
 
-    private Flags buildFlags(Message<UUID> message, Flags flags, boolean value, boolean replace) {
+    private Flags buildFlags(Message<CassandraId> message, Flags flags, boolean value, boolean replace) {
         if (replace) {
             return flags;
         } else {
@@ -489,7 +521,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public MessageMetaData copy(Mailbox<UUID> mailbox, Message<UUID> original) throws MailboxException {
+    public MessageMetaData copy(Mailbox<CassandraId> mailbox, Message<CassandraId> original) throws MailboxException {
 
         original.setUid(uidProvider.nextUid(mailboxSession, mailbox));
         original.setModSeq(modSeqProvider.nextModSeq(mailboxSession, mailbox));
@@ -502,7 +534,7 @@ public class CassandraMessageMapper implements MessageMapper<UUID> {
     }
 
     @Override
-    public long getLastUid(Mailbox<UUID> mailbox) throws MailboxException {
+    public long getLastUid(Mailbox<CassandraId> mailbox) throws MailboxException {
         return uidProvider.lastUid(mailboxSession, mailbox);
     }
 

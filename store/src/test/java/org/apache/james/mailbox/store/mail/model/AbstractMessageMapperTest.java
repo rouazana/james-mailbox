@@ -19,6 +19,16 @@
 
 package org.apache.james.mailbox.store.mail.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
+
+import javax.mail.Flags;
+import javax.mail.util.SharedByteArrayInputStream;
+
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -35,16 +45,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.mail.Flags;
-import javax.mail.util.SharedByteArrayInputStream;
-import java.io.IOException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-public abstract class AbstractMessageMapperTest<Id> {
+public abstract class AbstractMessageMapperTest<Id extends MailboxId> {
 
     private final static char DELIMITER = ':';
     private static final int LIMIT = 10;

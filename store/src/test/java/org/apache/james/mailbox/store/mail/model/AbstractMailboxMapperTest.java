@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.fail;
  * 
  * You then just need to instantiate your mailbox mapper and an IdGenerator.
  */
-public abstract class AbstractMailboxMapperTest<Id> {
+public abstract class AbstractMailboxMapperTest<Id extends MailboxId> {
     
     private final static char DELIMITER = ':';
     private final static char WILDCARD = '%';

@@ -18,8 +18,11 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.mail;
 
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_LASTUID;
+
 import java.io.IOException;
-import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
@@ -28,16 +31,14 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-
-import static org.apache.james.mailbox.hbase.HBaseUtils.*;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
 /**
  * Message UidProvider for HBase.
  * 
  */
-public class HBaseUidProvider implements UidProvider<UUID> {
+public class HBaseUidProvider implements UidProvider<HBaseId> {
 
     /** Link to the HBase Configuration object and specific mailbox names */
     private final Configuration conf;
@@ -54,11 +55,11 @@ public class HBaseUidProvider implements UidProvider<UUID> {
      * @throws MailboxException 
      */
     @Override
-    public long lastUid(MailboxSession session, Mailbox<UUID> mailbox) throws MailboxException {
+    public long lastUid(MailboxSession session, Mailbox<HBaseId> mailbox) throws MailboxException {
         HTable mailboxes = null;
         try {
             mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            Get get = new Get(mailboxRowKey(mailbox.getMailboxId()));
+            Get get = new Get(mailbox.getMailboxId().toBytes());
             get.addColumn(MAILBOX_CF, MAILBOX_LASTUID);
             get.setMaxVersions(1);
             Result result = mailboxes.get(get);
@@ -90,11 +91,11 @@ public class HBaseUidProvider implements UidProvider<UUID> {
      * @throws MailboxException 
      */
     @Override
-    public long nextUid(MailboxSession session, Mailbox<UUID> mailbox) throws MailboxException {
+    public long nextUid(MailboxSession session, Mailbox<HBaseId> mailbox) throws MailboxException {
         HTable mailboxes = null;
         try {
             mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            long newValue = mailboxes.incrementColumnValue(mailboxRowKey(mailbox.getMailboxId()), MAILBOX_CF, MAILBOX_LASTUID, 1);
+            long newValue = mailboxes.incrementColumnValue(mailbox.getMailboxId().toBytes(), MAILBOX_CF, MAILBOX_LASTUID, 1);
             mailboxes.close();
             return newValue;
         } catch (IOException e) {

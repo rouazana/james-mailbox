@@ -10,6 +10,7 @@ import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
@@ -19,7 +20,7 @@ import org.apache.james.mailbox.store.mail.model.Message;
  * 
  * @param <Id>
  */
-public class CachingMessageMapper<Id> implements MessageMapper<Id> {
+public class CachingMessageMapper<Id extends MailboxId> implements MessageMapper<Id> {
 
 	
 	private MessageMapper<Id> underlying;

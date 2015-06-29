@@ -25,13 +25,14 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.store.StoreMailboxManager;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 
 /**
  * Allows to set a per Users quota
  * 
  *
  */
-public class PerUserQuotaManager<Id> extends ListeningQuotaManager{
+public class PerUserQuotaManager<Id extends MailboxId> extends ListeningQuotaManager {
 
     public PerUserQuotaManager(StoreMailboxManager<Id> manager) throws MailboxException {
         super(manager);

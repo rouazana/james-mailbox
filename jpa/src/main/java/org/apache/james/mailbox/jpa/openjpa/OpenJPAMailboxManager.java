@@ -25,6 +25,7 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.acl.GroupMembershipResolver;
 import org.apache.james.mailbox.acl.MailboxACLResolver;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.JPAMailboxManager;
 import org.apache.james.mailbox.jpa.JPAMailboxSessionMapperFactory;
 import org.apache.james.mailbox.jpa.mail.model.openjpa.EncryptDecryptHelper;
@@ -66,8 +67,8 @@ public class OpenJPAMailboxManager extends JPAMailboxManager {
     }
 
     @Override
-    protected StoreMessageManager<Long> createMessageManager(Mailbox<Long> mailboxRow, MailboxSession session) throws MailboxException {
-        StoreMessageManager<Long> result =  new OpenJPAMessageManager(getMapperFactory(), getMessageSearchIndex(), getEventDispatcher(), getLocker(), mailboxRow, feature, getAclResolver(), getGroupMembershipResolver());
+    protected StoreMessageManager<JPAId> createMessageManager(Mailbox<JPAId> mailboxRow, MailboxSession session) throws MailboxException {
+        StoreMessageManager<JPAId> result =  new OpenJPAMessageManager(getMapperFactory(), getMessageSearchIndex(), getEventDispatcher(), getLocker(), mailboxRow, feature, getAclResolver(), getGroupMembershipResolver());
         return result;
     }
 }

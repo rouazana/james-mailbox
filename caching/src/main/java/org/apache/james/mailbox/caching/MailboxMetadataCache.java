@@ -2,6 +2,7 @@ package org.apache.james.mailbox.caching;
 
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 /**
@@ -10,7 +11,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
  * 
  * @param <Id>
  */
-public interface MailboxMetadataCache<Id> {
+public interface MailboxMetadataCache<Id extends MailboxId> {
 
 	public abstract long countMessagesInMailbox(Mailbox<Id> mailbox,
 			MessageMapper<Id> underlying) throws MailboxException;

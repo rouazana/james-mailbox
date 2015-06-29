@@ -34,7 +34,7 @@ import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 
-public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Integer>{
+public class MaildirStore implements UidProvider<MaildirId>, ModSeqProvider<MaildirId> {
 
     public static final String PATH_USER = "%user";
     public static final String PATH_DOMAIN = "%domain";
@@ -78,7 +78,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @param mailbox
      * @return The MaildirFolder
      */
-    public MaildirFolder createMaildirFolder(Mailbox<Integer> mailbox) {
+    public MaildirFolder createMaildirFolder(Mailbox<MaildirId> mailbox) {
         MaildirFolder mf = new MaildirFolder(getFolderName(mailbox), new MailboxPath(mailbox.getNamespace(), mailbox.getUser(), mailbox.getName()), locker);
         mf.setMessageNameStrictParse(isMessageNameStrictParse());
         return mf;
@@ -93,7 +93,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @return The Mailbox object populated with data from the file system
      * @throws MailboxException If the mailbox folder doesn't exist or can't be read
      */
-    public Mailbox<Integer> loadMailbox(MailboxSession session, File root, String namespace, String user, String folderName) throws MailboxException {
+    public Mailbox<MaildirId> loadMailbox(MailboxSession session, File root, String namespace, String user, String folderName) throws MailboxException {
         String mailboxName = getMailboxNameFromFolderName(folderName);
         return loadMailbox(session, new File(root, folderName), new MailboxPath(namespace, user, mailboxName));
     }
@@ -105,7 +105,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @throws MailboxNotFoundException If the mailbox folder doesn't exist
      * @throws MailboxException If the mailbox folder can't be read
      */
-    public Mailbox<Integer> loadMailbox(MailboxSession session, MailboxPath mailboxPath)
+    public Mailbox<MaildirId> loadMailbox(MailboxSession session, MailboxPath mailboxPath)
     throws MailboxNotFoundException, MailboxException {
         MaildirFolder folder = new MaildirFolder(getFolderName(mailboxPath), mailboxPath, locker);
         folder.setMessageNameStrictParse(isMessageNameStrictParse());
@@ -121,11 +121,11 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @return The Mailbox object populated with data from the file system
      * @throws MailboxException If the mailbox folder doesn't exist or can't be read
      */
-    private Mailbox<Integer> loadMailbox(MailboxSession session, File mailboxFile, MailboxPath mailboxPath) throws MailboxException {
+    private Mailbox<MaildirId> loadMailbox(MailboxSession session, File mailboxFile, MailboxPath mailboxPath) throws MailboxException {
         MaildirFolder folder = new MaildirFolder(mailboxFile.getAbsolutePath(), mailboxPath, locker);
         folder.setMessageNameStrictParse(isMessageNameStrictParse());
         try {
-            Mailbox<Integer> loadedMailbox = new SimpleMailbox<Integer>(mailboxPath, folder.getUidValidity());
+            Mailbox<MaildirId> loadedMailbox = new SimpleMailbox<MaildirId>(mailboxPath, folder.getUidValidity());
             loadedMailbox.setACL(folder.getACL(session));
             return loadedMailbox;
         } catch (IOException e) {
@@ -224,7 +224,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @param mailbox The mailbox
      * @return The absolute path to the folder containing the mailbox
      */
-    public String getFolderName(Mailbox<Integer> mailbox) {
+    public String getFolderName(Mailbox<MaildirId> mailbox) {
         return getFolderName(mailbox.getNamespace(), mailbox.getUser(), mailbox.getName());
     }
     
@@ -241,7 +241,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
      * @see org.apache.james.mailbox.store.mail.UidProvider#nextUid(org.apache.james.mailbox.MailboxSession, org.apache.james.mailbox.store.mail.model.Mailbox)
      */
     @Override
-    public long nextUid(MailboxSession session, Mailbox<Integer> mailbox) throws MailboxException {
+    public long nextUid(MailboxSession session, Mailbox<MaildirId> mailbox) throws MailboxException {
         try {
             return createMaildirFolder(mailbox).getLastUid(session) +1;
         } catch (MailboxException e) {
@@ -250,12 +250,12 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
     }
 
     @Override
-    public long nextModSeq(MailboxSession session, Mailbox<Integer> mailbox) throws MailboxException {
+    public long nextModSeq(MailboxSession session, Mailbox<MaildirId> mailbox) throws MailboxException {
         return System.currentTimeMillis();
     }
 
     @Override
-    public long highestModSeq(MailboxSession session, Mailbox<Integer> mailbox) throws MailboxException {
+    public long highestModSeq(MailboxSession session, Mailbox<MaildirId> mailbox) throws MailboxException {
         try {
             return createMaildirFolder(mailbox).getHighestModSeq();
         } catch (IOException e) {
@@ -264,7 +264,7 @@ public class MaildirStore implements UidProvider<Integer>, ModSeqProvider<Intege
     }
 
     @Override
-    public long lastUid(MailboxSession session, Mailbox<Integer> mailbox) throws MailboxException {
+    public long lastUid(MailboxSession session, Mailbox<MaildirId> mailbox) throws MailboxException {
        return createMaildirFolder(mailbox).getLastUid(session);
     }
 

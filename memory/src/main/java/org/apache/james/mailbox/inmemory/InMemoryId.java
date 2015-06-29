@@ -16,13 +16,56 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.cassandra.mail;
+package org.apache.james.mailbox.inmemory;
 
-import org.apache.james.mailbox.cassandra.CassandraId;
-import org.apache.james.mailbox.store.mail.model.AbstractMailboxMapperTest;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 
-public class CassandraMailboxMapperTest extends AbstractMailboxMapperTest<CassandraId> {
-    public CassandraMailboxMapperTest() {
-        super(new CassandraMapperProvider());
+public class InMemoryId implements MailboxId {
+
+    public static InMemoryId of(long value) {
+        return new InMemoryId(value);
     }
+
+    private final long value;
+
+    private InMemoryId(long value) {
+        this.value = value;
+    }
+
+    @Override
+    public String serialize() {
+        return String.valueOf(value);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    public long getRawId() {
+        return value;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (value ^ (value >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        InMemoryId other = (InMemoryId) obj;
+        if (value != other.value)
+            return false;
+        return true;
+    }
+
 }

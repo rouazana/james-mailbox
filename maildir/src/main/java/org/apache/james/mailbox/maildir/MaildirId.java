@@ -16,13 +16,56 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.cassandra.mail;
+package org.apache.james.mailbox.maildir;
 
-import org.apache.james.mailbox.cassandra.CassandraId;
-import org.apache.james.mailbox.store.mail.model.AbstractMailboxMapperTest;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 
-public class CassandraMailboxMapperTest extends AbstractMailboxMapperTest<CassandraId> {
-    public CassandraMailboxMapperTest() {
-        super(new CassandraMapperProvider());
+public class MaildirId implements MailboxId {
+
+    public static MaildirId of(int id) {
+        return new MaildirId(id);
     }
+
+    private final int id;
+
+    private MaildirId(int id) {
+        this.id = id;
+    }
+
+    public int getRawId() {
+        return id;
+    }
+
+    @Override
+    public String serialize() {
+        return String.valueOf(id);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(id);
+    }
+    
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + id;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MaildirId other = (MaildirId) obj;
+        if (id != other.id)
+            return false;
+        return true;
+    }
+
 }

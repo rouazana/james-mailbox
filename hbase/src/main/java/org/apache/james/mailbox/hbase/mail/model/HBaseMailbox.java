@@ -20,6 +20,7 @@ package org.apache.james.mailbox.hbase.mail.model;
 
 import java.util.UUID;
 
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.SimpleMailboxACL;
@@ -30,11 +31,11 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
  * implementations.
  * 
  */
-public class HBaseMailbox implements Mailbox<UUID> {
+public class HBaseMailbox implements Mailbox<HBaseId> {
 
     private static final String TAB = " ";
     /** The value for the mailboxId field */
-    private UUID mailboxId;
+    private HBaseId mailboxId;
     /** The value for the name field */
     private String name;
     /** The value for the uidValidity field */
@@ -52,18 +53,18 @@ public class HBaseMailbox implements Mailbox<UUID> {
         this.namespace = mailboxPath.getNamespace();
         this.uidValidity = uidValidity;
         //TODO: this has to change to something that can guarantee that mailboxId is unique
-        this.mailboxId = UUID.randomUUID();
+        this.mailboxId = HBaseId.of(UUID.randomUUID());
     }
 
     /**
      * @see org.apache.james.mailbox.store.mail.model.Mailbox#getMailboxId()
      */
     @Override
-    public UUID getMailboxId() {
+    public HBaseId getMailboxId() {
         return mailboxId;
     }
 
-    public void setMailboxId(UUID mailboxId) {
+    public void setMailboxId(HBaseId mailboxId) {
         this.mailboxId = mailboxId;
     }
     /*
@@ -143,7 +144,7 @@ public class HBaseMailbox implements Mailbox<UUID> {
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
-        result = PRIME * result + (int) (mailboxId.getMostSignificantBits() ^ (mailboxId.getMostSignificantBits() >>> 32));
+        result = PRIME * result + mailboxId.hashCode();
         return result;
     }
 

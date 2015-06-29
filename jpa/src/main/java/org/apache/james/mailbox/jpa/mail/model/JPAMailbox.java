@@ -27,6 +27,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.SimpleMailboxACL;
@@ -58,7 +59,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
     @NamedQuery(name="findLastUid",
         query="SELECT mailbox.lastUid FROM Mailbox mailbox WHERE mailbox.mailboxId = :idParam")
 })
-public class JPAMailbox implements Mailbox<Long> {
+public class JPAMailbox implements Mailbox<JPAId> {
     
     private static final String TAB = " ";
 
@@ -113,8 +114,8 @@ public class JPAMailbox implements Mailbox<Long> {
     /**
      * @see org.apache.james.mailbox.store.mail.model.Mailbox#getMailboxId()
      */
-    public Long getMailboxId() {
-        return mailboxId;
+    public JPAId getMailboxId() {
+        return JPAId.of(mailboxId);
     }
 
     /**

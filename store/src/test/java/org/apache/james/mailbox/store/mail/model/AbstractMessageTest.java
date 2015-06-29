@@ -22,6 +22,7 @@ package org.apache.james.mailbox.store.mail.model;
 import static org.junit.Assert.*;
 
 import org.apache.james.mailbox.store.MessageBuilder;
+import org.apache.james.mailbox.store.TestId;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.junit.Test;
 
@@ -30,12 +31,12 @@ public class AbstractMessageTest {
     @Test
     public void testShouldReturnPositiveWhenFirstGreaterThanSecond()
             throws Exception {
-        Message<Long> one = buildMessage(100);
-        Message<Long> two = buildMessage(99);
+        Message<TestId> one = buildMessage(100);
+        Message<TestId> two = buildMessage(99);
         assertTrue( one.compareTo(two) > 0);
     }
 
-    private Message<Long> buildMessage(int uid) throws Exception {
+    private Message<TestId> buildMessage(int uid) throws Exception {
         MessageBuilder builder = new MessageBuilder();
         builder.uid = uid;
         return builder.build();
@@ -44,15 +45,15 @@ public class AbstractMessageTest {
     @Test
     public void testShouldReturnNegativeWhenFirstLessThanSecond()
             throws Exception {
-        Message<Long> one = buildMessage(98);
-        Message<Long> two = buildMessage(99);
+        Message<TestId> one = buildMessage(98);
+        Message<TestId> two = buildMessage(99);
         assertTrue( one.compareTo(two) < 0);
     }
 
     @Test
     public void testShouldReturnZeroWhenFirstEqualsSecond() throws Exception {
-        Message<Long> one = buildMessage(90);
-        Message<Long> two = buildMessage(90);
+        Message<TestId> one = buildMessage(90);
+        Message<TestId> two = buildMessage(90);
         assertEquals(0, one.compareTo(two));
     }
 }

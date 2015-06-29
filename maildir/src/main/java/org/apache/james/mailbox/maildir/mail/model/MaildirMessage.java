@@ -18,8 +18,21 @@
  ****************************************************************/
 package org.apache.james.mailbox.maildir.mail.model;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.util.Date;
+import java.util.List;
+
+import javax.mail.Flags;
+import javax.mail.util.SharedFileInputStream;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.maildir.MaildirFolder;
+import org.apache.james.mailbox.maildir.MaildirId;
 import org.apache.james.mailbox.maildir.MaildirMessageName;
 import org.apache.james.mailbox.store.mail.model.AbstractMessage;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
@@ -35,15 +48,9 @@ import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.james.mime4j.stream.MimeTokenStream;
 import org.apache.james.mime4j.stream.RecursionMode;
 
-import javax.mail.Flags;
-import javax.mail.util.SharedFileInputStream;
-import java.io.*;
-import java.util.Date;
-import java.util.List;
+public class MaildirMessage extends AbstractMessage<MaildirId> {
 
-public class MaildirMessage extends AbstractMessage<Integer> {
-
-    private MaildirMessageName messageName;
+	private MaildirMessageName messageName;
     private int bodyStartOctet;
     private final PropertyBuilder propertyBuilder = new PropertyBuilder();
     private boolean parsed;
@@ -53,12 +60,12 @@ public class MaildirMessage extends AbstractMessage<Integer> {
     private boolean flagged;
     private boolean recent;
     private boolean seen;
-    private Mailbox<Integer> mailbox;
+    private Mailbox<MaildirId> mailbox;
     private long uid;
     protected boolean newMessage;
     private long modSeq;
     
-    public MaildirMessage(Mailbox<Integer> mailbox, long uid, MaildirMessageName messageName) throws IOException {
+    public MaildirMessage(Mailbox<MaildirId> mailbox, long uid, MaildirMessageName messageName) throws IOException {
         this.mailbox = mailbox;
         setUid(uid);
         setModSeq(messageName.getFile().lastModified());
@@ -83,7 +90,7 @@ public class MaildirMessage extends AbstractMessage<Integer> {
 
     
     @Override
-    public Integer getMailboxId() {
+    public MaildirId getMailboxId() {
         return mailbox.getMailboxId();
     }
 

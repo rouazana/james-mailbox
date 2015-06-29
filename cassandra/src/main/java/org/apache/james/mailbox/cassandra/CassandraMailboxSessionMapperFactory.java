@@ -19,8 +19,6 @@
 
 package org.apache.james.mailbox.cassandra;
 
-import java.util.UUID;
-
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.mail.CassandraMailboxMapper;
 import org.apache.james.mailbox.cassandra.mail.CassandraMessageMapper;
@@ -37,16 +35,16 @@ import com.datastax.driver.core.Session;
  * Cassandra implementation of {@link MailboxSessionMapperFactory}
  * 
  */
-public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFactory<UUID> {
+public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFactory<CassandraId> {
     private static final int DEFAULT_MAX_RETRY = 1000;
 
     private final Session session;
-    private final UidProvider<UUID> uidProvider;
-    private final ModSeqProvider<UUID> modSeqProvider;
+    private final UidProvider<CassandraId> uidProvider;
+    private final ModSeqProvider<CassandraId> modSeqProvider;
     private final CassandraTypesProvider typesProvider;
     private int maxRetry;
 
-    public CassandraMailboxSessionMapperFactory(UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider, Session session, CassandraTypesProvider typesProvider) {
+    public CassandraMailboxSessionMapperFactory(UidProvider<CassandraId> uidProvider, ModSeqProvider<CassandraId> modSeqProvider, Session session, CassandraTypesProvider typesProvider) {
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
         this.session = session;
@@ -64,7 +62,7 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
     }
 
     @Override
-    public MailboxMapper<UUID> createMailboxMapper(MailboxSession mailboxSession) {
+    public MailboxMapper<CassandraId> createMailboxMapper(MailboxSession mailboxSession) {
         return new CassandraMailboxMapper(session, typesProvider, maxRetry);
     }
 
@@ -73,11 +71,11 @@ public class CassandraMailboxSessionMapperFactory extends MailboxSessionMapperFa
         return new CassandraSubscriptionMapper(session);
     }
 
-    public ModSeqProvider<UUID> getModSeqProvider() {
+    public ModSeqProvider<CassandraId> getModSeqProvider() {
         return modSeqProvider;
     }
 
-    public UidProvider<UUID> getUidProvider() {
+    public UidProvider<CassandraId> getUidProvider() {
         return uidProvider;
     }
 

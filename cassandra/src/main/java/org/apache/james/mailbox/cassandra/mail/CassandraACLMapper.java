@@ -19,15 +19,19 @@
 
 package org.apache.james.mailbox.cassandra.mail;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
+
+import java.io.IOException;
+import java.util.Optional;
+
 import org.apache.james.mailbox.cassandra.CassandraConstants;
-import org.apache.james.mailbox.cassandra.mail.utils.SimpleMailboxACLJsonConverter;
+import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.mail.utils.FunctionRunnerWithRetry;
+import org.apache.james.mailbox.cassandra.mail.utils.SimpleMailboxACLJsonConverter;
 import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable;
 import org.apache.james.mailbox.exception.MailboxException;
@@ -38,15 +42,12 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Optional;
-import java.util.UUID;
-
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 
 public class CassandraACLMapper {
 
@@ -55,18 +56,18 @@ public class CassandraACLMapper {
         void inject();
     }
 
-    private final Mailbox<UUID> mailbox;
+    private final Mailbox<CassandraId> mailbox;
     private final Session session;
     private final int maxRetry;
     private final CodeInjector codeInjector;
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraACLMapper.class);
 
-    public CassandraACLMapper(Mailbox<UUID> mailbox, Session session, int maxRetry) {
+    public CassandraACLMapper(Mailbox<CassandraId> mailbox, Session session, int maxRetry) {
         this(mailbox, session, maxRetry, () -> {});
     }
 
-    public CassandraACLMapper(Mailbox<UUID> mailbox, Session session, int maxRetry, CodeInjector codeInjector) {
+    public CassandraACLMapper(Mailbox<CassandraId> mailbox, Session session, int maxRetry, CodeInjector codeInjector) {
         Preconditions.checkArgument(maxRetry > 0);
         Preconditions.checkArgument(mailbox.getMailboxId() != null);
         this.mailbox = mailbox;
@@ -109,7 +110,7 @@ public class CassandraACLMapper {
         return session.execute(
             select(CassandraACLTable.ACL, CassandraACLTable.VERSION)
                 .from(CassandraACLTable.TABLE_NAME)
-                .where(eq(CassandraMailboxTable.ID, mailbox.getMailboxId()))
+                .where(eq(CassandraMailboxTable.ID, mailbox.getMailboxId().asUuid()))
         );
     }
 
@@ -119,7 +120,7 @@ public class CassandraACLMapper {
                 update(CassandraACLTable.TABLE_NAME)
                     .with(set(CassandraACLTable.ACL, SimpleMailboxACLJsonConverter.toJson(aclWithVersion.mailboxACL)))
                     .and(set(CassandraACLTable.VERSION, aclWithVersion.version + 1))
-                    .where(eq(CassandraACLTable.ID, mailbox.getMailboxId()))
+                    .where(eq(CassandraACLTable.ID, mailbox.getMailboxId().asUuid()))
                     .onlyIf(eq(CassandraACLTable.VERSION, aclWithVersion.version))
             );
         } catch (JsonProcessingException exception) {
@@ -131,7 +132,7 @@ public class CassandraACLMapper {
         try {
             return session.execute(
                 insertInto(CassandraACLTable.TABLE_NAME)
-                    .value(CassandraACLTable.ID, mailbox.getMailboxId())
+                    .value(CassandraACLTable.ID, mailbox.getMailboxId().asUuid())
                     .value(CassandraACLTable.ACL, SimpleMailboxACLJsonConverter.toJson(acl))
                     .value(CassandraACLTable.VERSION, 0)
                     .ifNotExists()

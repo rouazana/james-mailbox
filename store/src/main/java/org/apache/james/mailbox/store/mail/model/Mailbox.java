@@ -23,7 +23,7 @@ import org.apache.james.mailbox.model.MailboxACL;
 /**
  * Models long term mailbox data.
  */
-public interface Mailbox<Id> {
+public interface Mailbox<Id extends MailboxId> {
 
     /**
      * Gets the unique mailbox ID.

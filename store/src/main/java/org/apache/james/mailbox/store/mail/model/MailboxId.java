@@ -16,13 +16,8 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox.cassandra.mail;
+package org.apache.james.mailbox.store.mail.model;
 
-import org.apache.james.mailbox.cassandra.CassandraId;
-import org.apache.james.mailbox.store.mail.model.AbstractMailboxMapperTest;
-
-public class CassandraMailboxMapperTest extends AbstractMailboxMapperTest<CassandraId> {
-    public CassandraMailboxMapperTest() {
-        super(new CassandraMapperProvider());
-    }
+public interface MailboxId {
+    String serialize();
 }

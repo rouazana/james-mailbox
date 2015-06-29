@@ -22,8 +22,6 @@ package org.apache.james.mailbox.cassandra.mail.utils;
 import static net.javacrumbs.jsonunit.core.Option.IGNORING_ARRAY_ORDER;
 import static net.javacrumbs.jsonunit.fluent.JsonFluentAssert.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import java.util.HashMap;
-import java.util.Map;
 
 import java.util.HashMap;
 import java.util.Map;

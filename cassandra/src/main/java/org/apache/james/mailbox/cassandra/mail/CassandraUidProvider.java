@@ -19,18 +19,17 @@
 
 package org.apache.james.mailbox.cassandra.mail;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.set;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.update;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.MAILBOX_ID;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.NEXT_UID;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageUidTable.TABLE_NAME;
 
-import java.util.UUID;
-
 import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.UidProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
@@ -38,7 +37,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 
-public class CassandraUidProvider implements UidProvider<UUID> {
+public class CassandraUidProvider implements UidProvider<CassandraId> {
     public final static int DEFAULT_MAX_RETRY = 100000;
 
     private Session session;
@@ -55,10 +54,14 @@ public class CassandraUidProvider implements UidProvider<UUID> {
     }
 
     @Override
-    public long nextUid(MailboxSession mailboxSession, Mailbox<UUID> mailbox) throws MailboxException {
+    public long nextUid(MailboxSession mailboxSession, Mailbox<CassandraId> mailbox) throws MailboxException {
         long lastUid = lastUid(mailboxSession, mailbox);
         if (lastUid == 0) {
-            ResultSet result = session.execute(insertInto(TABLE_NAME).value(NEXT_UID, ++lastUid).value(MAILBOX_ID, mailbox.getMailboxId()).ifNotExists());
+            ResultSet result = session.execute(
+                    insertInto(TABLE_NAME)
+                    .value(NEXT_UID, ++lastUid)
+                    .value(MAILBOX_ID, mailbox.getMailboxId().asUuid())
+                    .ifNotExists());
             if(result.one().getBool(applied)) {
                 return lastUid;
             }
@@ -68,7 +71,11 @@ public class CassandraUidProvider implements UidProvider<UUID> {
         do {
             tries++;
             lastUid = lastUid(mailboxSession, mailbox);
-            ResultSet result = session.execute(update(TABLE_NAME).onlyIf(eq(NEXT_UID, lastUid)).with(set(NEXT_UID, ++lastUid)).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
+            ResultSet result = session.execute(
+                    update(TABLE_NAME)
+                    .onlyIf(eq(NEXT_UID, lastUid))
+                    .with(set(NEXT_UID, ++lastUid))
+                    .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())));
             isApplied = result.one().getBool(applied);
         } while (! isApplied && tries < maxRetry);
         if( ! isApplied ) {
@@ -78,8 +85,11 @@ public class CassandraUidProvider implements UidProvider<UUID> {
     }
 
     @Override
-    public long lastUid(MailboxSession mailboxSession, Mailbox<UUID> mailbox) throws MailboxException {
-        ResultSet result = session.execute(select(NEXT_UID).from(TABLE_NAME).where(eq(MAILBOX_ID, mailbox.getMailboxId())));
+    public long lastUid(MailboxSession mailboxSession, Mailbox<CassandraId> mailbox) throws MailboxException {
+        ResultSet result = session.execute(
+                select(NEXT_UID)
+                .from(TABLE_NAME)
+                .where(eq(MAILBOX_ID, mailbox.getMailboxId().asUuid())));
         return result.isExhausted() ? 0 : result.one().getLong(NEXT_UID);
     }
 

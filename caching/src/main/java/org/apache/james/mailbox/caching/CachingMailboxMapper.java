@@ -6,6 +6,7 @@ import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 /**
@@ -15,7 +16,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
  * @param <Id>
  */
 
-public class CachingMailboxMapper<Id> implements MailboxMapper<Id> {
+public class CachingMailboxMapper<Id extends MailboxId> implements MailboxMapper<Id> {
 
 	private MailboxMapper<Id> underlying;
 	private MailboxByPathCache<Id> cache;

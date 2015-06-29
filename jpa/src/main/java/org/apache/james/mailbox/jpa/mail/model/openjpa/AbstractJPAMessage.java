@@ -38,6 +38,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.jpa.mail.model.JPAProperty;
 import org.apache.james.mailbox.jpa.mail.model.JPAUserFlag;
@@ -98,7 +99,7 @@ import org.apache.openjpa.persistence.jdbc.Index;
             query="DELETE FROM Message message")
 })
 @MappedSuperclass
-public abstract class AbstractJPAMessage extends AbstractMessage<Long> {
+public abstract class AbstractJPAMessage extends AbstractMessage<JPAId> {
 
 
 
@@ -309,7 +310,7 @@ public abstract class AbstractJPAMessage extends AbstractMessage<Long> {
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
-        result = PRIME * result + (int) (getMailboxId() ^ (getMailboxId() >>> 32));
+        result = PRIME * result + (int) (getMailboxId().getRawId() ^ (getMailboxId().getRawId() >>> 32));
         result = PRIME * result + (int) (uid ^ (uid >>> 32));
         return result;
     }
@@ -409,7 +410,7 @@ public abstract class AbstractJPAMessage extends AbstractMessage<Long> {
     /**
      * @see org.apache.james.mailbox.store.mail.model.Message#getMailboxId()
      */
-    public Long getMailboxId() {
+    public JPAId getMailboxId() {
         return getMailbox().getMailboxId();
     }
 

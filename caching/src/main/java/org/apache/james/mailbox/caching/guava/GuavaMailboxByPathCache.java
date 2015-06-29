@@ -5,6 +5,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 import com.google.common.cache.Cache;
@@ -16,7 +17,7 @@ import com.google.common.cache.Cache;
  *
  * @param <Id>
  */
-public class GuavaMailboxByPathCache<Id> extends AbstractGuavaCache implements MailboxByPathCache<Id> {
+public class GuavaMailboxByPathCache<Id extends MailboxId> extends AbstractGuavaCache implements MailboxByPathCache<Id> {
 	
 	private final Cache<String, Mailbox<Id>> findMailboxByPathCache = BUILDER.build();
 

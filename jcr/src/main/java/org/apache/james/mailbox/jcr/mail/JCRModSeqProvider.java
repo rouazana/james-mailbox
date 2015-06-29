@@ -25,12 +25,13 @@ import javax.jcr.Session;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jcr.JCRId;
 import org.apache.james.mailbox.jcr.MailboxSessionJCRRepository;
 import org.apache.james.mailbox.jcr.mail.model.JCRMailbox;
 import org.apache.james.mailbox.store.mail.AbstractLockingModSeqProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
-public class JCRModSeqProvider extends AbstractLockingModSeqProvider<String>{
+public class JCRModSeqProvider extends AbstractLockingModSeqProvider<JCRId>{
 
     private MailboxSessionJCRRepository repository;
 
@@ -40,10 +41,10 @@ public class JCRModSeqProvider extends AbstractLockingModSeqProvider<String>{
     }
 
     @Override
-    public long highestModSeq(MailboxSession session, Mailbox<String> mailbox) throws MailboxException {
+    public long highestModSeq(MailboxSession session, Mailbox<JCRId> mailbox) throws MailboxException {
         try {
             Session s = repository.login(session);
-            Node node = s.getNodeByIdentifier(mailbox.getMailboxId());
+            Node node = s.getNodeByIdentifier(mailbox.getMailboxId().serialize());
             return node.getProperty(JCRMailbox.HIGHESTMODSEQ_PROPERTY).getLong();
         } catch (RepositoryException e) {
             throw new MailboxException("Unable to get highest mod-sequence for mailbox " + mailbox, e);
@@ -51,10 +52,10 @@ public class JCRModSeqProvider extends AbstractLockingModSeqProvider<String>{
     }
 
     @Override
-    protected long lockedNextModSeq(MailboxSession session, Mailbox<String> mailbox) throws MailboxException {
+    protected long lockedNextModSeq(MailboxSession session, Mailbox<JCRId> mailbox) throws MailboxException {
         try {
             Session s = repository.login(session);
-            Node node = s.getNodeByIdentifier(mailbox.getMailboxId());
+            Node node = s.getNodeByIdentifier(mailbox.getMailboxId().serialize());
             long modseq = node.getProperty(JCRMailbox.HIGHESTMODSEQ_PROPERTY).getLong();
             modseq++;
             node.setProperty(JCRMailbox.HIGHESTMODSEQ_PROPERTY, modseq);

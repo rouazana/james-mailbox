@@ -18,21 +18,8 @@
  ****************************************************************/
 package org.apache.james.mailbox.cassandra.mail;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-
-import com.google.common.base.Throwables;
-
-import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
-import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
-import org.apache.james.mailbox.exception.MailboxException;
-import org.apache.james.mailbox.model.MailboxACL;
-import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.SimpleMailboxACL;
-import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -43,11 +30,25 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
+import org.apache.james.mailbox.cassandra.CassandraId;
+import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
+import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.model.MailboxACL;
+import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.model.SimpleMailboxACL;
+import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.base.Throwables;
+
 public class CassandraACLMapperTest {
 
     private CassandraACLMapper cassandraACLMapper;
     private CassandraClusterSingleton cassandra;
-    private SimpleMailbox<UUID> mailbox;
+    private SimpleMailbox<CassandraId> mailbox;
     private int uidValidity;
     private int maxRetry;
     private ExecutorService executor;
@@ -58,7 +59,7 @@ public class CassandraACLMapperTest {
         cassandra.ensureAllTables();
         uidValidity = 10;
         mailbox = new SimpleMailbox<>(new MailboxPath("#private", "benwa@linagora.com", "INBOX"), uidValidity);
-        mailbox.setMailboxId(UUID.fromString("464765a0-e4e7-11e4-aba4-710c1de3782b"));
+        mailbox.setMailboxId(CassandraId.of(UUID.fromString("464765a0-e4e7-11e4-aba4-710c1de3782b")));
         maxRetry = 100;
         cassandraACLMapper = new CassandraACLMapper(mailbox, cassandra.getConf(), maxRetry);
         executor = Executors.newFixedThreadPool(2);
@@ -89,7 +90,7 @@ public class CassandraACLMapperTest {
     public void retrieveACLWhenPresentInBaseShouldReturnCorrespondingACL() throws Exception {
         cassandra.getConf().execute(
             insertInto(CassandraACLTable.TABLE_NAME)
-                .value(CassandraACLTable.ID, mailbox.getMailboxId())
+                .value(CassandraACLTable.ID, mailbox.getMailboxId().asUuid())
                 .value(CassandraACLTable.ACL, "{\"entries\":{\"bob\":64}}")
                 .value(CassandraACLTable.VERSION, 1)
         );
@@ -105,7 +106,7 @@ public class CassandraACLMapperTest {
     public void retrieveACLWhenInvalidInBaseShouldReturnEmptyACL() throws Exception {
         cassandra.getConf().execute(
             insertInto(CassandraACLTable.TABLE_NAME)
-                .value(CassandraACLTable.ID, mailbox.getMailboxId())
+                .value(CassandraACLTable.ID, mailbox.getMailboxId().asUuid())
                 .value(CassandraACLTable.ACL, "{\"entries\":{\"bob\":invalid}}")
                 .value(CassandraACLTable.VERSION, 1)
         );
@@ -165,7 +166,7 @@ public class CassandraACLMapperTest {
     public void updateInvalidACLShouldBeBasedOnEmptyACL() throws Exception {
         cassandra.getConf().execute(
             insertInto(CassandraACLTable.TABLE_NAME)
-                .value(CassandraACLTable.ID, mailbox.getMailboxId())
+                .value(CassandraACLTable.ID, mailbox.getMailboxId().asUuid())
                 .value(CassandraACLTable.ACL, "{\"entries\":{\"bob\":invalid}}")
                 .value(CassandraACLTable.VERSION, 1)
         );

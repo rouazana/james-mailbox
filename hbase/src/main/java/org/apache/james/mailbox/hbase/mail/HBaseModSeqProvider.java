@@ -18,8 +18,12 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.mail;
 
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_HIGHEST_MODSEQ;
+
 import java.io.IOException;
-import java.util.UUID;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -27,16 +31,14 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
-
-import static org.apache.james.mailbox.hbase.HBaseUtils.*;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
 /**
  * ModSeqProvider implementation for HBase.
  * 
  */
-public class HBaseModSeqProvider implements ModSeqProvider<UUID> {
+public class HBaseModSeqProvider implements ModSeqProvider<HBaseId> {
 
     /** Link to the HBase Configuration object and specific mailbox names */
     private final Configuration conf;
@@ -46,11 +48,11 @@ public class HBaseModSeqProvider implements ModSeqProvider<UUID> {
     }
 
     @Override
-    public long highestModSeq(MailboxSession session, Mailbox<UUID> mailbox) throws MailboxException {
+    public long highestModSeq(MailboxSession session, Mailbox<HBaseId> mailbox) throws MailboxException {
         HTable mailboxes = null;
         try {
             mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            Get get = new Get(mailboxRowKey(mailbox.getMailboxId()));
+            Get get = new Get(mailbox.getMailboxId().toBytes());
             get.addColumn(MAILBOX_CF, MAILBOX_HIGHEST_MODSEQ);
             get.setMaxVersions(1);
             Result result = mailboxes.get(get);
@@ -74,11 +76,11 @@ public class HBaseModSeqProvider implements ModSeqProvider<UUID> {
     }
 
     @Override
-    public long nextModSeq(MailboxSession session, Mailbox<UUID> mailbox) throws MailboxException {
+    public long nextModSeq(MailboxSession session, Mailbox<HBaseId> mailbox) throws MailboxException {
         HTable mailboxes = null;
         try {
             mailboxes = new HTable(conf, MAILBOXES_TABLE);
-            long newValue = mailboxes.incrementColumnValue(mailboxRowKey(mailbox.getMailboxId()), MAILBOX_CF, MAILBOX_HIGHEST_MODSEQ, 1);
+            long newValue = mailboxes.incrementColumnValue(mailbox.getMailboxId().toBytes(), MAILBOX_CF, MAILBOX_HIGHEST_MODSEQ, 1);
             return newValue;
         } catch (IOException e) {
             throw new MailboxException("lastUid", e);

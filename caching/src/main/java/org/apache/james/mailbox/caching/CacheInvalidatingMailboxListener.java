@@ -3,12 +3,13 @@ package org.apache.james.mailbox.caching;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxListenerSupport;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 /**
  * A MailboxListener that invalidates the configured caches in response to Events
  * 
  * @param <Id>
  */
-public class CacheInvalidatingMailboxListener<Id> implements MailboxListener {
+public class CacheInvalidatingMailboxListener<Id extends MailboxId> implements MailboxListener {
 
 	private MailboxByPathCache<Id> mailboxCacheByPath;
 	private MailboxMetadataCache<Id> mailboxMetadataCache;

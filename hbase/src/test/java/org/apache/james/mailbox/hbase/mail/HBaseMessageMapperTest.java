@@ -18,16 +18,34 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.mail;
 
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_META_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_BODY_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_HEADERS_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
 import javax.mail.Flags;
 import javax.mail.internet.SharedInputStream;
 import javax.mail.util.SharedByteArrayInputStream;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.hbase.HBaseClusterSingleton;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.model.MailboxPath;
@@ -35,7 +53,6 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMessage;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -53,8 +70,8 @@ public class HBaseMessageMapperTest {
     private static HBaseModSeqProvider modSeqProvider;
     private static HBaseMessageMapper messageMapper;
     private static final List<MailboxPath> MBOX_PATHS = new ArrayList<MailboxPath>();
-    private static final List<Mailbox<UUID>> MBOXES = new ArrayList<Mailbox<UUID>>();
-    private static final List<Message<UUID>> MESSAGE_NO = new ArrayList<Message<UUID>>();
+    private static final List<Mailbox<HBaseId>> MBOXES = new ArrayList<Mailbox<HBaseId>>();
+    private static final List<Message<HBaseId>> MESSAGE_NO = new ArrayList<Message<HBaseId>>();
     private static final int COUNT = 5;
     private static Configuration conf;
     /*
@@ -120,12 +137,12 @@ public class HBaseMessageMapperTest {
         propBuilder.setSubType("html");
         propBuilder.setTextualLineCount(2L);
 
-        SimpleMessage<UUID> myMsg;
+        SimpleMessage<HBaseId> myMsg;
         final Flags flags = new Flags(Flags.Flag.RECENT);
         final Date today = new Date();
 
         for (int i = 0; i < COUNT * 2; i++) {
-            myMsg = new SimpleMessage<UUID>(today, messageTemplate.length,
+            myMsg = new SimpleMessage<HBaseId>(today, messageTemplate.length,
                     messageTemplate.length - 20, content, flags, propBuilder,
                     MBOXES.get(1).getMailboxId());
             if (i == COUNT * 2 - 1) {

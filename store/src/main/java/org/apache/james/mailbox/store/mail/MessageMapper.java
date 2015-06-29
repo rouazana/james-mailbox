@@ -28,6 +28,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.Property;
@@ -37,7 +38,7 @@ import org.apache.james.mailbox.store.transaction.Mapper;
  * Maps {@link Message} in a {@link org.apache.james.mailbox.MessageManager}. A {@link MessageMapper} has a lifecycle from the start of a request 
  * to the end of the request.
  */
-public interface MessageMapper<Id> extends Mapper {
+public interface MessageMapper<Id extends MailboxId> extends Mapper {
 
     /**
      * Return a {@link Iterator} which holds the messages for the given criterias

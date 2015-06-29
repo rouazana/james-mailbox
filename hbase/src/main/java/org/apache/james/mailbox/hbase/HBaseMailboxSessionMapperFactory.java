@@ -18,7 +18,17 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase;
 
-import java.util.UUID;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOXES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_META_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_BODY_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_DATA_HEADERS_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
+
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -26,8 +36,6 @@ import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.james.mailbox.MailboxSession;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
-
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.SubscriptionException;
 import org.apache.james.mailbox.hbase.mail.HBaseMailboxMapper;
@@ -44,11 +52,11 @@ import org.apache.james.mailbox.store.user.SubscriptionMapper;
  * HBase implementation of {@link MailboxSessionMapperFactory}
  *
  */
-public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactory<UUID> {
+public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactory<HBaseId> {
 
     private final Configuration conf;
-    private final UidProvider<UUID> uidProvider;
-    private final ModSeqProvider<UUID> modSeqProvider;
+    private final UidProvider<HBaseId> uidProvider;
+    private final ModSeqProvider<HBaseId> modSeqProvider;
 
     /**
      * Creates  the necessary tables in HBase if they do not exist.
@@ -60,7 +68,7 @@ public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactor
      * @throws ZooKeeperConnectionException
      * @throws IOException
      */
-    public HBaseMailboxSessionMapperFactory(Configuration conf, UidProvider<UUID> uidProvider, ModSeqProvider<UUID> modSeqProvider) {
+    public HBaseMailboxSessionMapperFactory(Configuration conf, UidProvider<HBaseId> uidProvider, ModSeqProvider<HBaseId> modSeqProvider) {
         this.conf = conf;
         this.uidProvider = uidProvider;
         this.modSeqProvider = modSeqProvider;
@@ -114,12 +122,12 @@ public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactor
     }
 
     @Override
-    public MessageMapper<UUID> createMessageMapper(MailboxSession session) throws MailboxException {
+    public MessageMapper<HBaseId> createMessageMapper(MailboxSession session) throws MailboxException {
         return new HBaseMessageMapper(session, uidProvider, modSeqProvider, this.conf);
     }
 
     @Override
-    public MailboxMapper<UUID> createMailboxMapper(MailboxSession session) throws MailboxException {
+    public MailboxMapper<HBaseId> createMailboxMapper(MailboxSession session) throws MailboxException {
         return new HBaseMailboxMapper(this.conf);
     }
 
@@ -140,7 +148,7 @@ public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactor
      * Returns the ModSeqProvider used.
      * @return The used modSeqProvider
      */
-    public ModSeqProvider<UUID> getModSeqProvider() {
+    public ModSeqProvider<HBaseId> getModSeqProvider() {
         return modSeqProvider;
     }
 
@@ -148,7 +156,7 @@ public class HBaseMailboxSessionMapperFactory extends MailboxSessionMapperFactor
      * Returns the UidProvider that generates UID's for mailboxes.
      * @return The provider that generates UID's for mailboxes
      */
-    public UidProvider<UUID> getUidProvider() {
+    public UidProvider<HBaseId> getUidProvider() {
         return uidProvider;
     }
 }

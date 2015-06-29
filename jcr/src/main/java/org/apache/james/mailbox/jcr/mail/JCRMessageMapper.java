@@ -40,6 +40,7 @@ import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.util.ISO9075;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jcr.JCRId;
 import org.apache.james.mailbox.jcr.JCRImapConstants;
 import org.apache.james.mailbox.jcr.MailboxSessionJCRRepository;
 import org.apache.james.mailbox.jcr.mail.model.JCRMessage;
@@ -59,7 +60,7 @@ import org.apache.james.mailbox.store.mail.model.Message;
  * message as a seperate child node under the mailbox
  * 
  */
-public class JCRMessageMapper extends AbstractMessageMapper<String> implements JCRImapConstants {
+public class JCRMessageMapper extends AbstractMessageMapper<JCRId> implements JCRImapConstants {
 
     /**
      * Store the messages directly in the mailbox: .../mailbox/
@@ -118,7 +119,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      *            {@link #MESSAGE_SCALE_YEAR}
      */
     public JCRMessageMapper(final MailboxSessionJCRRepository repository, MailboxSession mSession,
-            UidProvider<String> uidProvider, ModSeqProvider<String> modSeqProvider, int scaleType) {
+            UidProvider<JCRId> uidProvider, ModSeqProvider<JCRId> modSeqProvider, int scaleType) {
         super(mSession, uidProvider, modSeqProvider);
         this.repository = repository;
         this.scaleType = scaleType;
@@ -138,7 +139,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      *            {@link ModSeqProvider} to use
      */
     public JCRMessageMapper(final MailboxSessionJCRRepository repos, MailboxSession session,
-            UidProvider<String> uidProvider, ModSeqProvider<String> modSeqProvider) {
+            UidProvider<JCRId> uidProvider, ModSeqProvider<JCRId> modSeqProvider) {
         this(repos, session, uidProvider, modSeqProvider, MESSAGE_SCALE_DAY);
     }
 
@@ -205,7 +206,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * org.apache.james.mailbox.store.mail.MessageMapper#countMessagesInMailbox
      * ()
      */
-    public long countMessagesInMailbox(Mailbox<String> mailbox) throws MailboxException {
+    public long countMessagesInMailbox(Mailbox<JCRId> mailbox) throws MailboxException {
         try {
             // we use order by because without it count will always be 0 in
             // jackrabbit
@@ -235,7 +236,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * @see org.apache.james.mailbox.store.mail.MessageMapper#
      * countUnseenMessagesInMailbox ()
      */
-    public long countUnseenMessagesInMailbox(Mailbox<String> mailbox) throws MailboxException {
+    public long countUnseenMessagesInMailbox(Mailbox<JCRId> mailbox) throws MailboxException {
 
         try {
             // we use order by because without it count will always be 0 in
@@ -269,7 +270,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * .mailbox.store.mail.model.Mailbox,
      * org.apache.james.mailbox.store.mail.model.Message)
      */
-    public void delete(Mailbox<String> mailbox, Message<String> message) throws MailboxException {
+    public void delete(Mailbox<JCRId> mailbox, Message<JCRId> message) throws MailboxException {
         JCRMessage membership = (JCRMessage) message;
         if (membership.isPersistent()) {
             try {
@@ -290,10 +291,10 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * org.apache.james.mailbox.MessageRange,
      * org.apache.james.mailbox.store.mail.MessageMapper.FetchType, int)
      */
-    public Iterator<Message<String>> findInMailbox(Mailbox<String> mailbox, MessageRange set, FetchType fType, int max)
+    public Iterator<Message<JCRId>> findInMailbox(Mailbox<JCRId> mailbox, MessageRange set, FetchType fType, int max)
             throws MailboxException {
         try {
-            List<Message<String>> results;
+            List<Message<JCRId>> results;
             long from = set.getUidFrom();
             final long to = set.getUidTo();
             final Type type = set.getType();
@@ -329,7 +330,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * @see org.apache.james.mailbox.store.mail.MessageMapper#
      * findRecentMessageUidsInMailbox ()
      */
-    public List<Long> findRecentMessageUidsInMailbox(Mailbox<String> mailbox) throws MailboxException {
+    public List<Long> findRecentMessageUidsInMailbox(Mailbox<JCRId> mailbox) throws MailboxException {
 
         try {
 
@@ -359,7 +360,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * org.apache.james.mailbox.store.mail.MessageMapper#findFirstUnseenMessageUid
      * (org.apache.james.mailbox.store.mail.model.Mailbox)
      */
-    public Long findFirstUnseenMessageUid(Mailbox<String> mailbox) throws MailboxException {
+    public Long findFirstUnseenMessageUid(Mailbox<JCRId> mailbox) throws MailboxException {
         try {
             String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                     + JCRMessage.SEEN_PROPERTY + "='false'] order by @" + JCRMessage.UID_PROPERTY;
@@ -382,10 +383,10 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
     }
 
     @Override
-    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(Mailbox<String> mailbox, MessageRange set)
+    public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(Mailbox<JCRId> mailbox, MessageRange set)
             throws MailboxException {
         try {
-            final List<Message<String>> results;
+            final List<Message<JCRId>> results;
             final long from = set.getUidFrom();
             final long to = set.getUidTo();
             final Type type = set.getType();
@@ -406,7 +407,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
             }
             Map<Long, MessageMetaData> uids = new HashMap<Long, MessageMetaData>();
             for (int i = 0; i < results.size(); i++) {
-                Message<String> m = results.get(i);
+                Message<JCRId> m = results.get(i);
                 long uid = m.getUid();
                 uids.put(uid, new SimpleMessageMetaData(m));
                 delete(mailbox, m);
@@ -424,22 +425,22 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      *      org.apache.james.mailbox.store.mail.model.Message)
      */
     @Override
-    public MessageMetaData move(Mailbox<String> mailbox, Message<String> original) throws MailboxException {
+    public MessageMetaData move(Mailbox<JCRId> mailbox, Message<JCRId> original) throws MailboxException {
         throw new UnsupportedOperationException("Not implemented - see https://issues.apache.org/jira/browse/IMAP-370");
     }
 
     @Override
-    protected MessageMetaData copy(Mailbox<String> mailbox, long uid, long modSeq, Message<String> original)
+    protected MessageMetaData copy(Mailbox<JCRId> mailbox, long uid, long modSeq, Message<JCRId> original)
             throws MailboxException {
         try {
-            String newMessagePath = getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath() + NODE_DELIMITER
+            String newMessagePath = getSession().getNodeByIdentifier(mailbox.getMailboxId().serialize()).getPath() + NODE_DELIMITER
                     + String.valueOf(uid);
             getSession().getWorkspace().copy(
                     ((JCRMessage) original).getNode().getPath(),
-                    getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath() + NODE_DELIMITER
+                    getSession().getNodeByIdentifier(mailbox.getMailboxId().serialize()).getPath() + NODE_DELIMITER
                             + String.valueOf(uid));
             Node node = getSession().getNode(newMessagePath);
-            node.setProperty(JCRMessage.MAILBOX_UUID_PROPERTY, mailbox.getMailboxId());
+            node.setProperty(JCRMessage.MAILBOX_UUID_PROPERTY, mailbox.getMailboxId().serialize());
             node.setProperty(JCRMessage.UID_PROPERTY, uid);
             node.setProperty(JCRMessage.MODSEQ_PROPERTY, modSeq);
             // A copy of a message is recent
@@ -452,7 +453,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
     }
 
     @Override
-    protected MessageMetaData save(Mailbox<String> mailbox, Message<String> message) throws MailboxException {
+    protected MessageMetaData save(Mailbox<JCRId> mailbox, Message<JCRId> message) throws MailboxException {
         final JCRMessage membership = (JCRMessage) message;
         try {
     
@@ -479,7 +480,7 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
                 final String hour = convertIntToString(cal.get(Calendar.HOUR_OF_DAY));
                 final String min = convertIntToString(cal.get(Calendar.MINUTE));
     
-                Node mailboxNode = getSession().getNodeByIdentifier(mailbox.getMailboxId());
+                Node mailboxNode = getSession().getNodeByIdentifier(mailbox.getMailboxId().serialize());
                 Node node = mailboxNode;
     
                 if (scaleType > MESSAGE_SCALE_NONE) {
@@ -539,13 +540,13 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
      * @throws ItemNotFoundException
      * @throws RepositoryException
      */
-    private String getMailboxPath(Mailbox<String> mailbox) throws ItemNotFoundException, RepositoryException {
-        return ISO9075.encodePath(getSession().getNodeByIdentifier(mailbox.getMailboxId()).getPath());
+    private String getMailboxPath(Mailbox<JCRId> mailbox) throws ItemNotFoundException, RepositoryException {
+        return ISO9075.encodePath(getSession().getNodeByIdentifier(mailbox.getMailboxId().serialize()).getPath());
     }
 
-    private List<Message<String>> findMessagesInMailboxAfterUID(Mailbox<String> mailbox, long uid, int batchSize)
+    private List<Message<JCRId>> findMessagesInMailboxAfterUID(Mailbox<JCRId> mailbox, long uid, int batchSize)
             throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.UID_PROPERTY + ">=" + uid + "] order by @" + JCRMessage.UID_PROPERTY;
 
@@ -562,9 +563,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findMessageInMailboxWithUID(Mailbox<String> mailbox, long uid)
+    private List<Message<JCRId>> findMessageInMailboxWithUID(Mailbox<JCRId> mailbox, long uid)
             throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.UID_PROPERTY + "=" + uid + "]";
 
@@ -579,9 +580,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findMessagesInMailboxBetweenUIDs(Mailbox<String> mailbox, long from, long to,
+    private List<Message<JCRId>> findMessagesInMailboxBetweenUIDs(Mailbox<JCRId> mailbox, long from, long to,
             int batchSize) throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.UID_PROPERTY + ">=" + from + " and @" + JCRMessage.UID_PROPERTY + "<=" + to
                 + "] order by @" + JCRMessage.UID_PROPERTY;
@@ -599,9 +600,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findMessagesInMailbox(Mailbox<String> mailbox, int batchSize)
+    private List<Message<JCRId>> findMessagesInMailbox(Mailbox<JCRId> mailbox, int batchSize)
             throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
 
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message) order by @"
                 + JCRMessage.UID_PROPERTY;
@@ -618,9 +619,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findDeletedMessagesInMailboxAfterUID(Mailbox<String> mailbox, long uid)
+    private List<Message<JCRId>> findDeletedMessagesInMailboxAfterUID(Mailbox<JCRId> mailbox, long uid)
             throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.UID_PROPERTY + ">=" + uid + " and @" + JCRMessage.DELETED_PROPERTY + "='true'] order by @"
                 + JCRMessage.UID_PROPERTY;
@@ -635,9 +636,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findDeletedMessageInMailboxWithUID(Mailbox<String> mailbox, long uid)
+    private List<Message<JCRId>> findDeletedMessageInMailboxWithUID(Mailbox<JCRId> mailbox, long uid)
             throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.UID_PROPERTY + "=" + uid + " and @" + JCRMessage.DELETED_PROPERTY + "='true']";
         QueryManager manager = getSession().getWorkspace().getQueryManager();
@@ -653,9 +654,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findDeletedMessagesInMailboxBetweenUIDs(Mailbox<String> mailbox, long from, long to)
+    private List<Message<JCRId>> findDeletedMessagesInMailboxBetweenUIDs(Mailbox<JCRId> mailbox, long from, long to)
             throws RepositoryException {
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.UID_PROPERTY + ">=" + from + " and @" + JCRMessage.UID_PROPERTY + "<=" + to + " and @"
                 + JCRMessage.DELETED_PROPERTY + "='true'] order by @" + JCRMessage.UID_PROPERTY;
@@ -670,9 +671,9 @@ public class JCRMessageMapper extends AbstractMessageMapper<String> implements J
         return list;
     }
 
-    private List<Message<String>> findDeletedMessagesInMailbox(Mailbox<String> mailbox) throws RepositoryException {
+    private List<Message<JCRId>> findDeletedMessagesInMailbox(Mailbox<JCRId> mailbox) throws RepositoryException {
 
-        List<Message<String>> list = new ArrayList<Message<String>>();
+        List<Message<JCRId>> list = new ArrayList<Message<JCRId>>();
         String queryString = "/jcr:root" + getMailboxPath(mailbox) + "//element(*,jamesMailbox:message)[@"
                 + JCRMessage.DELETED_PROPERTY + "='true'] order by @" + JCRMessage.UID_PROPERTY;
 

@@ -28,6 +28,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.SearchQuery;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
@@ -41,7 +42,7 @@ import org.apache.james.mailbox.store.mail.model.Message;
  *
  * @param <Id>
  */
-public class LazyMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id> {
+public class LazyMessageSearchIndex<Id extends MailboxId> extends ListeningMessageSearchIndex<Id> {
 
     private ListeningMessageSearchIndex<Id> index;
     private final ConcurrentHashMap<Id, Object> indexed = new ConcurrentHashMap<Id, Object>();

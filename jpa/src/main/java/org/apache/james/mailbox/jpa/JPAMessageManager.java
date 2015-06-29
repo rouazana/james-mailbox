@@ -41,17 +41,21 @@ import org.apache.james.mailbox.store.search.MessageSearchIndex;
 /**
  * Abstract base class which should be used from JPA implementations.
  */
-public class JPAMessageManager extends StoreMessageManager<Long> {
+public class JPAMessageManager extends StoreMessageManager<JPAId> {
     
-    public JPAMessageManager(MailboxSessionMapperFactory<Long> mapperFactory, final MessageSearchIndex<Long> index, final MailboxEventDispatcher<Long> dispatcher, final MailboxPathLocker locker, final Mailbox<Long> mailbox, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) throws MailboxException {
+    public JPAMessageManager(MailboxSessionMapperFactory<JPAId> mapperFactory, final MessageSearchIndex<JPAId> index, 
+    			final MailboxEventDispatcher<JPAId> dispatcher, final MailboxPathLocker locker, 
+    			final Mailbox<JPAId> mailbox, MailboxACLResolver aclResolver, 
+    			GroupMembershipResolver groupMembershipResolver) throws MailboxException {
+    	
         super(mapperFactory, index, dispatcher, locker, mailbox, aclResolver, groupMembershipResolver);     
     }
     
     @Override
-    protected Message<Long> createMessage(Date internalDate, final int size, int bodyStartOctet, final SharedInputStream content, 
+    protected Message<JPAId> createMessage(Date internalDate, final int size, int bodyStartOctet, final SharedInputStream content, 
             final Flags flags, PropertyBuilder propertyBuilder) throws MailboxException{
 
-        final Message<Long> message = new JPAMessage((JPAMailbox) getMailboxEntity(), internalDate, size, flags, content,  bodyStartOctet,  propertyBuilder);
+        final Message<JPAId> message = new JPAMessage((JPAMailbox) getMailboxEntity(), internalDate, size, flags, content,  bodyStartOctet,  propertyBuilder);
         return message;
     }
 

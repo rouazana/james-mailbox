@@ -24,14 +24,16 @@ import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.recipes.atomic.AtomicValue;
 import com.netflix.curator.framework.recipes.atomic.DistributedAtomicLong;
 import com.netflix.curator.retry.RetryOneTime;
+
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 /**
  * ZooKeeper based implementation of a distributed sequential UID generator.
  */
-public class ZooUidProvider<E> implements UidProvider<E> {
+public class ZooUidProvider<E extends MailboxId> implements UidProvider<E> {
     // TODO: use ZK paths to store uid and modSeq, etc.
 
     public static final String UID_PATH_SUFFIX = "-uid";

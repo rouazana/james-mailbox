@@ -34,6 +34,7 @@ import org.apache.james.mailbox.store.MailboxEventDispatcher.FlagsUpdatedImpl;
 import org.apache.james.mailbox.store.MailboxEventDispatcher.MailboxDeletionImpl;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
@@ -44,7 +45,7 @@ import org.apache.james.mailbox.store.mail.model.Message;
  *
  * @param <Id>
  */
-public abstract class ListeningMessageSearchIndex<Id> implements MessageSearchIndex<Id>, MailboxListener{
+public abstract class ListeningMessageSearchIndex<Id extends MailboxId> implements MessageSearchIndex<Id>, MailboxListener {
 
     private MessageMapperFactory<Id> factory;
 

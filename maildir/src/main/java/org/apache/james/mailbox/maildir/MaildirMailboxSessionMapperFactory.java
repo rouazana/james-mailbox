@@ -30,7 +30,7 @@ import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.user.SubscriptionMapper;
 
 public class MaildirMailboxSessionMapperFactory extends
-        MailboxSessionMapperFactory<Integer> {
+        MailboxSessionMapperFactory<MaildirId> {
 
     private final MaildirStore store;
 
@@ -41,13 +41,13 @@ public class MaildirMailboxSessionMapperFactory extends
     
     
     @Override
-    public MailboxMapper<Integer> createMailboxMapper(MailboxSession session)
+    public MailboxMapper<MaildirId> createMailboxMapper(MailboxSession session)
             throws MailboxException {
         return new MaildirMailboxMapper(store, session);
     }
 
     @Override
-    public MessageMapper<Integer> createMessageMapper(MailboxSession session)
+    public MessageMapper<MaildirId> createMessageMapper(MailboxSession session)
             throws MailboxException {
         return new MaildirMessageMapper(session, store);
     }

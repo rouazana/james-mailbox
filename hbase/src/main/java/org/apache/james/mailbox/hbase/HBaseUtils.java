@@ -18,11 +18,48 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase;
 
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_ANSWERED;
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_DELETED;
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_DRAFT;
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_FLAGGED;
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_RECENT;
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_SEEN;
+import static org.apache.james.mailbox.hbase.FlagConvertor.FLAGS_USER;
+import static org.apache.james.mailbox.hbase.FlagConvertor.PREFIX_SFLAGS_B;
+import static org.apache.james.mailbox.hbase.FlagConvertor.PREFIX_UFLAGS_B;
+import static org.apache.james.mailbox.hbase.FlagConvertor.systemFlagFromBytes;
+import static org.apache.james.mailbox.hbase.FlagConvertor.userFlagFromBytes;
+import static org.apache.james.mailbox.hbase.FlagConvertor.userFlagToBytes;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_HIGHEST_MODSEQ;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_LASTUID;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_MESSAGE_COUNT;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_NAME;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_NAMESPACE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_UIDVALIDITY;
+import static org.apache.james.mailbox.hbase.HBaseNames.MAILBOX_USER;
+import static org.apache.james.mailbox.hbase.HBaseNames.MARKER_MISSING;
+import static org.apache.james.mailbox.hbase.HBaseNames.MARKER_PRESENT;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_META_CF;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_BODY_OCTETS;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_CONTENT_OCTETS;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_INTERNALDATE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_MEDIA_TYPE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_MODSEQ;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_SUB_TYPE;
+import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_TEXT_LINE_COUNT;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
+import static org.apache.james.mailbox.hbase.PropertyConvertor.PREFIX_PROP_B;
+import static org.apache.james.mailbox.hbase.PropertyConvertor.getProperty;
+import static org.apache.james.mailbox.hbase.PropertyConvertor.getQualifier;
+import static org.apache.james.mailbox.hbase.PropertyConvertor.getValue;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.UUID;
+
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 
@@ -33,18 +70,14 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.james.mailbox.hbase.io.ChunkInputStream;
-import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.hbase.mail.HBaseMessage;
+import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.mail.model.Property;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.mailbox.store.user.model.Subscription;
-
-import static org.apache.james.mailbox.hbase.FlagConvertor.*;
-import static org.apache.james.mailbox.hbase.PropertyConvertor.*;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
 
 /**
  * HBase utility classes for mailbox and message manipulation.
@@ -58,7 +91,7 @@ public class HBaseUtils {
      * @param result a result of a HBase Get operation 
      * @return a Mailbox object
      */
-    public static Mailbox<UUID> mailboxFromResult(Result result) {
+    public static Mailbox<HBaseId> mailboxFromResult(Result result) {
         NavigableMap<byte[], byte[]> rawMailbox = result.getFamilyMap(MAILBOX_CF);
         //TODO: should we test for null values?
         MailboxPath path = new MailboxPath(Bytes.toString(rawMailbox.get(MAILBOX_NAMESPACE)),
@@ -66,7 +99,7 @@ public class HBaseUtils {
                 Bytes.toString(rawMailbox.get(MAILBOX_NAME)));
 
         HBaseMailbox mailbox = new HBaseMailbox(path, Bytes.toLong(rawMailbox.get(MAILBOX_UIDVALIDITY)));
-        mailbox.setMailboxId(UUIDFromRowKey(result.getRow()));
+        mailbox.setMailboxId(HBaseIdFromRowKey(result.getRow()));
         mailbox.setHighestModSeq(Bytes.toLong(rawMailbox.get(MAILBOX_HIGHEST_MODSEQ)));
         mailbox.setLastUid(Bytes.toLong(rawMailbox.get(MAILBOX_LASTUID)));
         mailbox.setMessageCount(Bytes.toLong(rawMailbox.get(MAILBOX_MESSAGE_COUNT)));
@@ -74,27 +107,12 @@ public class HBaseUtils {
     }
 
     /**
-     * This returns the row key needed for HBase. Having the method here ensure 
-     * we have a consistent way to generate the rowkey.
-     *
-     * Convenience method for generating a rowKey when you don't have a mailbox object.
-     * @param uuid
-     * @return rowkey byte array that can be used with HBase API
-     */
-    public static byte[] mailboxRowKey(UUID uuid) {
-        byte[] rowKey = new byte[16];
-        int offset = Bytes.putLong(rowKey, 0, uuid.getMostSignificantBits());
-        Bytes.putLong(rowKey, offset, uuid.getLeastSignificantBits());
-        return rowKey;
-    }
-
-    /**
      * Returns a UUID from the a byte array.
      * @param rowkey
      * @return UUID calculated from the byte array
      */
-    public static UUID UUIDFromRowKey(byte[] rowkey) {
-        return new UUID(Bytes.toLong(rowkey, 0), Bytes.toLong(rowkey, 8));
+    public static HBaseId HBaseIdFromRowKey(byte[] rowkey) {
+        return HBaseId.of(new UUID(Bytes.toLong(rowkey, 0), Bytes.toLong(rowkey, 8)));
     }
 
     /**
@@ -102,7 +120,7 @@ public class HBaseUtils {
      * @return a Put object
      */
     public static Put toPut(HBaseMailbox mailbox) {
-        Put put = new Put(mailboxRowKey(mailbox.getMailboxId()));
+        Put put = new Put(mailbox.getMailboxId().toBytes());
         // we don't store null values and we don't restore them. it's a column based store.
         if (mailbox.getName() != null) {
             put.add(MAILBOX_CF, MAILBOX_NAME, Bytes.toBytes(mailbox.getName()));
@@ -127,7 +145,7 @@ public class HBaseUtils {
      * @param message
      * @return a put that contains all metadata information.
      */
-    public static Put metadataToPut(Message<UUID> message) {
+    public static Put metadataToPut(Message<HBaseId> message) {
         Put put = new Put(messageRowKey(message));
         // we store the message uid and mailbox uid in the row key
         // store the meta data
@@ -185,7 +203,7 @@ public class HBaseUtils {
      * @param message message to get row key from
      * @return rowkey byte array that can be used with HBase API
      */
-    public static byte[] messageRowKey(Message<UUID> message) {
+    public static byte[] messageRowKey(Message<HBaseId> message) {
         return messageRowKey(message.getMailboxId(), message.getUid());
     }
 
@@ -197,26 +215,20 @@ public class HBaseUtils {
      * @param uid message uid
      * @return rowkey byte array that can be used with HBase API
      */
-    public static byte[] messageRowKey(UUID mailboxUid, long uid) {
+    public static byte[] messageRowKey(HBaseId mailboxUid, long uid) {
         /**  message uid's are stored in reverse order so we will always have the most recent messages first*/
-        byte[] ba = Bytes.add(Bytes.toBytes(mailboxUid.getMostSignificantBits()),
-                Bytes.toBytes(mailboxUid.getLeastSignificantBits()),
-                Bytes.toBytes(Long.MAX_VALUE - uid));
-        //System.out.println(Bytes.toStringBinary(ba));
-        return ba;
+        return Bytes.add(mailboxUid.toBytes(), Bytes.toBytes(Long.MAX_VALUE - uid));
     }
 
     /**
      * Utility to build row keys from mailboxUID and a value. The value is added to 
      * the key without any other operations. 
-     * @param mailboxUid mailbox UUID
+     * @param mailboxUid mailbox HBaseId
      * @param value
      * @return rowkey byte array that can be used with HBase API
      */
-    public static byte[] customMessageRowKey(UUID mailboxUid, long value) {
-        return Bytes.add(Bytes.toBytes(mailboxUid.getMostSignificantBits()),
-                Bytes.toBytes(mailboxUid.getLeastSignificantBits()),
-                Bytes.toBytes(value));
+    public static byte[] customMessageRowKey(HBaseId mailboxUid, long value) {
+        return Bytes.add(mailboxUid.toBytes(), Bytes.toBytes(value));
     }
 
     /**
@@ -228,7 +240,7 @@ public class HBaseUtils {
      * @param result the result object containing message data
      * @return a HBaseMessage instance with message metadata.
      */
-    public static Message<UUID> messageMetaFromResult(Configuration conf, Result result) {
+    public static Message<HBaseId> messageMetaFromResult(Configuration conf, Result result) {
         HBaseMessage message = null;
         Flags flags = new Flags();
         List<Property> propList = new ArrayList<Property>();
@@ -288,7 +300,7 @@ public class HBaseUtils {
             }
             i++;
         }
-        UUID uuid = UUIDFromRowKey(result.getRow());
+        HBaseId uuid = HBaseIdFromRowKey(result.getRow());
         uid = Long.MAX_VALUE - Bytes.toLong(result.getRow(), 16);
         PropertyBuilder props = new PropertyBuilder(propList);
         props.setMediaType(mediaType);
@@ -316,7 +328,7 @@ public class HBaseUtils {
      * @param flags
      * @return a put object with 
      */
-    public static Put flagsToPut(Message<UUID> message, Flags flags) {
+    public static Put flagsToPut(Message<HBaseId> message, Flags flags) {
         Put put = new Put(messageRowKey(message));
         //system flags
         if (flags.contains(Flag.ANSWERED)) {
@@ -364,7 +376,7 @@ public class HBaseUtils {
         return put;
     }
 
-    public static Delete flagsToDelete(Message<UUID> message, Flags flags) {
+    public static Delete flagsToDelete(Message<HBaseId> message, Flags flags) {
         Delete delete = new Delete(messageRowKey(message));
         //we mark for delete flags that are not present (they will be Put'ed)
         if (flags.contains(Flag.ANSWERED)) {

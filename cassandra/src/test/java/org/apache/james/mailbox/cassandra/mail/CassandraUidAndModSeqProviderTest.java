@@ -23,12 +23,12 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
 import java.util.stream.LongStream;
 
 import org.apache.james.mailbox.cassandra.CassandraClusterSingleton;
+import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
@@ -54,7 +54,7 @@ public class CassandraUidAndModSeqProviderTest {
     private CassandraUidProvider uidProvider;
     private CassandraModSeqProvider modSeqProvider;
     private CassandraMailboxMapper mapper;
-    private List<SimpleMailbox<UUID>> mailboxList;
+    private List<SimpleMailbox<CassandraId>> mailboxList;
     private List<MailboxPath> pathsList;
 
     @Before
@@ -64,7 +64,7 @@ public class CassandraUidAndModSeqProviderTest {
         modSeqProvider = new CassandraModSeqProvider(CASSANDRA.getConf());
         mapper = new CassandraMailboxMapper(CASSANDRA.getConf(), CASSANDRA.getTypesProvider(), MAX_RETRY);
         fillMailboxList();
-        for (SimpleMailbox<UUID> mailbox : mailboxList) {
+        for (SimpleMailbox<CassandraId> mailbox : mailboxList) {
             mapper.save(mailbox);
         }
     }
@@ -98,7 +98,7 @@ public class CassandraUidAndModSeqProviderTest {
     @Test
     public void lastUidShouldRetrieveValueStoredByNextUid() throws Exception {
         MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
-        SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
+        SimpleMailbox<CassandraId> newBox = new SimpleMailbox<>(path, 1234);
         mapper.save(newBox);
         mailboxList.add(newBox);
         pathsList.add(path);
@@ -115,7 +115,7 @@ public class CassandraUidAndModSeqProviderTest {
 
     @Test
     public void nextUidShouldIncrementValueByOne() throws Exception {
-        SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
+        SimpleMailbox<CassandraId> mailbox = mailboxList.get(mailboxList.size() / 2);
         long lastUid = uidProvider.lastUid(null, mailbox);
         LongStream.range(lastUid + 1, lastUid + 10)
             .forEach(propagateException(value -> {
@@ -128,7 +128,7 @@ public class CassandraUidAndModSeqProviderTest {
     @Test
     public void highestModSeqShouldRetrieveValueStoredNextModSeq() throws Exception {
         MailboxPath path = new MailboxPath("gsoc", "ieugen", "Trash");
-        SimpleMailbox<UUID> newBox = new SimpleMailbox<>(path, 1234);
+        SimpleMailbox<CassandraId> newBox = new SimpleMailbox<>(path, 1234);
         mapper.save(newBox);
         mailboxList.add(newBox);
         pathsList.add(path);
@@ -145,7 +145,7 @@ public class CassandraUidAndModSeqProviderTest {
 
     @Test
     public void nextModSeqShouldIncrementValueByOne() throws Exception {
-        SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
+        SimpleMailbox<CassandraId> mailbox = mailboxList.get(mailboxList.size() / 2);
         long lastUid = modSeqProvider.highestModSeq(null, mailbox);
         LongStream.range(lastUid + 1, lastUid + 10)
             .forEach(propagateException(value -> {
@@ -157,7 +157,7 @@ public class CassandraUidAndModSeqProviderTest {
 
     @Test
     public void nextModSeqShouldIncrementValueWhenParallelCalls() throws Exception {
-        SimpleMailbox<UUID> mailbox = mailboxList.get(mailboxList.size() / 2);
+        SimpleMailbox<CassandraId> mailbox = mailboxList.get(mailboxList.size() / 2);
         long lastUid = modSeqProvider.highestModSeq(null, mailbox);
         final AtomicLong previousValue = new AtomicLong();
         LongStream.range(lastUid + 1, lastUid + 10)

@@ -20,9 +20,10 @@
 package org.apache.james.mailbox.store;
 
 import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
-public class StoreMailboxPath<Id> extends MailboxPath {
+public class StoreMailboxPath<Id extends MailboxId> extends MailboxPath {
 
     public StoreMailboxPath(String namespace, String user, String name) {
         super(namespace, user, name);

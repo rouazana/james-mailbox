@@ -43,7 +43,7 @@ public class GroupFolderResolverTest {
         SimpleMailboxSession mailboxSession = new SimpleMailboxSession(1, "username", "password", log, localePreferences, sharedSpaces, null, pathSeparator, SessionType.User);
         GroupFolderResolver testee =  new GroupFolderResolver(mailboxSession);
         
-        SimpleMailbox<Long> mailbox = new SimpleMailbox<Long>(new MailboxPath(null, "user", "name"), UID_VALIDITY);
+        SimpleMailbox<TestId> mailbox = new SimpleMailbox<TestId>(new MailboxPath(null, "user", "name"), UID_VALIDITY);
         assertThat(testee.isGroupFolder(mailbox)).isFalse();
     }
     
@@ -52,7 +52,7 @@ public class GroupFolderResolverTest {
         SimpleMailboxSession mailboxSession = new SimpleMailboxSession(1, "username", "password", log, localePreferences, sharedSpaces, null, pathSeparator, SessionType.User);
         GroupFolderResolver testee =  new GroupFolderResolver(mailboxSession);
         
-        SimpleMailbox<Long> mailbox = new SimpleMailbox<Long>(new MailboxPath(MailboxConstants.USER_NAMESPACE, "user", "name"), UID_VALIDITY);
+        SimpleMailbox<TestId> mailbox = new SimpleMailbox<TestId>(new MailboxPath(MailboxConstants.USER_NAMESPACE, "user", "name"), UID_VALIDITY);
         assertThat(testee.isGroupFolder(mailbox)).isFalse();
     }
     
@@ -62,7 +62,7 @@ public class GroupFolderResolverTest {
         SimpleMailboxSession mailboxSession = new SimpleMailboxSession(1, "username", "password", log, localePreferences, sharedSpaces, otherUsersSpace, pathSeparator, SessionType.User);
         GroupFolderResolver testee =  new GroupFolderResolver(mailboxSession);
         
-        SimpleMailbox<Long> mailbox = new SimpleMailbox<Long>(new MailboxPath("other", "user", "name"), UID_VALIDITY);
+        SimpleMailbox<TestId> mailbox = new SimpleMailbox<TestId>(new MailboxPath("other", "user", "name"), UID_VALIDITY);
         assertThat(testee.isGroupFolder(mailbox)).isFalse();
     }
     
@@ -72,7 +72,7 @@ public class GroupFolderResolverTest {
         SimpleMailboxSession mailboxSession = new SimpleMailboxSession(1, "username", "password", log, localePreferences, sharedSpaces, otherUsersSpace, pathSeparator, SessionType.User);
         GroupFolderResolver testee =  new GroupFolderResolver(mailboxSession);
         
-        SimpleMailbox<Long> mailbox = new SimpleMailbox<Long>(new MailboxPath("namespace", "user", "name"), UID_VALIDITY);
+        SimpleMailbox<TestId> mailbox = new SimpleMailbox<TestId>(new MailboxPath("namespace", "user", "name"), UID_VALIDITY);
         assertThat(testee.isGroupFolder(mailbox)).isTrue();
     }
 }

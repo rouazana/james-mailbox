@@ -3,6 +3,7 @@ package org.apache.james.mailbox.caching.guava;
 import org.apache.james.mailbox.caching.MailboxMetadataCache;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.MessageMapper;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 import com.google.common.cache.Cache;
@@ -13,7 +14,7 @@ import com.google.common.cache.Cache;
  * @param <Id>
  */
 
-public class GuavaMailboxMetadataCache<Id> extends AbstractGuavaCache implements MailboxMetadataCache<Id> {
+public class GuavaMailboxMetadataCache<Id extends MailboxId> extends AbstractGuavaCache implements MailboxMetadataCache<Id> {
 
 	// TODO these can probably be instantiated more elegant way
 	private final Cache<Id, Long> cacheCountMessagesInMailbox = BUILDER.build();

@@ -34,6 +34,7 @@ import org.apache.james.mailbox.model.SearchQuery.UidCriterion;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper.FetchType;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
@@ -46,7 +47,7 @@ import org.apache.james.mailbox.store.mail.model.Message;
  *
  * @param <Id>
  */
-public class SimpleMessageSearchIndex<Id> implements MessageSearchIndex<Id>{
+public class SimpleMessageSearchIndex<Id extends MailboxId> implements MessageSearchIndex<Id> {
 
     private final MessageMapperFactory<Id> factory;
     public SimpleMessageSearchIndex(MessageMapperFactory<Id> factory) {

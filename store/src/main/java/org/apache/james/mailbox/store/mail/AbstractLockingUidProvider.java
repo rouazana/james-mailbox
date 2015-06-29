@@ -23,6 +23,7 @@ import org.apache.james.mailbox.MailboxPathLocker.LockAwareExecution;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.StoreMailboxPath;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 
@@ -33,7 +34,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
  *
  * @param <Id>
  */
-public abstract class AbstractLockingUidProvider<Id> implements UidProvider<Id>{
+public abstract class AbstractLockingUidProvider<Id extends MailboxId> implements UidProvider<Id>{
 
     private final MailboxPathLocker locker;
 

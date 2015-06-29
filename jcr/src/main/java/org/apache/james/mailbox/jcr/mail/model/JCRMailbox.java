@@ -23,6 +23,7 @@ import javax.jcr.RepositoryException;
 
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Text;
+import org.apache.james.mailbox.jcr.JCRId;
 import org.apache.james.mailbox.jcr.JCRImapConstants;
 import org.apache.james.mailbox.jcr.Persistent;
 import org.apache.james.mailbox.model.MailboxACL;
@@ -35,7 +36,7 @@ import org.slf4j.Logger;
 /**
  * JCR implementation of a {@link Mailbox}
  */
-public class JCRMailbox implements Mailbox<String>, JCRImapConstants, Persistent{
+public class JCRMailbox implements Mailbox<JCRId>, JCRImapConstants, Persistent{
 
     private static final String TAB = " ";
 
@@ -202,10 +203,10 @@ public class JCRMailbox implements Mailbox<String>, JCRImapConstants, Persistent
      * (non-Javadoc)
      * @see org.apache.james.mailbox.store.mail.model.Mailbox#getMailboxId()
      */
-    public String getMailboxId() {
+    public JCRId getMailboxId() {
         if (isPersistent()) {
             try {
-                return node.getIdentifier();
+                return JCRId.of(node.getIdentifier());
             } catch (RepositoryException e) {
                 logger.error("Unable to access property " + JcrConstants.JCR_UUID, e);
             }

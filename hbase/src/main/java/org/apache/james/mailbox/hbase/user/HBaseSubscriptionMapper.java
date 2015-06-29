@@ -18,9 +18,14 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.user;
 
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTIONS_TABLE;
+import static org.apache.james.mailbox.hbase.HBaseNames.SUBSCRIPTION_CF;
+import static org.apache.james.mailbox.hbase.HBaseUtils.toPut;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Delete;
@@ -34,9 +39,6 @@ import org.apache.james.mailbox.hbase.HBaseNonTransactionalMapper;
 import org.apache.james.mailbox.store.user.SubscriptionMapper;
 import org.apache.james.mailbox.store.user.model.Subscription;
 import org.apache.james.mailbox.store.user.model.impl.SimpleSubscription;
-
-import static org.apache.james.mailbox.hbase.HBaseUtils.*;
-import static org.apache.james.mailbox.hbase.HBaseNames.*;
 /**
  * HBase implementation of a {@link SubscriptionMapper}. 
  * I don't know if this class is thread-safe!

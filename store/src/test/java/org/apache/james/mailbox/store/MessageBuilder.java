@@ -28,7 +28,7 @@ import org.apache.james.mailbox.store.mail.model.Message;
 
 public class MessageBuilder {
     
-    public long mailboxId = 113;
+    public TestId mailboxId = TestId.of(113);
     public long uid = 776;
     public Date internalDate = new Date();
     public int size = 8867;
@@ -37,8 +37,8 @@ public class MessageBuilder {
     public final Map<String, String> headers = new HashMap<String, String>();
     public int lineNumber = 0;
     
-    public Message<Long> build() throws Exception {
-        Message<Long> result = new SimpleMailboxMembership(mailboxId, uid, -1,  internalDate, size, flags, body, headers);
+    public Message<TestId> build() throws Exception {
+        Message<TestId> result = new SimpleMailboxMembership(mailboxId, uid, -1,  internalDate, size, flags, body, headers);
         return result;
     }
     
@@ -48,7 +48,7 @@ public class MessageBuilder {
 
     public void setKey(int mailboxId, int uid) {
         this.uid = uid;
-        this.mailboxId = mailboxId;
+        this.mailboxId = TestId.of(mailboxId);
     }
     
     public void setFlags(boolean seen, boolean flagged, boolean answered,

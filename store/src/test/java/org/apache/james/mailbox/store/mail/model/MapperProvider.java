@@ -23,7 +23,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 
-public interface MapperProvider<Id> {
+public interface MapperProvider<Id extends MailboxId> {
     MailboxMapper<Id> createMailboxMapper() throws MailboxException;
 
     MessageMapper<Id> createMessageMapper() throws MailboxException;

@@ -57,6 +57,7 @@ import org.apache.james.mailbox.model.SearchQuery.NumericOperator;
 import org.apache.james.mailbox.model.SearchQuery.NumericRange;
 import org.apache.james.mailbox.model.SearchQuery.UidCriterion;
 import org.apache.james.mailbox.store.mail.MessageMapperFactory;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.search.ListeningMessageSearchIndex;
@@ -114,7 +115,7 @@ import org.apache.lucene.util.Version;
 
  * @param <Id>
  */
-public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id>{
+public class LuceneMessageSearchIndex<Id extends MailboxId> extends ListeningMessageSearchIndex<Id> {
     private final static Date MAX_DATE;
     private final static Date MIN_DATE;
     
@@ -408,7 +409,7 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
         try {
             searcher = new IndexSearcher(IndexReader.open(writer, true));
             BooleanQuery query = new BooleanQuery();
-            query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().toString())), BooleanClause.Occur.MUST);
+            query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().serialize())), BooleanClause.Occur.MUST);
             // Not return flags documents
             query.add(new PrefixQuery(new Term(FLAGS_FIELD, "")), BooleanClause.Occur.MUST_NOT);
             List<Criterion> crits = searchQuery.getCriterias();
@@ -449,11 +450,11 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
     private Document createMessageDocument(final MailboxSession session, final Message<?> membership) throws MailboxException{
         final Document doc = new Document();
         // TODO: Better handling
-        doc.add(new Field(MAILBOX_ID_FIELD, membership.getMailboxId().toString().toUpperCase(Locale.ENGLISH), Store.YES, Index.NOT_ANALYZED));
+        doc.add(new Field(MAILBOX_ID_FIELD, membership.getMailboxId().serialize().toUpperCase(Locale.ENGLISH), Store.YES, Index.NOT_ANALYZED));
         doc.add(new NumericField(UID_FIELD,Store.YES, true).setLongValue(membership.getUid()));
         
         // create an unqiue key for the document which can be used later on updates to find the document
-        doc.add(new Field(ID_FIELD, membership.getMailboxId().toString().toUpperCase(Locale.ENGLISH) +"-" + Long.toString(membership.getUid()), Store.YES, Index.NOT_ANALYZED));
+        doc.add(new Field(ID_FIELD, membership.getMailboxId().serialize().toUpperCase(Locale.ENGLISH) +"-" + Long.toString(membership.getUid()), Store.YES, Index.NOT_ANALYZED));
 
         doc.add(new Field(INTERNAL_DATE_FIELD_YEAR_RESOLUTION, DateTools.dateToString(membership.getInternalDate(), DateTools.Resolution.YEAR), Store.NO, Index.NOT_ANALYZED));
         doc.add(new Field(INTERNAL_DATE_FIELD_MONTH_RESOLUTION, DateTools.dateToString(membership.getInternalDate(), DateTools.Resolution.MONTH), Store.NO, Index.NOT_ANALYZED));
@@ -892,7 +893,7 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
             
             query.add(bQuery, BooleanClause.Occur.MUST);
         }
-        query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().toString())), BooleanClause.Occur.MUST);
+        query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().serialize())), BooleanClause.Occur.MUST);
         
         
         IndexSearcher searcher = null;
@@ -1128,7 +1129,7 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
             for (int i = 0; i < crits.size(); i++) {
                 conQuery.add(createQuery(crits.get(i), mailbox, recentUids), BooleanClause.Occur.SHOULD);
             }
-            nor.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().toString())), BooleanClause.Occur.MUST);
+            nor.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().serialize())), BooleanClause.Occur.MUST);
 
             nor.add(conQuery, BooleanClause.Occur.MUST_NOT);
             return nor;
@@ -1205,7 +1206,7 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
         try {
             IndexSearcher searcher = new IndexSearcher(IndexReader.open(writer, true));
             BooleanQuery query = new BooleanQuery();
-            query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().toString())), BooleanClause.Occur.MUST);
+            query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().serialize())), BooleanClause.Occur.MUST);
             query.add(createQuery(range), BooleanClause.Occur.MUST);
             query.add( new PrefixQuery(new Term(FLAGS_FIELD, "")), BooleanClause.Occur.MUST);
 
@@ -1237,8 +1238,8 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
      */
     private Document createFlagsDocument(Message<?> message) {
         Document doc = new Document();
-        doc.add(new Field(ID_FIELD, "flags-" + message.getMailboxId().toString() +"-" + Long.toString(message.getUid()), Store.YES, Index.NOT_ANALYZED));
-        doc.add(new Field(MAILBOX_ID_FIELD, message.getMailboxId().toString(), Store.YES, Index.NOT_ANALYZED));
+        doc.add(new Field(ID_FIELD, "flags-" + message.getMailboxId().serialize() +"-" + Long.toString(message.getUid()), Store.YES, Index.NOT_ANALYZED));
+        doc.add(new Field(MAILBOX_ID_FIELD, message.getMailboxId().serialize(), Store.YES, Index.NOT_ANALYZED));
         doc.add(new NumericField(UID_FIELD,Store.YES, true).setLongValue(message.getUid()));
         
         indexFlags(doc, message.createFlags());
@@ -1286,7 +1287,7 @@ public class LuceneMessageSearchIndex<Id> extends ListeningMessageSearchIndex<Id
      */
     public void delete(MailboxSession session, Mailbox<Id> mailbox, MessageRange range) throws MailboxException {
         BooleanQuery query = new BooleanQuery();
-        query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().toString())), BooleanClause.Occur.MUST);
+        query.add(new TermQuery(new Term(MAILBOX_ID_FIELD, mailbox.getMailboxId().serialize())), BooleanClause.Occur.MUST);
         query.add(createQuery(range), BooleanClause.Occur.MUST);
         
         try {

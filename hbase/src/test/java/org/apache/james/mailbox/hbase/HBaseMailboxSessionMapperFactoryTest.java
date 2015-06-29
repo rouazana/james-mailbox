@@ -19,7 +19,6 @@
 package org.apache.james.mailbox.hbase;
 
 import java.io.IOException;
-import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.james.mailbox.MailboxSession;
 import static org.apache.james.mailbox.hbase.HBaseNames.*;
@@ -75,7 +74,7 @@ public class HBaseMailboxSessionMapperFactoryTest {
         LOG.info("createMessageMapper");
         MailboxSession session = null;
         HBaseMailboxSessionMapperFactory instance = new HBaseMailboxSessionMapperFactory(conf, null, null);
-        MessageMapper<UUID> messageMapper = instance.createMessageMapper(session);
+        MessageMapper<HBaseId> messageMapper = instance.createMessageMapper(session);
         assertNotNull(messageMapper);
         assertTrue(messageMapper instanceof MessageMapper);
     }
@@ -89,7 +88,7 @@ public class HBaseMailboxSessionMapperFactoryTest {
         LOG.info("createMailboxMapper");
         MailboxSession session = null;
         HBaseMailboxSessionMapperFactory instance = new HBaseMailboxSessionMapperFactory(conf, null, null);
-        MailboxMapper<UUID> mailboxMapper = instance.createMailboxMapper(session);
+        MailboxMapper<HBaseId> mailboxMapper = instance.createMailboxMapper(session);
         assertNotNull(mailboxMapper);
         assertTrue(mailboxMapper instanceof MailboxMapper);
     }
@@ -115,9 +114,9 @@ public class HBaseMailboxSessionMapperFactoryTest {
     @Test
     public void testGetModSeqProvider() {
         LOG.info("getModSeqProvider");
-        ModSeqProvider<UUID> expResult = new HBaseModSeqProvider(conf);
+        ModSeqProvider<HBaseId> expResult = new HBaseModSeqProvider(conf);
         HBaseMailboxSessionMapperFactory instance = new HBaseMailboxSessionMapperFactory(conf, null, expResult);
-        ModSeqProvider<UUID> result = instance.getModSeqProvider();
+        ModSeqProvider<HBaseId> result = instance.getModSeqProvider();
         assertEquals(expResult, result);
     }
 
@@ -127,9 +126,9 @@ public class HBaseMailboxSessionMapperFactoryTest {
     @Test
     public void testGetUidProvider() {
         LOG.info("getUidProvider");
-        UidProvider<UUID> expResult = new HBaseUidProvider(conf);
+        UidProvider<HBaseId> expResult = new HBaseUidProvider(conf);
         HBaseMailboxSessionMapperFactory instance = new HBaseMailboxSessionMapperFactory(conf, expResult, null);
-        UidProvider<UUID> result = instance.getUidProvider();
+        UidProvider<HBaseId> result = instance.getUidProvider();
         assertEquals(expResult, result);
     }
 }

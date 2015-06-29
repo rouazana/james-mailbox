@@ -19,43 +19,49 @@
 
 package org.apache.james.mailbox.cassandra.mail;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
-import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.*;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.FIELDS;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.ID;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.MAILBOX_BASE;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.NAME;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.PATH;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.TABLE_NAME;
+import static org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.UIDVALIDITY;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.StringTokenizer;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.datastax.driver.core.utils.UUIDs;
-import com.google.common.base.Preconditions;
+import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider.TYPE;
-import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable;
+import org.apache.james.mailbox.cassandra.table.CassandraMailboxTable.MailboxBase;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.store.mail.MailboxMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
+import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
-import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 
 /**
  * Data access management for mailbox.
  */
-public class CassandraMailboxMapper implements MailboxMapper<UUID> {
+public class CassandraMailboxMapper implements MailboxMapper<CassandraId> {
 
     public static final String WILDCARD = "%";
     private final Session session;
@@ -69,12 +75,15 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
     }
 
     @Override
-    public void delete(Mailbox<UUID> mailbox) throws MailboxException {
-        session.execute(QueryBuilder.delete().from(TABLE_NAME).where(eq(ID, mailbox.getMailboxId())));
+    public void delete(Mailbox<CassandraId> mailbox) throws MailboxException {
+        session.execute(
+                QueryBuilder.delete()
+                .from(TABLE_NAME)
+                .where(eq(ID, mailbox.getMailboxId().asUuid())));
     }
 
     @Override
-    public Mailbox<UUID> findMailboxByPath(MailboxPath path) throws MailboxException {
+    public Mailbox<CassandraId> findMailboxByPath(MailboxPath path) throws MailboxException {
         ResultSet resultSet = session.execute(select(FIELDS).from(TABLE_NAME).where(eq(PATH, path.toString())));
         if (resultSet.isExhausted()) {
             throw new MailboxNotFoundException(path);
@@ -83,20 +92,20 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
         }
     }
 
-    private SimpleMailbox<UUID> mailbox(Row row) {
-        SimpleMailbox<UUID> mailbox = new SimpleMailbox<>(
+    private SimpleMailbox<CassandraId> mailbox(Row row) {
+        SimpleMailbox<CassandraId> mailbox = new SimpleMailbox<>(
             new MailboxPath(
                 row.getUDTValue(MAILBOX_BASE).getString(MailboxBase.NAMESPACE),
                 row.getUDTValue(MAILBOX_BASE).getString(MailboxBase.USER),
                 row.getString(NAME)),
             row.getLong(UIDVALIDITY));
-        mailbox.setMailboxId(row.getUUID(ID));
+        mailbox.setMailboxId(CassandraId.of(row.getUUID(ID)));
         mailbox.setACL(new CassandraACLMapper(mailbox, session, maxRetry).getACL());
         return mailbox;
     }
 
     @Override
-    public List<Mailbox<UUID>> findMailboxWithPathLike(MailboxPath path) throws MailboxException {
+    public List<Mailbox<CassandraId>> findMailboxWithPathLike(MailboxPath path) throws MailboxException {
         Pattern regex = Pattern.compile(constructEscapedRegexForMailboxNameMatching(path));
         return getMailboxFilteredByNamespaceAndUserStream(path.getNamespace(), path.getUser())
             .filter((row) -> regex.matcher(row.getString(NAME)).matches())
@@ -119,19 +128,19 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
     }
 
     @Override
-    public void save(Mailbox<UUID> mailbox) throws MailboxException {
+    public void save(Mailbox<CassandraId> mailbox) throws MailboxException {
         Preconditions.checkArgument(mailbox instanceof SimpleMailbox);
-        SimpleMailbox<UUID> cassandraMailbox = (SimpleMailbox<UUID>) mailbox;
+        SimpleMailbox<CassandraId> cassandraMailbox = (SimpleMailbox<CassandraId>) mailbox;
         if (cassandraMailbox.getMailboxId() == null) {
-            cassandraMailbox.setMailboxId(UUIDs.timeBased());
+            cassandraMailbox.setMailboxId(CassandraId.timeBased());
         }
         upsertMailbox(cassandraMailbox);
     }
 
-    private void upsertMailbox(SimpleMailbox<UUID> mailbox) throws MailboxException {
+    private void upsertMailbox(SimpleMailbox<CassandraId> mailbox) throws MailboxException {
         session.execute(
             insertInto(TABLE_NAME)
-                .value(ID, mailbox.getMailboxId())
+                .value(ID, mailbox.getMailboxId().asUuid())
                 .value(NAME, mailbox.getName())
                 .value(UIDVALIDITY, mailbox.getUidValidity())
                 .value(MAILBOX_BASE, typesProvider.getDefinedUserType(TYPE.MailboxBase)
@@ -152,7 +161,7 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
     }
 
     @Override
-    public boolean hasChildren(Mailbox<UUID> mailbox, char delimiter) {
+    public boolean hasChildren(Mailbox<CassandraId> mailbox, char delimiter) {
         final Pattern regex = Pattern.compile(Pattern.quote( mailbox.getName() + String.valueOf(delimiter)) + ".*");
         return getMailboxFilteredByNamespaceAndUserStream(mailbox.getNamespace(), mailbox.getUser())
             .anyMatch((row) -> regex.matcher(row.getString(NAME)).matches());
@@ -171,8 +180,8 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
     }
 
     @Override
-    public List<Mailbox<UUID>> list() throws MailboxException {
-        Builder<Mailbox<UUID>> result = ImmutableList.<Mailbox<UUID>> builder();
+    public List<Mailbox<CassandraId>> list() throws MailboxException {
+        Builder<Mailbox<CassandraId>> result = ImmutableList.<Mailbox<CassandraId>> builder();
         for (Row row : session.execute(select(FIELDS).from(TABLE_NAME))) {
             result.add(mailbox(row));
         }
@@ -185,7 +194,7 @@ public class CassandraMailboxMapper implements MailboxMapper<UUID> {
     }
 
     @Override
-    public void updateACL(Mailbox<UUID> mailbox, MailboxACL.MailboxACLCommand mailboxACLCommand) throws MailboxException {
+    public void updateACL(Mailbox<CassandraId> mailbox, MailboxACL.MailboxACLCommand mailboxACLCommand) throws MailboxException {
         new CassandraACLMapper(mailbox, session, maxRetry).updateACL(mailboxACLCommand);
     }
 

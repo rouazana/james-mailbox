@@ -29,6 +29,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.james.mailbox.store.transaction.TransactionalMapper;
@@ -39,7 +40,7 @@ import org.apache.james.mailbox.store.transaction.TransactionalMapper;
  *
  * @param <Id>
  */
-public abstract class AbstractMessageMapper<Id> extends TransactionalMapper implements MessageMapper<Id>{
+public abstract class AbstractMessageMapper<Id extends MailboxId> extends TransactionalMapper implements MessageMapper<Id> {
     protected final MailboxSession mailboxSession;
     private final UidProvider<Id> uidProvider;
     private final ModSeqProvider<Id> modSeqProvider;

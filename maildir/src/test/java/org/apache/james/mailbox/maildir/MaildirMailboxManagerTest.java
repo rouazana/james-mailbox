@@ -118,7 +118,7 @@ public class MaildirMailboxManagerTest extends AbstractMailboxManagerTest {
             MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
             GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-            StoreMailboxManager<Integer> manager = new StoreMailboxManager<Integer>(mf, null, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
+            StoreMailboxManager<MaildirId> manager = new StoreMailboxManager<MaildirId>(mf, null, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
             manager.init();
             setMailboxManager(manager);
             try {
@@ -151,7 +151,7 @@ public class MaildirMailboxManagerTest extends AbstractMailboxManagerTest {
             MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
             GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-            StoreMailboxManager<Integer> manager = new StoreMailboxManager<Integer>(mf, null, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
+            StoreMailboxManager<MaildirId> manager = new StoreMailboxManager<MaildirId>(mf, null, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
             manager.init();
             setMailboxManager(manager);
             try {
@@ -183,7 +183,7 @@ public class MaildirMailboxManagerTest extends AbstractMailboxManagerTest {
         MailboxACLResolver aclResolver = new UnionMailboxACLResolver();
         GroupMembershipResolver groupMembershipResolver = new SimpleGroupMembershipResolver();
 
-        StoreMailboxManager<Integer> manager = new StoreMailboxManager<Integer>(mf, null, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
+        StoreMailboxManager<MaildirId> manager = new StoreMailboxManager<MaildirId>(mf, null, new JVMMailboxPathLocker(), aclResolver, groupMembershipResolver);
         manager.init();
         setMailboxManager(manager);
         try {

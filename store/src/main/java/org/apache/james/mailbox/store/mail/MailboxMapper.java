@@ -24,6 +24,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
 import org.apache.james.mailbox.model.MailboxACL;
 import org.apache.james.mailbox.model.MailboxPath;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.transaction.Mapper;
 
@@ -32,7 +33,7 @@ import org.apache.james.mailbox.store.transaction.Mapper;
  * to the end of the request.
  *
  */
-public interface MailboxMapper<Id> extends Mapper {
+public interface MailboxMapper<Id extends MailboxId> extends Mapper {
     
     /**
      * Save the give {@link Mailbox} to the underlying storage

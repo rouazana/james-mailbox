@@ -25,11 +25,12 @@ import javax.persistence.PersistenceException;
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
+import org.apache.james.mailbox.jpa.JPAId;
 import org.apache.james.mailbox.jpa.mail.model.JPAMailbox;
 import org.apache.james.mailbox.store.mail.AbstractLockingModSeqProvider;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
-public class JPAModSeqProvider extends AbstractLockingModSeqProvider<Long>{
+public class JPAModSeqProvider extends AbstractLockingModSeqProvider<JPAId> {
 
     private EntityManagerFactory factory;
 
@@ -39,12 +40,12 @@ public class JPAModSeqProvider extends AbstractLockingModSeqProvider<Long>{
     }
 
     @Override
-    public long highestModSeq(MailboxSession session, Mailbox<Long> mailbox) throws MailboxException {
+    public long highestModSeq(MailboxSession session, Mailbox<JPAId> mailbox) throws MailboxException {
         EntityManager manager = null;
         try {
             manager = factory.createEntityManager();
             manager.getTransaction().begin();
-            long highest = (Long) manager.createNamedQuery("findHighestModSeq").setParameter("idParam", mailbox.getMailboxId()).getSingleResult();
+            long highest = (Long) manager.createNamedQuery("findHighestModSeq").setParameter("idParam", mailbox.getMailboxId().getRawId()).getSingleResult();
             manager.getTransaction().commit();
             return highest;
         } catch (PersistenceException e) {
@@ -60,12 +61,12 @@ public class JPAModSeqProvider extends AbstractLockingModSeqProvider<Long>{
     }
 
     @Override
-    protected long lockedNextModSeq(MailboxSession session, Mailbox<Long> mailbox) throws MailboxException {
+    protected long lockedNextModSeq(MailboxSession session, Mailbox<JPAId> mailbox) throws MailboxException {
         EntityManager manager = null;
         try {
             manager = factory.createEntityManager();
             manager.getTransaction().begin();
-            JPAMailbox m = manager.find(JPAMailbox.class, mailbox.getMailboxId());
+            JPAMailbox m = manager.find(JPAMailbox.class, mailbox.getMailboxId().getRawId());
             long modSeq = m.consumeModSeq();
             manager.persist(m);
             manager.getTransaction().commit();

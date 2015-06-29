@@ -47,7 +47,7 @@ import org.junit.runner.RunWith;
 @RunWith(JMock.class)
 public class MailboxEventDispatcherFlagsTest {
 
-    MailboxEventDispatcher<Long> dispatcher;
+    MailboxEventDispatcher<TestId> dispatcher;
 
     EventCollector collector;
 
@@ -65,11 +65,11 @@ public class MailboxEventDispatcherFlagsTest {
 
     private Mockery mockery = new JUnit4Mockery();
 
-    private Mailbox<Long> mailbox = new Mailbox<Long>() {
+    private Mailbox<TestId> mailbox = new Mailbox<TestId>() {
 
         @Override
-        public Long getMailboxId() {
-            return 1L;
+        public TestId getMailboxId() {
+            return TestId.of(1L);
         }
 
         @Override
@@ -120,7 +120,7 @@ public class MailboxEventDispatcherFlagsTest {
     public void setUp() throws Exception {
         collector = new EventCollector();
 
-        dispatcher = new MailboxEventDispatcher<Long>(collector);
+        dispatcher = new MailboxEventDispatcher<TestId>(collector);
         result = mockery.mock(MessageResult.class);
         mockery.checking(new Expectations() {{
             allowing(result).getUid();will(returnValue(23L));

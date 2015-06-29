@@ -42,9 +42,9 @@ public class MessageResultImplTest {
     public void initNames() throws Exception
     {
         Date dateAB = new Date();
-        Message<Long> msgA = buildMessage(100, dateAB);
-        Message<Long> msgB = buildMessage(100, dateAB);
-        Message<Long> msgC = buildMessage(200, new Date());
+        Message<TestId> msgA = buildMessage(100, dateAB);
+        Message<TestId> msgB = buildMessage(100, dateAB);
+        Message<TestId> msgC = buildMessage(200, new Date());
         
         msgResultA = new MessageResultImpl(msgA);
         msgResultACopy = new MessageResultImpl(msgA);
@@ -53,7 +53,7 @@ public class MessageResultImplTest {
     }
 
 
-    private Message<Long> buildMessage(int uid, Date aDate) throws Exception {
+    private Message<TestId> buildMessage(int uid, Date aDate) throws Exception {
         MessageBuilder builder = new MessageBuilder();
         builder.uid = uid;
         builder.internalDate = aDate;

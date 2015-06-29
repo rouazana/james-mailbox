@@ -42,6 +42,7 @@ import org.apache.james.mailbox.model.SearchQuery.DateResolution;
 import org.apache.james.mailbox.model.SearchQuery.Sort.SortClause;
 import org.apache.james.mailbox.store.MessageBuilder;
 import org.apache.james.mailbox.store.SimpleMailboxMembership;
+import org.apache.james.mailbox.store.TestId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 import org.apache.lucene.store.RAMDirectory;
@@ -50,8 +51,8 @@ import org.junit.Test;
 
 public class LuceneMessageSearchIndexTest {
 
-    private LuceneMessageSearchIndex<Long> index;
-
+	private LuceneMessageSearchIndex<TestId> index;
+    
     private SimpleMailbox mailbox = new SimpleMailbox(0);
     private SimpleMailbox mailbox2 = new SimpleMailbox(1);
     private SimpleMailbox mailbox3 = new SimpleMailbox(2);
@@ -69,7 +70,7 @@ public class LuceneMessageSearchIndexTest {
             + "It has " + RHUBARD + ".\r\n" + "It has " + CUSTARD + ".\r\n"
             + "It needs naught else.\r\n";
 
-    Message<Long> row;
+    Message<TestId> row;
 
     protected boolean useLenient() {
         return true;
@@ -77,7 +78,7 @@ public class LuceneMessageSearchIndexTest {
     
     @Before
     public void setUp() throws Exception {
-        index = new LuceneMessageSearchIndex<Long>(null, new RAMDirectory(), true, useLenient());
+        index = new LuceneMessageSearchIndex<TestId>(null, new RAMDirectory(), true, useLenient());
         index.setEnableSuffixMatch(true);
         Map<String, String> headersSubject = new HashMap<String, String>();
         headersSubject.put("Subject", "test (fwd)");
@@ -704,14 +705,14 @@ public class LuceneMessageSearchIndexTest {
         assertFalse(it4.hasNext());
     }
     
-    private final class SimpleMailbox implements Mailbox<Long> {
-        private long id;
+    private final class SimpleMailbox implements Mailbox<TestId> {
+        private TestId id;
 
         public SimpleMailbox(long id) {
-            this.id = id;
+        	this.id = TestId.of(id);
         }
 
-        public Long getMailboxId() {
+        public TestId getMailboxId() {
             return id;
         }
 
@@ -732,7 +733,7 @@ public class LuceneMessageSearchIndexTest {
         }
 
         public String getName() {
-            return Long.toString(id);
+            return id.serialize();
         }
 
         public void setName(String name) {

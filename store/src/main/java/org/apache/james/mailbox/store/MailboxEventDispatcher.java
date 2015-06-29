@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxListener.MailboxAdded;
 import org.apache.james.mailbox.MailboxListener.MailboxDeletion;
@@ -30,12 +31,13 @@ import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
 /**
  * Helper class to dispatch {@link org.apache.james.mailbox.MailboxListener.Event}'s to registerend MailboxListener
  */
-public class MailboxEventDispatcher<Id> {
+public class MailboxEventDispatcher<Id extends MailboxId> {
 
     
     private final MailboxListener listener;

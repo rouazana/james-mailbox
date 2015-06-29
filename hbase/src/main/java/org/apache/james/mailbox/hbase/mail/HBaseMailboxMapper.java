@@ -28,13 +28,11 @@ import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_META_CF;
 import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGES_TABLE;
 import static org.apache.james.mailbox.hbase.HBaseNames.MESSAGE_INTERNALDATE;
 import static org.apache.james.mailbox.hbase.HBaseUtils.mailboxFromResult;
-import static org.apache.james.mailbox.hbase.HBaseUtils.mailboxRowKey;
 import static org.apache.james.mailbox.hbase.HBaseUtils.toPut;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Delete;
@@ -52,6 +50,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.exception.MailboxNotFoundException;
+import org.apache.james.mailbox.hbase.HBaseId;
 import org.apache.james.mailbox.hbase.HBaseNonTransactionalMapper;
 import org.apache.james.mailbox.hbase.mail.model.HBaseMailbox;
 import org.apache.james.mailbox.model.MailboxACL;
@@ -63,7 +62,7 @@ import org.apache.james.mailbox.store.mail.model.Mailbox;
  * Data access management for mailbox.
  *
  */
-public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements MailboxMapper<UUID> {
+public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements MailboxMapper<HBaseId> {
 
     /**
      * Link to the HBase Configuration object and specific mailbox names
@@ -75,7 +74,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
     
     @Override
-    public Mailbox<UUID> findMailboxByPath(MailboxPath mailboxPath) throws MailboxException, MailboxNotFoundException {
+    public Mailbox<HBaseId> findMailboxByPath(MailboxPath mailboxPath) throws MailboxException, MailboxNotFoundException {
         HTable mailboxes = null;
         ResultScanner scanner = null;
         try {
@@ -126,7 +125,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
     
     @Override
-    public List<Mailbox<UUID>> findMailboxWithPathLike(MailboxPath mailboxPath) throws MailboxException {
+    public List<Mailbox<HBaseId>> findMailboxWithPathLike(MailboxPath mailboxPath) throws MailboxException {
         HTable mailboxes = null;
         ResultScanner scanner = null;
         try {
@@ -167,7 +166,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             scan.setFilter(filters);
             scanner = mailboxes.getScanner(scan);
             
-            List<Mailbox<UUID>> mailboxList = new ArrayList<Mailbox<UUID>>();
+            List<Mailbox<HBaseId>> mailboxList = new ArrayList<Mailbox<HBaseId>>();
             
             for (Result result : scanner) {
                 mailboxList.add(mailboxFromResult(result));
@@ -188,7 +187,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
     
     @Override
-    public List<Mailbox<UUID>> list() throws MailboxException {
+    public List<Mailbox<HBaseId>> list() throws MailboxException {
         HTable mailboxes = null;
         ResultScanner scanner = null;
         //TODO: possible performance isssues, we are creating an object from all the rows in HBase mailbox table
@@ -199,11 +198,11 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
             scan.setCaching(mailboxes.getScannerCaching() * 2);
             scan.setMaxVersions(1);
             scanner = mailboxes.getScanner(scan);
-            List<Mailbox<UUID>> mailboxList = new ArrayList<Mailbox<UUID>>();
+            List<Mailbox<HBaseId>> mailboxList = new ArrayList<Mailbox<HBaseId>>();
             
             Result result;
             while ((result = scanner.next()) != null) {
-                Mailbox<UUID> mlbx = mailboxFromResult(result);
+                Mailbox<HBaseId> mlbx = mailboxFromResult(result);
                 mailboxList.add(mlbx);
             }
             return mailboxList;
@@ -226,7 +225,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
     
     @Override
-    public void save(Mailbox<UUID> mlbx) throws MailboxException {
+    public void save(Mailbox<HBaseId> mlbx) throws MailboxException {
         //TODO: maybe switch to checkAndPut for transactions
         HTable mailboxes = null;
         try {
@@ -250,13 +249,13 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
     
     @Override
-    public void delete(Mailbox<UUID> mlbx) throws MailboxException {
+    public void delete(Mailbox<HBaseId> mlbx) throws MailboxException {
         //TODO: maybe switch to checkAndDelete
         HTable mailboxes = null;
         try {
             mailboxes = new HTable(conf, MAILBOXES_TABLE);
             //TODO: delete all maessages from this mailbox
-            Delete delete = new Delete(mailboxRowKey(mlbx.getMailboxId()));
+            Delete delete = new Delete(mlbx.getMailboxId().toBytes());
             mailboxes.delete(delete);
         } catch (IOException ex) {
             throw new MailboxException("IOException in HBase cluster during delete()", ex);
@@ -272,7 +271,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
     
     @Override
-    public boolean hasChildren(final Mailbox<UUID> mailbox, final char c) throws MailboxException, MailboxNotFoundException {
+    public boolean hasChildren(final Mailbox<HBaseId> mailbox, final char c) throws MailboxException, MailboxNotFoundException {
         HTable mailboxes = null;
         ResultScanner scanner = null;
         try {
@@ -395,7 +394,7 @@ public class HBaseMailboxMapper extends HBaseNonTransactionalMapper implements M
     }
 
     @Override
-    public void updateACL(Mailbox<UUID> mailbox, MailboxACL.MailboxACLCommand mailboxACLCommand) throws MailboxException {
+    public void updateACL(Mailbox<HBaseId> mailbox, MailboxACL.MailboxACLCommand mailboxACLCommand) throws MailboxException {
         mailbox.setACL(mailbox.getACL().apply(mailboxACLCommand));
     }
 }

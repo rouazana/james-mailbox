@@ -39,7 +39,7 @@ import org.apache.james.mailbox.store.transaction.TransactionalMapper;
  * HBase implementation of {@link StoreMailboxManager}
  * 
  */
-public class HBaseMailboxManager extends StoreMailboxManager<UUID> {
+public class HBaseMailboxManager extends StoreMailboxManager<HBaseId> {
 
     public HBaseMailboxManager(HBaseMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, MailboxPathLocker locker, MailboxACLResolver aclResolver, GroupMembershipResolver groupMembershipResolver) {
         super(mapperFactory, authenticator, locker, aclResolver, groupMembershipResolver);
@@ -50,7 +50,7 @@ public class HBaseMailboxManager extends StoreMailboxManager<UUID> {
     }
 
     @Override
-    protected Mailbox<UUID> doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
+    protected Mailbox<HBaseId> doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
         return new HBaseMailbox(mailboxPath, randomUidValidity());
     }
 
@@ -81,8 +81,8 @@ public class HBaseMailboxManager extends StoreMailboxManager<UUID> {
     }
 
     @Override
-    protected StoreMessageManager<UUID> createMessageManager(Mailbox<UUID> mailboxRow, MailboxSession session) throws MailboxException {
-        StoreMessageManager<UUID> result = new HBaseMessageManager(getMapperFactory(), getMessageSearchIndex(), getEventDispatcher(), getLocker(), mailboxRow, getAclResolver(), getGroupMembershipResolver());
+    protected StoreMessageManager<HBaseId> createMessageManager(Mailbox<HBaseId> mailboxRow, MailboxSession session) throws MailboxException {
+        StoreMessageManager<HBaseId> result = new HBaseMessageManager(getMapperFactory(), getMessageSearchIndex(), getEventDispatcher(), getLocker(), mailboxRow, getAclResolver(), getGroupMembershipResolver());
         return result;
     }
 }

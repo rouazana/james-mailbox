@@ -18,9 +18,12 @@
  ****************************************************************/
 package org.apache.james.mailbox.hbase.mail.model;
 
-import java.util.UUID;
-import org.apache.james.mailbox.model.MailboxPath;
 import static org.junit.Assert.assertEquals;
+
+import java.util.UUID;
+
+import org.apache.james.mailbox.hbase.HBaseId;
+import org.apache.james.mailbox.model.MailboxPath;
 import org.junit.Test;
 
 /**
@@ -37,7 +40,7 @@ public class HBaseMailboxTest {
         final MailboxPath mailboxPath = new MailboxPath("gsoc", "ieugen", "INBOX");
         final HBaseMailbox instance = new HBaseMailbox(mailboxPath, 10);
 
-        UUID expResult = UUID.randomUUID();
+        HBaseId expResult = HBaseId.of(UUID.randomUUID());
         instance.setMailboxId(expResult);
         assertEquals(expResult, instance.getMailboxId());
 
@@ -114,8 +117,8 @@ public class HBaseMailboxTest {
         // from the hashCode()
         final int PRIME = 31;
         int result = 1;
-        UUID mailboxId = instance.getMailboxId();
-        int expResult = PRIME * result + (int) (mailboxId.getMostSignificantBits() ^ (mailboxId.getMostSignificantBits() >>> 32));
+        HBaseId mailboxId = instance.getMailboxId();
+        int expResult = PRIME * result + (int) (mailboxId.getRawId().getMostSignificantBits() ^ (mailboxId.getRawId().getMostSignificantBits() >>> 32));
 
         assertEquals(expResult, instance.hashCode());
     }

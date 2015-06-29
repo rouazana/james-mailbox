@@ -47,7 +47,7 @@ public class SearchUtilsRFC822Test {
             + "It has " + RHUBARD + ".\r\n" + "It has " + CUSTARD + ".\r\n"
             + "It needs naught else.\r\n";
 
-    Message<Long> row;
+    Message<TestId> row;
 
     private Logger log = LoggerFactory.getLogger(getClass());
     Collection<Long> recent;

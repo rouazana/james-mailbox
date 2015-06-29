@@ -19,8 +19,6 @@
 
 package org.apache.james.mailbox.cassandra;
 
-import java.util.UUID;
-
 import org.apache.james.mailbox.MailboxPathLocker;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.acl.SimpleGroupMembershipResolver;
@@ -37,7 +35,7 @@ import org.apache.james.mailbox.store.mail.model.impl.SimpleMailbox;
 /**
  * Cassandra implementation of {@link StoreMailboxManager}
  */
-public class CassandraMailboxManager extends StoreMailboxManager<UUID> {
+public class CassandraMailboxManager extends StoreMailboxManager<CassandraId> {
     private MailboxPathLocker locker;
 
     public CassandraMailboxManager(CassandraMailboxSessionMapperFactory mapperFactory, Authenticator authenticator, final MailboxPathLocker locker) {
@@ -46,14 +44,14 @@ public class CassandraMailboxManager extends StoreMailboxManager<UUID> {
     }
 
     @Override
-    protected Mailbox<UUID> doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
-        SimpleMailbox<UUID> cassandraMailbox = new SimpleMailbox<>(mailboxPath, randomUidValidity());
+    protected Mailbox<CassandraId> doCreateMailbox(MailboxPath mailboxPath, MailboxSession session) throws MailboxException {
+        SimpleMailbox<CassandraId> cassandraMailbox = new SimpleMailbox<>(mailboxPath, randomUidValidity());
         cassandraMailbox.setACL(SimpleMailboxACL.EMPTY);
         return cassandraMailbox;
     }
 
     @Override
-    protected StoreMessageManager<UUID> createMessageManager(Mailbox<UUID> mailboxRow, MailboxSession session) throws MailboxException {
+    protected StoreMessageManager<CassandraId> createMessageManager(Mailbox<CassandraId> mailboxRow, MailboxSession session) throws MailboxException {
         return new CassandraMessageManager(getMapperFactory(), getMessageSearchIndex(), getEventDispatcher(), this.locker, mailboxRow);
     }
 
