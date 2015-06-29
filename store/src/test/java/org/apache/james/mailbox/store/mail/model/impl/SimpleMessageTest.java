@@ -20,6 +20,7 @@ package org.apache.james.mailbox.store.mail.model.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,14 +32,22 @@ import javax.mail.util.SharedByteArrayInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.store.TestId;
+import org.apache.james.mailbox.FlagsBuilder;
+import org.junit.Before;
 import org.junit.Test;
 
 public class SimpleMessageTest {
     private static final Charset MESSAGE_CHARSET = Charset.forName("UTF-8");
     private static final String MESSAGE_CONTENT = "Simple message content without special characters";
     private static final String MESSAGE_CONTENT_SPECIAL_CHAR = "Simple message content with special characters: \"'(§è!çà$*`";
-    private static final SimpleMessage<TestId> MESSAGE = buildMessage(MESSAGE_CONTENT);
-    private static final SimpleMessage<TestId> MESSAGE_SPECIAL_CHAR = buildMessage(MESSAGE_CONTENT_SPECIAL_CHAR);
+    private SimpleMessage<TestId> MESSAGE;
+    private SimpleMessage<TestId> MESSAGE_SPECIAL_CHAR;
+
+    @Before
+    public void setUp() {
+        MESSAGE = buildMessage(MESSAGE_CONTENT);
+        MESSAGE_SPECIAL_CHAR = buildMessage(MESSAGE_CONTENT_SPECIAL_CHAR);
+    }
 
     @Test
     public void testSize() {
@@ -75,8 +84,14 @@ public class SimpleMessageTest {
                 new String(IOUtils.toByteArray(MESSAGE_SPECIAL_CHAR.getFullContent()),MESSAGE_CHARSET));
     }
 
-    private static SimpleMessage<TestId> buildMessage(String content) {
-        return new SimpleMessage<TestId>(Calendar.getInstance().getTime(),
+    @Test
+    public void simpleMessageShouldReturnTheSameUserFlagsThatThoseProvided() {
+        MESSAGE.setFlags(new FlagsBuilder().add(Flags.Flag.DELETED, Flags.Flag.SEEN).add("mozzarela", "parmesan", "coppa", "limonchello").build());
+        assertThat(MESSAGE.createUserFlags()).containsOnly("mozzarela", "parmesan", "coppa", "limonchello");
+    }
+
+        private static SimpleMessage<TestId> buildMessage(String content) {
+            return new SimpleMessage<TestId>(Calendar.getInstance().getTime(),
                 content.length(), 0, new SharedByteArrayInputStream(
                         content.getBytes(MESSAGE_CHARSET)), new Flags(),
                 new PropertyBuilder(), TestId.of(1L));

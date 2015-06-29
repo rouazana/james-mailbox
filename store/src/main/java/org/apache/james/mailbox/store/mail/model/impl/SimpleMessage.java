@@ -48,6 +48,7 @@ public class SimpleMessage<Id extends MailboxId> extends AbstractMessage<Id> {
     private boolean flagged;
     private boolean recent;
     private boolean seen;
+    private String[] userFlags;
     private Date internalDate;
     private final String subType;
     private List<Property> properties;
@@ -71,6 +72,7 @@ public class SimpleMessage<Id extends MailboxId> extends AbstractMessage<Id> {
         this.properties = propertyBuilder.toProperties();
         this.mediaType = propertyBuilder.getMediaType();
         this.subType = propertyBuilder.getSubType();
+        this.userFlags = flags.getUserFlags();
     }
 
     public SimpleMessage(Mailbox<Id> mailbox, Message<Id> original)
@@ -98,6 +100,11 @@ public class SimpleMessage<Id extends MailboxId> extends AbstractMessage<Id> {
         for (final Property property : properties) {
             this.properties.add(new SimpleProperty(property));
         }
+    }
+
+    @Override
+    protected String[] createUserFlags() {
+        return userFlags.clone();
     }
 
     public Date getInternalDate() {
@@ -143,6 +150,7 @@ public class SimpleMessage<Id extends MailboxId> extends AbstractMessage<Id> {
         flagged = flags.contains(Flags.Flag.FLAGGED);
         recent = flags.contains(Flags.Flag.RECENT);
         seen = flags.contains(Flags.Flag.SEEN);
+        userFlags = flags.getUserFlags();
     }
 
     public InputStream getBodyContent() throws IOException {
