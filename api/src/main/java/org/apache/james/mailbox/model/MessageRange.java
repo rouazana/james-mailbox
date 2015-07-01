@@ -102,8 +102,7 @@ public class MessageRange implements Iterable<Long>{
      * @return not null
      */
     public static MessageRange from(long from) {
-        final MessageRange result = new MessageRange(Type.FROM, from, NOT_A_UID);
-        return result;
+        return new MessageRange(Type.FROM, from, MAX_UID);
     }
 
 
