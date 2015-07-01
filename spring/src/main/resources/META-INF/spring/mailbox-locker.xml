@@ -25,4 +25,6 @@
 
     <bean id="jvm-locker" class="org.apache.james.mailbox.store.JVMMailboxPathLocker"/>
 
+    <bean id="no-locker" class="org.apache.james.mailbox.store.NoMailboxPathLocker"/>
+
 </beans>

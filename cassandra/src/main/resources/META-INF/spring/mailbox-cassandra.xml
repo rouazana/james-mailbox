@@ -52,7 +52,7 @@
         <constructor-arg index="0" ref="cassandra-session"/>
     </bean>
 
-    <alias name="jvm-locker" alias="cassandra-locker"/>
+    <alias name="no-locker" alias="cassandra-locker"/>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="ignoreUnresolvablePlaceholders" value="true"/>
