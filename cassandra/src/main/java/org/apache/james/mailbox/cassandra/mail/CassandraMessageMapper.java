@@ -56,10 +56,13 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Fla
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
@@ -101,14 +104,9 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select.Where;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.ImmutableSortedSet.Builder;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
 
-/**
- * Cassandra implementation of a {@link MessageMapper}.
- */
 public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     private final Session session;
@@ -200,12 +198,9 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public Iterator<Message<CassandraId>> findInMailbox(Mailbox<CassandraId> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
-        Builder<Message<CassandraId>> result = ImmutableSortedSet.<Message<CassandraId>> naturalOrder();
-        ResultSet rows = session.execute(buildQuery(mailbox, set));
-        for (Row row : rows) {
-            result.add(message(row));
-        }
-        return result.build().iterator();
+        return convertToStream(session.execute(buildQuery(mailbox, set)))
+            .map(this::message)
+            .iterator();
     }
 
     private byte[] getFullContent(Row row) {
@@ -217,13 +212,18 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     private Flags getFlags(Row row) {
-        Flags flags = new Flags();
-        for (String flag : CassandraMessageTable.Flag.ALL) {
-            if (row.getBool(flag)) {
-                flags.add(JAVAX_MAIL_FLAG.get(flag));
-            }
-        }
-        return flags;
+        return Arrays.stream(CassandraMessageTable.Flag.ALL)
+            .filter(row::getBool)
+            .map(JAVAX_MAIL_FLAG::get)
+            .reduce(
+                new Flags(),
+                (flags, flag) -> {
+                    flags.add(flag);
+                    return flags;
+                }, (flags1, flags2) -> {
+                    flags1.add(flags2);
+                    return flags1;
+                });
     }
 
     private PropertyBuilder getPropertyBuilder(Row row) {
@@ -514,5 +514,10 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     public long getLastUid(Mailbox<CassandraId> mailbox) throws MailboxException {
         return uidProvider.lastUid(mailboxSession, mailbox);
     }
+
+    private Stream<Row> convertToStream(ResultSet resultSet) {
+        return StreamSupport.stream(resultSet.spliterator(), true);
+    }
+
 
 }
