@@ -302,13 +302,11 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public Long findFirstUnseenMessageUid(Mailbox<CassandraId> mailbox) throws MailboxException {
-        ResultSet rows = session.execute(selectAll(mailbox).orderBy(asc(IMAP_UID)));
-        for (Row row : rows) {
-            if (!row.getBool(SEEN)) {
-                return row.getLong(IMAP_UID);
-            }
-        }
-        return null;
+        return convertToStream(session.execute(selectAll(mailbox).and((eq(SEEN, false)))))
+            .map((row) -> row.getLong(IMAP_UID))
+            .sorted()
+            .findFirst()
+            .orElse(null);
     }
 
     @Override

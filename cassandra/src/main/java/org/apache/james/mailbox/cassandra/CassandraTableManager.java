@@ -137,7 +137,11 @@ public class CassandraTableManager {
         RecentMessages(SchemaBuilder.createIndex(INDEX_PREFIX + CassandraMessageTable.Flag.RECENT)
             .ifNotExists()
             .onTable(CassandraMessageTable.TABLE_NAME)
-            .andColumn(CassandraMessageTable.Flag.RECENT))
+            .andColumn(CassandraMessageTable.Flag.RECENT)),
+        SeenMessages(SchemaBuilder.createIndex(INDEX_PREFIX + CassandraMessageTable.Flag.SEEN)
+            .ifNotExists()
+            .onTable(CassandraMessageTable.TABLE_NAME)
+            .andColumn(CassandraMessageTable.Flag.SEEN))
         ;
         private SchemaStatement createIndexStatement;
 
