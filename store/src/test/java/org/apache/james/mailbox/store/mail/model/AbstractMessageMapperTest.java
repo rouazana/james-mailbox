@@ -53,6 +53,7 @@ public abstract class AbstractMessageMapperTest<Id extends MailboxId> {
     private static final int LIMIT = 10;
     private static final int BODY_START = 16;
     public static final int UID_VALIDITY = 42;
+    public static final String USER_FLAG = "userFlag";
 
     private MapperProvider<Id> mapperProvider;
     private MessageMapper<Id> messageMapper;
@@ -607,6 +608,28 @@ public abstract class AbstractMessageMapperTest<Id extends MailboxId> {
         MessageMetaData messageMetaData = messageMapper.add(benwaInboxMailbox, messageWithProperties);
         Message<Id> message = messageMapper.findInMailbox(benwaInboxMailbox, MessageRange.one(messageMetaData.getUid()), FetchType.Body, 1).next();
         assertThat(message.getSubType()).isEqualTo(subType);
+    }
+
+    @Test
+    public void userFlagsShouldBeSupported() throws Exception {
+        saveMessages();
+        messageMapper.updateFlags(benwaInboxMailbox, new FlagsUpdateCalculator(new Flags(USER_FLAG), FlagsUpdateMode.ADD), MessageRange.one(message1.getUid()));
+        MessageAssert.assertThat(retrieveMessageFromStorage(message1)).hasFlags(new Flags(USER_FLAG));
+    }
+
+    @Test
+    public void userFlagsUpdateShouldReturnCorrectUpdatedFlags() throws Exception {
+        saveMessages();
+        long modSeq = messageMapper.getHighestModSeq(benwaInboxMailbox);
+        assertThat(messageMapper.updateFlags(benwaInboxMailbox, new FlagsUpdateCalculator(new Flags(USER_FLAG), FlagsUpdateMode.ADD), MessageRange.one(message1.getUid())))
+            .containsOnly(new UpdatedFlags(message1.getUid(), modSeq + 1, new Flags(), new Flags(USER_FLAG)));
+    }
+
+    @Test
+    public void messagesShouldBeSavedWithTheirUserFlags() throws Exception {
+        Message<Id> message = new SimpleMessage<Id>(benwaInboxMailbox, message1);
+        messageMapper.add(benwaInboxMailbox, message);
+        MessageAssert.assertThat(retrieveMessageFromStorage(message)).hasFlags(new Flags(USER_FLAG));
     }
 
     private Map<Long, MessageMetaData> markThenPerformExpunge(MessageRange range) throws MailboxException {

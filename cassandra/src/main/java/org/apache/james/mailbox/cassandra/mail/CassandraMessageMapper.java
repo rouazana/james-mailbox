@@ -46,7 +46,7 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Fla
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.DELETED;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.DRAFT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.FLAGGED;
-import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.JAVAX_MAIL_FLAG;
+import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.USER_FLAGS;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.RECENT;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.SEEN;
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Flag.USER;
@@ -54,11 +54,13 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Fla
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -273,9 +275,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     private void updateMailbox(Mailbox<CassandraId> mailbox, Assignment operation) {
-        session.execute(update(CassandraMailboxCountersTable.TABLE_NAME)
-            .with(operation)
-            .where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
+        session.execute(update(CassandraMailboxCountersTable.TABLE_NAME).with(operation).where(eq(CassandraMailboxCountersTable.MAILBOX_ID, mailbox.getMailboxId().asUuid())));
     }
 
     private Message<CassandraId> message(Row row) {
@@ -308,6 +308,9 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
                 flags.add(CassandraMessageTable.Flag.JAVAX_MAIL_FLAG.get(flag));
             }
         }
+        row.getSet(CassandraMessageTable.Flag.USER_FLAGS, String.class)
+            .stream()
+            .forEach(flags::add);
         return flags;
     }
 
@@ -337,6 +340,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
                 .value(RECENT, message.isRecent())
                 .value(SEEN, message.isSeen())
                 .value(USER, message.createFlags().contains(Flag.USER))
+                .value(USER_FLAGS, userFlagsSet(message))
                 .value(BODY_CONTENT, bindMarker())
                 .value(HEADER_CONTENT, bindMarker())
                 .value(PROPERTIES, message.getProperties().stream()
@@ -356,6 +360,10 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         } catch (IOException e) {
             throw new MailboxException("Error saving mail", e);
         }
+    }
+
+    private Set<String> userFlagsSet(Message<CassandraId> message) {
+        return Arrays.stream(message.createFlags().getUserFlags()).collect(Collectors.toSet());
     }
 
     private void manageUnseenMessageCounts(Mailbox<CassandraId> mailbox, Flags oldFlags, Flags newFlags) {
@@ -420,6 +428,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
                 .and(set(RECENT, message.isRecent()))
                 .and(set(SEEN, message.isSeen()))
                 .and(set(USER, message.createFlags().contains(Flag.USER)))
+                .and(set(USER_FLAGS, userFlagsSet(message)))
                 .and(set(MOD_SEQ, message.getModSeq()))
                 .where(eq(IMAP_UID, message.getUid()))
                 .and(eq(MAILBOX_ID, message.getMailboxId().asUuid()))

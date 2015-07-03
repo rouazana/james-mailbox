@@ -24,6 +24,7 @@ import static com.datastax.driver.core.DataType.blob;
 import static com.datastax.driver.core.DataType.cboolean;
 import static com.datastax.driver.core.DataType.cint;
 import static com.datastax.driver.core.DataType.counter;
+import static com.datastax.driver.core.DataType.set;
 import static com.datastax.driver.core.DataType.text;
 import static com.datastax.driver.core.DataType.timestamp;
 import static com.datastax.driver.core.DataType.timeuuid;
@@ -90,6 +91,7 @@ public class CassandraTableManager {
                 .addColumn(CassandraMessageTable.Flag.RECENT, cboolean())
                 .addColumn(CassandraMessageTable.Flag.SEEN, cboolean())
                 .addColumn(CassandraMessageTable.Flag.USER, cboolean())
+                .addColumn(CassandraMessageTable.Flag.USER_FLAGS, set(text()))
                 .addUDTListColumn(CassandraMessageTable.PROPERTIES, SchemaBuilder.frozen(CassandraTypesProvider.TYPE.Property.getName()))),
         Subscription(CassandraSubscriptionTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraSubscriptionTable.TABLE_NAME)
