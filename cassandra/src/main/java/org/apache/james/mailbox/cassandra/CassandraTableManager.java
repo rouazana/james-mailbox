@@ -90,8 +90,7 @@ public class CassandraTableManager {
                 .addColumn(CassandraMessageTable.Flag.RECENT, cboolean())
                 .addColumn(CassandraMessageTable.Flag.SEEN, cboolean())
                 .addColumn(CassandraMessageTable.Flag.USER, cboolean())
-                .addUDTListColumn(CassandraMessageTable.PROPERTIES, SchemaBuilder.frozen(CassandraTypesProvider.TYPE.Property.getName()))
-                .addColumn(CassandraMessageTable.FLAG_VERSION, bigint())),
+                .addUDTListColumn(CassandraMessageTable.PROPERTIES, SchemaBuilder.frozen(CassandraTypesProvider.TYPE.Property.getName()))),
         Subscription(CassandraSubscriptionTable.TABLE_NAME,
             SchemaBuilder.createTable(CassandraSubscriptionTable.TABLE_NAME)
                 .ifNotExists()
