@@ -515,7 +515,7 @@ public class StoreMessageManager<Id extends MailboxId> implements org.apache.jam
      *      boolean, boolean, org.apache.james.mailbox.model.MessageRange,
      *      org.apache.james.mailbox.MailboxSession)
      */
-    public Map<Long, Flags> setFlags(final Flags flags, final boolean value, final boolean replace, final MessageRange set, MailboxSession mailboxSession) throws MailboxException {
+    public Map<Long, Flags> setFlags(final Flags flags, final FlagsUpdateMode flagsUpdateMode, final MessageRange set, MailboxSession mailboxSession) throws MailboxException {
 
         if (!isWriteable(mailboxSession)) {
             throw new ReadOnlyException(new StoreMailboxPath<Id>(getMailboxEntity()), mailboxSession.getPathDelimiter());
@@ -529,7 +529,7 @@ public class StoreMessageManager<Id extends MailboxId> implements org.apache.jam
         Iterator<UpdatedFlags> it = messageMapper.execute(new Mapper.Transaction<Iterator<UpdatedFlags>>() {
 
             public Iterator<UpdatedFlags> run() throws MailboxException {
-                return messageMapper.updateFlags(getMailboxEntity(), flags, value, replace, set);
+                return messageMapper.updateFlags(getMailboxEntity(), new FlagsUpdateCalculator(flags, flagsUpdateMode), set);
             }
         });
 
@@ -654,7 +654,7 @@ public class StoreMessageManager<Id extends MailboxId> implements org.apache.jam
                 for (MessageRange range : ranges) {
                     if (reset) {
                         // only call save if we need to
-                        messageMapper.updateFlags(getMailboxEntity(), new Flags(Flag.RECENT), false, false, range);
+                        messageMapper.updateFlags(getMailboxEntity(), new FlagsUpdateCalculator(new Flags(Flag.RECENT), FlagsUpdateMode.REMOVE), range);
                     }
                 }
                 return members;

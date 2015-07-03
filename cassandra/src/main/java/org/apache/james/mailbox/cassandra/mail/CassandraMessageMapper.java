@@ -78,6 +78,7 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.apache.james.mailbox.store.FlagsUpdateCalculator;
 import org.apache.james.mailbox.store.SimpleMessageMetaData;
 import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.ModSeqProvider;
@@ -421,33 +422,23 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
         return ByteBuffer.wrap(ByteStreams.toByteArray(stream));
     }
 
-    /**
-     *
-     * @param mailbox Mailbox were messages are located
-     * @param flags Flags used for update
-     * @param value True if you want to set provided flags to true, false to set these flag to false
-     * @param replace true if we want to replace current flags by those provided
-     * @param set Range of messages to update
-     * @return Updated flag information
-     * @throws MailboxException
-     */
     @Override
-    public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, Flags flags, boolean value, boolean replace, MessageRange set) throws MailboxException {
+    public Iterator<UpdatedFlags> updateFlags(Mailbox<CassandraId> mailbox, FlagsUpdateCalculator flagsUpdateCalculator, MessageRange set) throws MailboxException {
         ImmutableList.Builder<UpdatedFlags> result = ImmutableList.builder();
         for (Row row : session.execute(buildQuery(mailbox, set))) {
-            updateMessage(mailbox, flags, value, replace, result, row);
+            updateMessage(mailbox, flagsUpdateCalculator, result, row);
         }
         return result.build().iterator();
     }
 
-    private void updateMessage(Mailbox<CassandraId> mailbox, Flags flags, boolean value, boolean replace, ImmutableList.Builder<UpdatedFlags> result, Row row) throws MailboxException {
+    private void updateMessage(Mailbox<CassandraId> mailbox, FlagsUpdateCalculator flagsUpdateCalculator, ImmutableList.Builder<UpdatedFlags> result, Row row) throws MailboxException {
         // Get the message and basic information about it
         Message<CassandraId> message = message(row);
         long flagVersion = row.getLong(FLAG_VERSION);
         long uid = message.getUid();
         // update flags
         Flags originFlags = message.createFlags();
-        Flags updatedFlags = buildFlags(message, flags, value, replace);
+        Flags updatedFlags = flagsUpdateCalculator.buildNewFlags(originFlags);
         message.setFlags(updatedFlags);
         // Update the ModSeq
         long previousModSeq = message.getModSeq();
@@ -470,7 +461,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
                 flagVersion = newRow.getLong(FLAG_VERSION);
                 // update flags
                 originFlags = message.createFlags();
-                updatedFlags = buildFlags(message, flags, value, replace);
+                updatedFlags = flagsUpdateCalculator.buildNewFlags(originFlags);
                 message.setFlags(updatedFlags);
                 // Update ModSeq
                 if (previousModSeq != message.getModSeq()) {
@@ -504,20 +495,6 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
             return null;
         }
         return resultSet.one();
-    }
-
-    private Flags buildFlags(Message<CassandraId> message, Flags flags, boolean value, boolean replace) {
-        if (replace) {
-            return flags;
-        } else {
-            Flags updatedFlags = message.createFlags();
-            if (value) {
-                updatedFlags.add(flags);
-            } else {
-                updatedFlags.remove(flags);
-            }
-            return updatedFlags;
-        }
     }
 
     @Override

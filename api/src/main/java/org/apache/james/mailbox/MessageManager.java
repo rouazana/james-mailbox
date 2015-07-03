@@ -49,6 +49,12 @@ import org.apache.james.mailbox.model.MessageResult.FetchGroup;
  */
 public interface MessageManager {
 
+    enum FlagsUpdateMode {
+        ADD,
+        REMOVE,
+        REPLACE
+    }
+
     /**
      * Return the count
      * 
@@ -116,20 +122,14 @@ public interface MessageManager {
      * Sets flags on messages within the given range. The new flags are returned
      * for each message altered.
      * 
-     * @param flags
-     *            Flags to be set
-     * @param value
-     *            true = set, false = unset
-     * @param replace
-     *            replace all Flags with this flags, value has to be true
-     * @param set
-     *            the range of messages
-     * @param mailboxSession
-     *            not null
+     * @param flags Flags to be taken into account for transformation of stored flags
+     * @param flagsUpdateMode Mode of the transformation of stored flags
+     * @param set the range of messages
+     * @param mailboxSession not null
      * @return new flags indexed by UID
      * @throws MailboxException
      */
-    Map<Long, Flags> setFlags(Flags flags, boolean value, boolean replace, MessageRange set, MailboxSession mailboxSession) throws MailboxException;
+    Map<Long, Flags> setFlags(Flags flags, FlagsUpdateMode flagsUpdateMode, MessageRange set, MailboxSession mailboxSession) throws MailboxException;
 
     /**
      * Appends a message to this mailbox. This method must return a higher UID

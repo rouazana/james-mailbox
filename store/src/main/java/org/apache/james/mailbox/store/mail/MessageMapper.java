@@ -22,12 +22,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.Flags;
-
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.apache.james.mailbox.store.FlagsUpdateCalculator;
 import org.apache.james.mailbox.store.mail.model.MailboxId;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
@@ -133,14 +132,12 @@ public interface MessageMapper<Id extends MailboxId> extends Mapper {
      * Update flags for the given {@link MessageRange}. Only the flags may be modified after a message was saved to a mailbox.
      * 
      * @param mailbox
-     * @param flags
-     * @param value
-     * @param replace
+     * @param flagsUpdateCalculator How to update flags
      * @param set
      * @return updatedFlags
      * @throws MailboxException
      */
-    Iterator<UpdatedFlags> updateFlags(Mailbox<Id> mailbox, final Flags flags, final boolean value, final boolean replace,
+    Iterator<UpdatedFlags> updateFlags(Mailbox<Id> mailbox, final FlagsUpdateCalculator flagsUpdateCalculator,
             final MessageRange set) throws MailboxException;
     
     /**

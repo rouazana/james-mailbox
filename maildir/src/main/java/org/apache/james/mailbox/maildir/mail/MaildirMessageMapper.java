@@ -46,6 +46,7 @@ import org.apache.james.mailbox.model.MessageMetaData;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageRange.Type;
 import org.apache.james.mailbox.model.UpdatedFlags;
+import org.apache.james.mailbox.store.FlagsUpdateCalculator;
 import org.apache.james.mailbox.store.SimpleMessageMetaData;
 import org.apache.james.mailbox.store.mail.AbstractMessageMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
@@ -171,8 +172,7 @@ public class MaildirMessageMapper extends AbstractMessageMapper<MaildirId> {
      *      org.apache.james.mailbox.model.MessageRange)
      */
     @Override
-    public Iterator<UpdatedFlags> updateFlags(final Mailbox<MaildirId> mailbox, final Flags flags, final boolean value,
-            final boolean replace, final MessageRange set) throws MailboxException {
+    public Iterator<UpdatedFlags> updateFlags(final Mailbox<MaildirId> mailbox, final FlagsUpdateCalculator flagsUpdateCalculator, final MessageRange set) throws MailboxException {
         final List<UpdatedFlags> updatedFlags = new ArrayList<UpdatedFlags>();
         final MaildirFolder folder = maildirStore.createMaildirFolder(mailbox);
 
@@ -180,17 +180,7 @@ public class MaildirMessageMapper extends AbstractMessageMapper<MaildirId> {
         while (it.hasNext()) {
             final Message<MaildirId> member = it.next();
             Flags originalFlags = member.createFlags();
-            if (replace) {
-                member.setFlags(flags);
-            } else {
-                Flags current = member.createFlags();
-                if (value) {
-                    current.add(flags);
-                } else {
-                    current.remove(flags);
-                }
-                member.setFlags(current);
-            }
+            member.setFlags(flagsUpdateCalculator.buildNewFlags(originalFlags));
             Flags newFlags = member.createFlags();
 
             try {
