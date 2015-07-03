@@ -28,6 +28,9 @@ import static org.apache.james.mailbox.cassandra.table.CassandraSubscriptionTabl
 import static org.apache.james.mailbox.cassandra.table.CassandraSubscriptionTable.USER;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.apache.james.mailbox.store.transaction.NonTransactionalMapper;
 import org.apache.james.mailbox.store.user.SubscriptionMapper;
@@ -52,44 +55,53 @@ public class CassandraSubscriptionMapper extends NonTransactionalMapper implemen
 
     @Override
     public synchronized void delete(Subscription subscription) {
-        session.execute(QueryBuilder.delete().from(TABLE_NAME).where(eq(USER, subscription.getUser())).and(eq(MAILBOX, subscription.getMailbox())));
+        session.execute(QueryBuilder.delete()
+            .from(TABLE_NAME)
+            .where(eq(USER, subscription.getUser()))
+            .and(eq(MAILBOX, subscription.getMailbox())));
     }
 
     @Override
     public Subscription findMailboxSubscriptionForUser(String user, String mailbox) {
-        ResultSet results = session.execute(select(MAILBOX).from(TABLE_NAME).where(eq(USER, user)).and(eq(MAILBOX, mailbox)));
+        ResultSet results = session.execute(select(MAILBOX)
+            .from(TABLE_NAME)
+            .where(eq(USER, user))
+            .and(eq(MAILBOX, mailbox)));
         return !results.isExhausted() ? new SimpleSubscription(user, mailbox) : null;
     }
 
     @Override
     public List<Subscription> findSubscriptionsForUser(String user) {
-        Builder<Subscription> result = ImmutableList.<Subscription> builder();
-        Select query = select(MAILBOX).from(TABLE_NAME);
-        query.where(eq(USER, user));
-        query.allowFiltering();
-        for (Row row : session.execute(query)) {
-            result.add(new SimpleSubscription(user, row.getString(MAILBOX)));
-        }
-        return result.build();
+        return convertToStream(
+            session.execute(select(MAILBOX)
+                .from(TABLE_NAME)
+                .where(eq(USER, user))))
+            .map((row) -> new SimpleSubscription(user, row.getString(MAILBOX)))
+            .collect(Collectors.toList());
     }
 
     @Override
     public synchronized void save(Subscription subscription) {
-        Insert query = insertInto(TABLE_NAME).value(USER, subscription.getUser()).value(MAILBOX, subscription.getMailbox());
-        session.execute(query);
+        session.execute(insertInto(TABLE_NAME)
+            .value(USER, subscription.getUser())
+            .value(MAILBOX, subscription.getMailbox()));
     }
 
     public List<SimpleSubscription> list() {
-        Builder<SimpleSubscription> result = ImmutableList.<SimpleSubscription> builder();
-        for (Row row : session.execute(select(FIELDS).from(TABLE_NAME))) {
-            result.add(new SimpleSubscription(row.getString(USER), row.getString(MAILBOX)));
-        }
-        return result.build();
+        return convertToStream(
+            session.execute(select(FIELDS)
+                .from(TABLE_NAME)))
+            .map((row) -> new SimpleSubscription(row.getString(USER), row.getString(MAILBOX)))
+            .collect(Collectors.toList());
     }
 
     @Override
     public void endRequest() {
-        // nothing todo
+        // nothing to do
+    }
+
+    private Stream<Row> convertToStream(ResultSet resultSet) {
+        return StreamSupport.stream(resultSet.spliterator(), true);
     }
 
 }

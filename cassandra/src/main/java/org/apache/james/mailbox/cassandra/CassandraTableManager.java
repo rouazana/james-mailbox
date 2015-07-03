@@ -131,6 +131,10 @@ public class CassandraTableManager {
                 .onTable(CassandraMailboxTable.TABLE_NAME)
                 .andColumn(CassandraMailboxTable.MAILBOX_BASE)
         ),
+        UserSubscription(SchemaBuilder.createIndex(INDEX_PREFIX + CassandraSubscriptionTable.USER)
+            .ifNotExists()
+            .onTable(CassandraSubscriptionTable.TABLE_NAME)
+            .andColumn(CassandraSubscriptionTable.USER))
         ;
         private SchemaStatement createIndexStatement;
 
