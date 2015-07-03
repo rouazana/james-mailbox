@@ -54,7 +54,7 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Fla
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +75,7 @@ import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider;
 import org.apache.james.mailbox.cassandra.CassandraTypesProvider.TYPE;
 import org.apache.james.mailbox.cassandra.mail.utils.FunctionRunnerWithRetry;
-import org.apache.james.mailbox.cassandra.mail.utils.MessageDeletedDuringFlagsUpdate;
+import org.apache.james.mailbox.cassandra.mail.utils.MessageDeletedDuringFlagsUpdateException;
 import org.apache.james.mailbox.cassandra.table.CassandraMailboxCountersTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageTable.Properties;
@@ -166,6 +166,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     public Iterator<Message<CassandraId>> findInMailbox(Mailbox<CassandraId> mailbox, MessageRange set, FetchType ftype, int max) throws MailboxException {
         return convertToStream(session.execute(buildQuery(mailbox, set)))
             .map(this::message)
+            .sorted(Comparator.comparingLong(Message::getUid))
             .iterator();
     }
 
@@ -301,16 +302,13 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     private Flags getFlags(Row row) {
-        return Arrays.stream(CassandraMessageTable.Flag.ALL)
-            .filter(row::getBool)
-            .map(JAVAX_MAIL_FLAG::get)
-            .reduce(new Flags(), (flags, flag) -> {
-                flags.add(flag);
-                return flags;
-            }, (flags1, flags2) -> {
-                flags1.add(flags2);
-                return flags1;
-            });
+        Flags flags = new Flags();
+        for (String flag : CassandraMessageTable.Flag.ALL) {
+            if (row.getBool(flag)) {
+                flags.add(CassandraMessageTable.Flag.JAVAX_MAIL_FLAG.get(flag));
+            }
+        }
+        return flags;
     }
 
     private PropertyBuilder getPropertyBuilder(Row row) {
@@ -397,7 +395,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
             return Optional.of(
                 new FunctionRunnerWithRetry(maxRetries)
                     .executeAndRetrieveObject(() -> retryMessageFlagsUpdate(mailbox, uid, flagUpdateCalculator)));
-        } catch (MessageDeletedDuringFlagsUpdate e) {
+        } catch (MessageDeletedDuringFlagsUpdateException e) {
             mailboxSession.getLog().warn(e.getMessage());
             return Optional.empty();
         } catch (MailboxException e) {
@@ -406,9 +404,10 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     private Optional<UpdatedFlags> retryMessageFlagsUpdate(Mailbox<CassandraId> mailbox, long uid, FlagsUpdateCalculator flagUpdateCalculator) {
-        return Optional.ofNullable(session.execute(selectMessage(mailbox, uid)).one())
-            .map((row) -> tryMessageFlagsUpdate(flagUpdateCalculator, mailbox, message(row)))
-            .orElseThrow(() -> new MessageDeletedDuringFlagsUpdate(mailbox.getMailboxId(), uid));
+        return tryMessageFlagsUpdate(flagUpdateCalculator,
+            mailbox,
+            message(Optional.ofNullable(session.execute(selectMessage(mailbox, uid)).one())
+                .orElseThrow(() -> new MessageDeletedDuringFlagsUpdateException(mailbox.getMailboxId(), uid))));
     }
 
     private boolean conditionalSave(Message<CassandraId> message, long oldModSeq) {
