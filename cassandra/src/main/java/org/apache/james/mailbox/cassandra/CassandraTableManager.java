@@ -129,12 +129,15 @@ public class CassandraTableManager {
             SchemaBuilder.createIndex(INDEX_PREFIX + CassandraMailboxTable.MAILBOX_BASE)
                 .ifNotExists()
                 .onTable(CassandraMailboxTable.TABLE_NAME)
-                .andColumn(CassandraMailboxTable.MAILBOX_BASE)
-        ),
+                .andColumn(CassandraMailboxTable.MAILBOX_BASE)),
         UserSubscription(SchemaBuilder.createIndex(INDEX_PREFIX + CassandraSubscriptionTable.USER)
             .ifNotExists()
             .onTable(CassandraSubscriptionTable.TABLE_NAME)
-            .andColumn(CassandraSubscriptionTable.USER))
+            .andColumn(CassandraSubscriptionTable.USER)),
+        RecentMessages(SchemaBuilder.createIndex(INDEX_PREFIX + CassandraMessageTable.Flag.RECENT)
+            .ifNotExists()
+            .onTable(CassandraMessageTable.TABLE_NAME)
+            .andColumn(CassandraMessageTable.Flag.RECENT))
         ;
         private SchemaStatement createIndexStatement;
 

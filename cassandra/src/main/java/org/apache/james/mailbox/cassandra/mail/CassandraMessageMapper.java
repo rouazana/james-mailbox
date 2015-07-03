@@ -294,14 +294,10 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public List<Long> findRecentMessageUidsInMailbox(Mailbox<CassandraId> mailbox) throws MailboxException {
-        ImmutableList.Builder<Long> result = ImmutableList.<Long> builder();
-        ResultSet rows = session.execute(selectAll(mailbox).orderBy(asc(IMAP_UID)));
-        for (Row row : rows) {
-            if (row.getBool(RECENT)) {
-                result.add(row.getLong(IMAP_UID));
-            }
-        }
-        return result.build();
+        return convertToStream(session.execute(selectAll(mailbox).and((eq(RECENT, true)))))
+            .map((row) -> row.getLong(IMAP_UID))
+            .sorted()
+            .collect(Collectors.toList());
     }
 
     @Override
