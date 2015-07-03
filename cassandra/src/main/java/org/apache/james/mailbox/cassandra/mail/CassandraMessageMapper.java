@@ -161,7 +161,7 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
     }
 
     @Override
-    public void delete(Mailbox<CassandraId> mailbox, Message<CassandraId> message) throws MailboxException {
+    public void delete(Mailbox<CassandraId> mailbox, Message<CassandraId> message) {
         session.execute(
             QueryBuilder.delete()
                 .from(TABLE_NAME)
@@ -311,16 +311,10 @@ public class CassandraMessageMapper implements MessageMapper<CassandraId> {
 
     @Override
     public Map<Long, MessageMetaData> expungeMarkedForDeletionInMailbox(final Mailbox<CassandraId> mailbox, MessageRange set) throws MailboxException {
-        ImmutableMap.Builder<Long, MessageMetaData> deletedMessages = ImmutableMap.builder();
-        ResultSet messages = session.execute(buildQuery(mailbox, set));
-        for (Row row : messages) {
-            if (row.getBool(DELETED)) {
-                Message<CassandraId> message = message(row);
-                delete(mailbox, message);
-                deletedMessages.put(message.getUid(), new SimpleMessageMetaData(message));
-            }
-        }
-        return deletedMessages.build();
+        return convertToStream(session.execute(buildQuery(mailbox, set).and(eq(DELETED, true))))
+            .map(this::message)
+            .peek((message) -> delete(mailbox, message))
+            .collect(Collectors.toMap(Message::getUid, SimpleMessageMetaData::new));
     }
 
     @Override
