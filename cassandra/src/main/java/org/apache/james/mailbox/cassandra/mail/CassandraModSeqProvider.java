@@ -32,6 +32,8 @@ import java.util.Optional;
 
 import org.apache.james.backends.cassandra.utils.CassandraConstants;
 import org.apache.james.backends.cassandra.utils.LightweightTransactionException;
+import javax.inject.Inject;
+
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.cassandra.CassandraId;
 import org.apache.james.backends.cassandra.utils.FunctionRunnerWithRetry;
@@ -60,6 +62,7 @@ public class CassandraModSeqProvider implements ModSeqProvider<CassandraId> {
         this.runner = new FunctionRunnerWithRetry(maxRetry);
     }
 
+    @Inject
     public CassandraModSeqProvider(Session session) {
         this(session, DEFAULT_MAX_RETRY);
     }
