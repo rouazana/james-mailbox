@@ -152,7 +152,7 @@ public abstract class AbstractJPAMessage extends AbstractMessage<JPAId> {
                     CascadeType.PERSIST, 
                     CascadeType.REFRESH, 
                     CascadeType.MERGE}, 
-            fetch=FetchType.LAZY)
+            fetch=FetchType.EAGER)
     @Column(name = "MAILBOX_ID", nullable = true)
     private JPAMailbox mailbox;
 
@@ -232,13 +232,13 @@ public abstract class AbstractJPAMessage extends AbstractMessage<JPAId> {
     
 
     /** Meta data for this message */
-    @OneToMany(cascade = CascadeType.ALL, fetch=FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, fetch=FetchType.EAGER)
     @OrderBy("line")
     @ElementJoinColumns({@ElementJoinColumn(name="MAILBOX_ID", referencedColumnName="MAILBOX_ID"),
                 @ElementJoinColumn(name="MAIL_UID", referencedColumnName="MAIL_UID")})
     private List<JPAProperty> properties;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch=FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, fetch=FetchType.EAGER, orphanRemoval = true)
     @OrderBy("id")
     @ElementJoinColumns({@ElementJoinColumn(name="MAILBOX_ID", referencedColumnName="MAILBOX_ID"),
     @ElementJoinColumn(name="MAIL_UID", referencedColumnName="MAIL_UID")})
