@@ -30,6 +30,8 @@ import org.apache.james.mailbox.exception.MailboxException;
  */
 public interface MailboxCopier {
 
+    String COMPONENT_NAME = "mailboxcopier";
+
     /**
      * Copy the mailboxes from a mailbox manager to another mailbox manager. The
      * implementation is responsible to read all mailboxes form the injected

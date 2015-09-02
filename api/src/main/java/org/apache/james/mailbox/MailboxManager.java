@@ -69,6 +69,8 @@ import org.slf4j.Logger;
 
 public interface MailboxManager extends RequestAware, MailboxListenerSupport {
 
+    String COMPONENT_NAME = "mailboxmanager";
+
     /**
      * Return the delimiter to use for folders
      * 
