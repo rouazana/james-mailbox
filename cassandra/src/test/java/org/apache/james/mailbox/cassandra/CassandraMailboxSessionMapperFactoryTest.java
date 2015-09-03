@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class CassandraMailboxSessionMapperFactoryTest {
-    private static final CassandraClusterSingleton CLUSTER = CassandraClusterSingleton.create(new CassandraMailboxModule());
+    private static final CassandraClusterSingleton CLUSTER = CassandraClusterSingleton.create(new CassandraMailboxFeatures());
     private final static Logger LOG = LoggerFactory.getLogger(CassandraMailboxSessionMapperFactoryTest.class);
 
     @Before

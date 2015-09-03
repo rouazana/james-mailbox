@@ -30,7 +30,7 @@ import org.apache.james.mailbox.cassandra.mail.CassandraUidProvider;
  */
 public class CassandraSubscriptionManagerTest extends AbstractSubscriptionManagerTest {
 
-    private static final CassandraClusterSingleton cassandra = CassandraClusterSingleton.create(new CassandraMailboxModule());
+    private static final CassandraClusterSingleton cassandra = CassandraClusterSingleton.create(new CassandraMailboxFeatures());
     
     @Override
     public SubscriptionManager createSubscriptionManager() {

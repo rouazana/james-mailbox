@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CassandraMailboxManagerTest extends AbstractMailboxManagerTest {
 
-    private static final CassandraClusterSingleton CASSANDRA = CassandraClusterSingleton.create(new CassandraMailboxModule());
+    private static final CassandraClusterSingleton CASSANDRA = CassandraClusterSingleton.create(new CassandraMailboxFeatures());
 
     /**
      * Setup the mailboxManager.

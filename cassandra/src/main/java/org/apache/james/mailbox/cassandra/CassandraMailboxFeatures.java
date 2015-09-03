@@ -6,8 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
+import org.apache.james.backends.cassandra.components.CassandraFeatures;
 import org.apache.james.backends.cassandra.components.CassandraIndex;
-import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.components.CassandraTable;
 import org.apache.james.backends.cassandra.components.CassandraType;
 import org.apache.james.mailbox.cassandra.table.CassandraACLTable;
@@ -27,13 +27,13 @@ import static com.datastax.driver.core.DataType.text;
 import static com.datastax.driver.core.DataType.timestamp;
 import static com.datastax.driver.core.DataType.timeuuid;
 
-public class CassandraMailboxModule implements CassandraModule {
+public class CassandraMailboxFeatures implements CassandraFeatures {
 
     private final List<CassandraTable> tables;
     private final List<CassandraIndex> index;
     private final List<CassandraType> types;
 
-    public CassandraMailboxModule() {
+    public CassandraMailboxFeatures() {
         tables = Arrays.asList(
             new CassandraTable(CassandraMailboxTable.TABLE_NAME,
                 SchemaBuilder.createTable(CassandraMailboxTable.TABLE_NAME)
