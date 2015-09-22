@@ -53,7 +53,7 @@ public class StoreQuotaManagerTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void getMessageQuotaShouldWorkWithNumericValues() throws Exception {
         when(mockedMaxQuotaManager.getMaxMessage(quotaRoot)).then(new Answer<Long>() {
             @Override
             public Long answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -70,7 +70,7 @@ public class StoreQuotaManagerTest {
     }
 
     @Test
-    public void test2() throws Exception {
+    public void getStorageQuotaShouldWorkWithNumericValues() throws Exception {
         when(mockedMaxQuotaManager.getMaxStorage(quotaRoot)).then(new Answer<Long>() {
             @Override
             public Long answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -87,7 +87,7 @@ public class StoreQuotaManagerTest {
     }
 
     @Test
-    public void test3() throws Exception {
+    public void getStorageQuotaShouldNotCalculateCurrentQuotaWhenUnlimited() throws Exception {
         testee.setCalculateWhenUnlimited(false);
         when(mockedMaxQuotaManager.getMaxStorage(quotaRoot)).then(new Answer<Long>() {
             @Override
@@ -100,7 +100,7 @@ public class StoreQuotaManagerTest {
     }
 
     @Test
-    public void test4() throws Exception {
+    public void getMessageQuotaShouldNotCalculateCurrentQuotaWhenUnlimited() throws Exception {
         testee.setCalculateWhenUnlimited(false);
         when(mockedMaxQuotaManager.getMaxMessage(quotaRoot)).then(new Answer<Long>() {
             @Override
@@ -113,7 +113,7 @@ public class StoreQuotaManagerTest {
     }
 
     @Test
-    public void test5() throws Exception {
+    public void getStorageQuotaShouldCalculateCurrentQuotaWhenUnlimited() throws Exception {
         testee.setCalculateWhenUnlimited(true);
         when(mockedMaxQuotaManager.getMaxStorage(quotaRoot)).then(new Answer<Long>() {
             @Override
@@ -131,7 +131,7 @@ public class StoreQuotaManagerTest {
     }
 
     @Test
-    public void test6() throws Exception {
+    public void getMessageQuotaShouldCalculateCurrentQuotaWhenUnlimited() throws Exception {
         testee.setCalculateWhenUnlimited(true);
         when(mockedMaxQuotaManager.getMaxMessage(quotaRoot)).then(new Answer<Long>() {
             @Override
