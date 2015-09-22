@@ -34,14 +34,18 @@ import org.apache.james.mailbox.store.mail.MessageMapper;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.Message;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Iterator;
 import java.util.List;
 
+@Singleton
 public class CurrentQuotaCalculator {
 
     private final MailboxSessionMapperFactory factory;
     private final QuotaRootResolver quotaRootResolver;
 
+    @Inject
     public CurrentQuotaCalculator(MailboxSessionMapperFactory factory,
                                   QuotaRootResolver quotaRootResolver) {
         this.factory = factory;

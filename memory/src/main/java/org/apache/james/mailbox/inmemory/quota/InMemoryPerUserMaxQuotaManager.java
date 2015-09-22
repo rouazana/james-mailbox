@@ -26,6 +26,9 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.model.QuotaRoot;
 
+import javax.inject.Singleton;
+
+@Singleton
 public class InMemoryPerUserMaxQuotaManager implements MaxQuotaManager {
 
     private long maxMessage = Quota.UNLIMITED;

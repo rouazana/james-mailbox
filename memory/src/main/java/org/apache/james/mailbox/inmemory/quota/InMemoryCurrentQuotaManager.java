@@ -32,9 +32,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Singleton
 public class InMemoryCurrentQuotaManager implements StoreCurrentQuotaManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryCurrentQuotaManager.class);

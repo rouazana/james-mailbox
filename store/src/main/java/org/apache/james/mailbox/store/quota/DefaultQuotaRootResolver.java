@@ -31,14 +31,18 @@ import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.mailbox.store.MailboxSessionMapperFactory;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.List;
 
+@Singleton
 public class DefaultQuotaRootResolver implements QuotaRootResolver {
 
     public static final String SEPARATOR = "&"; // Character illegal for mailbox naming in regard of RFC 3501 section 5.1
 
     private final MailboxSessionMapperFactory factory;
 
+    @Inject
     public DefaultQuotaRootResolver(MailboxSessionMapperFactory factory) {
         this.factory = factory;
     }

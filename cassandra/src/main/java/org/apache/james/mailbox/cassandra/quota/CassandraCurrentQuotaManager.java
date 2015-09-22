@@ -35,6 +35,10 @@ import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.store.quota.StoreCurrentQuotaManager;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class CassandraCurrentQuotaManager implements StoreCurrentQuotaManager {
 
     private final Session session;
@@ -43,6 +47,7 @@ public class CassandraCurrentQuotaManager implements StoreCurrentQuotaManager {
     private final PreparedStatement getCurrentMessageCountStatement;
     private final PreparedStatement getCurrentStorageStatement;
 
+    @Inject
     public CassandraCurrentQuotaManager(Session session) {
         this.session = session;
         this.increaseStatement = session.prepare(update(CassandraCurrentQuota.TABLE_NAME)

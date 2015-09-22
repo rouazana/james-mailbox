@@ -19,5 +19,8 @@
 
 package org.apache.james.mailbox.store.quota;
 
+import javax.inject.Singleton;
+
+@Singleton
 public class NoQuotaUpdater implements QuotaUpdater {
 }
